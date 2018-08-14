@@ -32,12 +32,7 @@ class OpenSIPSCTLConfig:
 
     # Function to get the value from a section.value
     def get(self, section, key):
-        if section in self.config:
-            if key in self.config[section]:
-                return self.config[section][key]
-        elif key is self.config['DEFAULT']:
-            return self.config['DEFAULT'][key]
-        return None
+        return self.ConfigMap[section][key]
 
     # Create ConfigMap[section][key] = value
     def create_map(self):

@@ -9,7 +9,6 @@ class OpenSIPSCTLComm:
     comm_func = ''
 
     def __init__(self, section):
-        # print(Config.ConfigMap['MODULES.CORE']['comm_type'])
         comm_type = Config.get(section, 'comm_type')
         comm_type = 'json'
         if comm_type == 'json':
