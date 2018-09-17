@@ -27,11 +27,17 @@ parser.add_argument('-d', '--debug',
                     help='enable debugging')
 # Argument used to overwrite certain values in the config
 parser.add_argument('-o', '--option',
-                    metavar='[SECTION.KEY=VALUE]',
+                    metavar='[KEY=VALUE]',
                     action='append',
                     type=str,
                     default=None,
                     help='overwrite certain values in the config')
+parser.add_argument('-i', '--instance',
+                    metavar='[INSTANCE]',
+                    type=str,
+                    action='store',
+                    default='default',
+                    help='choose an opensips instance')
 # Argument used to print the current version
 parser.add_argument('-V', '--version',
                     action='version',
@@ -45,7 +51,8 @@ args = parser.parse_args()
 BATCH = args.batch
 CONFIG_FILE = args.config
 DEBUG = args.debug
+INSTANCE = args.instance
 
 # Open the CLI
-Shell = OpenSIPSCTLShell(CONFIG_FILE, args.option)
+Shell = OpenSIPSCTLShell(CONFIG_FILE, INSTANCE, args.option)
 Shell.cmdloop()

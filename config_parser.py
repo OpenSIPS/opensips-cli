@@ -5,6 +5,8 @@ import os
 
 
 class OpenSIPSCTLConfig:
+    current_instance = 'default'
+
     def __init__(self):
         self.config = configparser.ConfigParser()
         self.ConfigMap = {}
@@ -36,14 +38,14 @@ class OpenSIPSCTLConfig:
 
     # Create ConfigMap[section][key] = value
     def create_map(self):
-        self.ConfigMap['DEFAULT'] = {}
-        for key, value in self.config.items('DEFAULT'):
-            self.ConfigMap['DEFAULT'][key] = value
+        self.ConfigMap['default'] = {}
+        for key, value in self.config.items('default'):
+            self.ConfigMap['default'][key] = value
         for sec in self.config.sections():
-            _sec = sec.upper()
-            self.ConfigMap[_sec] = {}
+            # _sec = sec.upper()
+            self.ConfigMap[sec] = {}
             for key, value in self.config.items(sec):
-                self.ConfigMap[_sec][key] = value
+                self.ConfigMap[sec][key] = value
 
 
 Config = OpenSIPSCTLConfig()

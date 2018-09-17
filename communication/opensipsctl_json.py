@@ -23,8 +23,12 @@ def mi_json(cmd='ps', args=None):
     cmd = urllib.request.urlopen('http://%s:%s/json/%s' % (IP, PORT, cmd))
 
     json_file = cmd.read().decode('utf-8')
-    parsed_json_file = json.loads(json_file)
-    return parsed_json_file
+    try:
+        parsed_json_file = json.loads(json_file)
+        return parsed_json_file
+    except json.decoder.JSONDecodeError:
+        print('Decoding JSON has failed')
+    return None
 
 
 # print(mi_json(ps))

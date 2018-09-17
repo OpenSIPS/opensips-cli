@@ -3,23 +3,67 @@
 import cmd
 from config_parser import *
 import sys
-import types
+import os
+from types import FunctionType
 import Modules
+import readline
+
+history_file = os.path.expanduser('./.opensipsctl_history')
+history_file_size = 1000
 
 
 class OpenSIPSCTLShell(cmd.Cmd, object):
     cmd_list = []
+    mod_list = []
+    cmd_to_mod = {}
 
-    def __init__(self, config_file, new_options):
+    def __init__(self, config_file, instance, new_options):
+        # __init__ of the configuration file
+        Config.current_instance = instance
         Config.parse(config_file)
         Config.overwrite_map(new_options)
+        # __init__ of cmd.Cmd module
         cmd.Cmd.__init__(self)
-        self.prompt = '(%s): ' % Config.ConfigMap['DEFAULT']['prompt_name']
-        self.intro = Config.ConfigMap['DEFAULT']['prompt_intro']
-        self.undoc_header = None
-        self.cmd_list = self.get_functions_list()
-        self.cmd_list += ['exit', 'quit']
+        # Opening the current working instance
+        self.update_instance(Config.current_instance)
         # print(self.cmd_list)
+
+    def update_instance(self, instance):
+        # Update the intro and prompt
+        self.intro = Config.ConfigMap[instance]['prompt_intro']
+        self.prompt = '(%s): ' % Config.ConfigMap[instance]['prompt_name']
+        # Clear the modules and commands list
+        self.mod_list.clear()
+        self.cmd_list.clear()
+        self.cmd_list = ['clear', 'help', 'history', 'exit', 'quit']
+        self.cmd_to_mod.clear()
+        # Create the modules list based on the current instance
+        for mod in sys.modules.keys():
+            if mod.startswith('Modules.') and mod != 'Modules.module':
+                # print(mod)
+                mod_name = mod.split('.')[1]
+                if eval('Modules.' + mod_name.title() +
+                        '.__exclude__(self)') is False:
+                    new_mod = eval('Modules.' + mod_name.title() + '()')
+                    self.mod_list.append(new_mod)
+                    # print(mod_name + " has been loaded.")
+        # Create the command list based on the loaded modules
+        for i in self.mod_list:
+            list = i.__get_methods__()
+            for j in list:
+                self.cmd_to_mod[j] = i.__class__.__name__
+            self.cmd_list += list
+
+    def preloop(self):
+        if readline and os.path.exists(history_file):
+            readline.read_history_file(history_file)
+
+    def postcmd(self, stop, line):
+        self.update_instance(Config.current_instance)
+        if readline:
+            readline.set_history_length(history_file_size)
+            readline.write_history_file(history_file)
+        return stop
 
     # Overwritten funtion in order not to print misc commands
     def print_topics(self, header, cmds, cmdlen, maxcol):
@@ -27,7 +71,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             if cmds:
                 self.stdout.write('%s\n' % str(header))
                 if self.ruler:
-                        self.stdout.write('%s\n' % str(self.ruler*len(header)))
+                    self.stdout.write('%s\n' % str(self.ruler*len(header)))
                 self.columnize(cmds, maxcol-1)
                 self.stdout.write('\n')
 
@@ -41,21 +85,6 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             except KeyboardInterrupt:
                 print('^C')
 
-    # Create cmd_list with all available functions
-    def get_functions_list(self):
-        cmd_list = []
-        for mod in sys.modules.keys():
-            if 'Modules' in str(mod) and len(str(mod)) > 7:
-                mod_dir = eval('dir(' + mod + ')')
-                for each_cmd in mod_dir:
-                    if each_cmd.startswith('__'):
-                        continue
-                    verify = eval('isinstance(' + mod + '.' + each_cmd +
-                                  ', types.FunctionType)')
-                    if verify is True:
-                        cmd_list.append(each_cmd)
-        return cmd_list
-
     # Overwritten function for our customized auto-complete
     def completenames(self, text, *ignored):
         dotext = text
@@ -64,7 +93,6 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     # Overwritten function for our customized auto-complete
     def complete(self, text, state):
         if state == 0:
-            import readline
             origline = readline.get_line_buffer()
             line = origline.lstrip()
             stripped = len(origline) - len(line)
@@ -95,13 +123,31 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     # Execute commands from Modules
     def default(self, line):
         aux = line.split(' ')
-        cmd = aux[0]
-        args = aux[1:]
-        # TODO: Search for the module
+        cmd = str(aux[0])
+        params = []
+        for i in aux[1:]:
+            params.append(str("\'%s\'" % i))
         if cmd in self.cmd_list:
-            exec('Modules.core.' + cmd + '(' + str(args) + ')')
+            for mod in self.mod_list:
+                if self.cmd_to_mod[cmd] in str(mod):
+                    mod.__invoke__(cmd, params)
         else:
             print('%s: command not found' % cmd)
+
+    # Print history
+    def do_history(self, line):
+        if not line:
+            with open(history_file) as hf:
+                for num, line in enumerate(hf, 1):
+                    print(num, line, end='')
+
+    #
+    def do_help(self, line):
+        print("Usage:: help cmd - returns information about \"cmd\"")
+
+    # Clear the terminal screen
+    def do_clear(self, line):
+        os.system('clear')
 
     # Commands used to exit the shell
     def do_EOF(self, line):
