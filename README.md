@@ -1,6 +1,6 @@
 # OpenSIPS_RSoC
 
-During ROSEdu Summer of Code, [opensips](https://www.opensips.org/) gave me the opportunity to develop 'opensipsctl' - a control tool for opensips with a command line interface.
+During ROSEdu Summer of Code, [opensips](https://www.opensips.org/) gave me the opportunity to develop 'opensipsctl' - a control tool for opensips with a command line interface. This will be the working repository until it is pulled to their master branch.
 
 ## Code style
 
