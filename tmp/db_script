@@ -1,0 +1,168 @@
+CREATE TABLE version (
+    table_name CHAR(32) NOT NULL,
+    table_version INT UNSIGNED DEFAULT 0 NOT NULL,
+    CONSTRAINT t_name_idx UNIQUE (table_name)
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('uri','2');
+CREATE TABLE uri (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    username CHAR(64) DEFAULT '' NOT NULL,
+    domain CHAR(64) DEFAULT '' NOT NULL,
+    uri_user CHAR(64) DEFAULT '' NOT NULL,
+    last_modified DATETIME DEFAULT '1900-01-01 00:00:01' NOT NULL,
+    CONSTRAINT account_idx UNIQUE (username, domain, uri_user)
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('b2b_sca','1');
+CREATE TABLE b2b_sca (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    shared_line CHAR(64) NOT NULL,
+    watchers CHAR(255) NOT NULL,
+    app1_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app1_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app1_call_info_uri CHAR(128) DEFAULT NULL,
+    app1_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app1_b2bl_key CHAR(64) DEFAULT NULL,
+    app2_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app2_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app2_call_info_uri CHAR(128) DEFAULT NULL,
+    app2_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app2_b2bl_key CHAR(64) DEFAULT NULL,
+    app3_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app3_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app3_call_info_uri CHAR(128) DEFAULT NULL,
+    app3_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app3_b2bl_key CHAR(64) DEFAULT NULL,
+    app4_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app4_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app4_call_info_uri CHAR(128) DEFAULT NULL,
+    app4_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app4_b2bl_key CHAR(64) DEFAULT NULL,
+    app5_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app5_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app5_call_info_uri CHAR(128) DEFAULT NULL,
+    app5_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app5_b2bl_key CHAR(64) DEFAULT NULL,
+    app6_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app6_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app6_call_info_uri CHAR(128) DEFAULT NULL,
+    app6_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app6_b2bl_key CHAR(64) DEFAULT NULL,
+    app7_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app7_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app7_call_info_uri CHAR(128) DEFAULT NULL,
+    app7_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app7_b2bl_key CHAR(64) DEFAULT NULL,
+    app8_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app8_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app8_call_info_uri CHAR(128) DEFAULT NULL,
+    app8_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app8_b2bl_key CHAR(64) DEFAULT NULL,
+    app9_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app9_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app9_call_info_uri CHAR(128) DEFAULT NULL,
+    app9_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app9_b2bl_key CHAR(64) DEFAULT NULL,
+    app10_shared_entity INT(1) UNSIGNED DEFAULT NULL,
+    app10_call_state INT(1) UNSIGNED DEFAULT NULL,
+    app10_call_info_uri CHAR(128) DEFAULT NULL,
+    app10_call_info_appearance_uri CHAR(128) DEFAULT NULL,
+    app10_b2bl_key CHAR(64) DEFAULT NULL,
+    CONSTRAINT sca_idx UNIQUE (shared_line)
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('rls_presentity','1');
+CREATE TABLE rls_presentity (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    rlsubs_did CHAR(255) NOT NULL,
+    resource_uri CHAR(128) NOT NULL,
+    content_type CHAR(255) NOT NULL,
+    presence_state BLOB NOT NULL,
+    expires INT(11) NOT NULL,
+    updated INT(11) NOT NULL,
+    auth_state INT(11) NOT NULL,
+    reason CHAR(64) NOT NULL,
+    CONSTRAINT rls_presentity_idx UNIQUE (rlsubs_did, resource_uri)
+) ENGINE=InnoDB;
+
+CREATE INDEX updated_idx ON rls_presentity (updated);
+
+INSERT INTO version (table_name, table_version) values ('rls_watchers','2');
+CREATE TABLE rls_watchers (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    presentity_uri CHAR(128) NOT NULL,
+    to_user CHAR(64) NOT NULL,
+    to_domain CHAR(64) NOT NULL,
+    watcher_username CHAR(64) NOT NULL,
+    watcher_domain CHAR(64) NOT NULL,
+    event CHAR(64) DEFAULT 'presence' NOT NULL,
+    event_id CHAR(64),
+    to_tag CHAR(64) NOT NULL,
+    from_tag CHAR(64) NOT NULL,
+    callid CHAR(64) NOT NULL,
+    local_cseq INT(11) NOT NULL,
+    remote_cseq INT(11) NOT NULL,
+    contact CHAR(64) NOT NULL,
+    record_route TEXT,
+    expires INT(11) NOT NULL,
+    status INT(11) DEFAULT 2 NOT NULL,
+    reason CHAR(64) NOT NULL,
+    version INT(11) DEFAULT 0 NOT NULL,
+    socket_info CHAR(64) NOT NULL,
+    local_contact CHAR(128) NOT NULL,
+    CONSTRAINT rls_watcher_idx UNIQUE (presentity_uri, callid, to_tag, from_tag)
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('usr_preferences','3');
+CREATE TABLE usr_preferences (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    uuid CHAR(64) DEFAULT '' NOT NULL,
+    username CHAR(128) DEFAULT 0 NOT NULL,
+    domain CHAR(64) DEFAULT '' NOT NULL,
+    attribute CHAR(32) DEFAULT '' NOT NULL,
+    type INT(11) DEFAULT 0 NOT NULL,
+    value CHAR(128) DEFAULT '' NOT NULL,
+    last_modified DATETIME DEFAULT '1900-01-01 00:00:01' NOT NULL
+) ENGINE=InnoDB;
+
+CREATE INDEX ua_idx ON usr_preferences (uuid, attribute);
+CREATE INDEX uda_idx ON usr_preferences (username, domain, attribute);
+CREATE INDEX value_idx ON usr_preferences (value);
+
+INSERT INTO version (table_name, table_version) values ('carrierroute','3');
+CREATE TABLE carrierroute (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    carrier INT(10) UNSIGNED DEFAULT 0 NOT NULL,
+    domain CHAR(64) DEFAULT '' NOT NULL,
+    scan_prefix CHAR(64) DEFAULT '' NOT NULL,
+    flags INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+    mask INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+    prob FLOAT DEFAULT 0 NOT NULL,
+    strip INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+    rewrite_host CHAR(128) DEFAULT '' NOT NULL,
+    rewrite_prefix CHAR(64) DEFAULT '' NOT NULL,
+    rewrite_suffix CHAR(64) DEFAULT '' NOT NULL,
+    description CHAR(255) DEFAULT NULL
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('carrierfailureroute','2');
+CREATE TABLE carrierfailureroute (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    carrier INT(10) UNSIGNED DEFAULT 0 NOT NULL,
+    domain CHAR(64) DEFAULT '' NOT NULL,
+    scan_prefix CHAR(64) DEFAULT '' NOT NULL,
+    host_name CHAR(128) DEFAULT '' NOT NULL,
+    reply_code CHAR(3) DEFAULT '' NOT NULL,
+    flags INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+    mask INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+    next_domain CHAR(64) DEFAULT '' NOT NULL,
+    description CHAR(255) DEFAULT NULL
+) ENGINE=InnoDB;
+
+INSERT INTO version (table_name, table_version) values ('route_tree','2');
+CREATE TABLE route_tree (
+    id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    carrier CHAR(64) DEFAULT NULL
+) ENGINE=InnoDB;
+

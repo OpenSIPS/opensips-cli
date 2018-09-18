@@ -3,3 +3,4 @@
 from Modules.module import *
 from Modules.mi import *
 from Modules.instance import *
+from Modules.database import *

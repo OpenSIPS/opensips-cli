@@ -141,9 +141,10 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
                 for num, line in enumerate(hf, 1):
                     print(num, line, end='')
 
-    #
+    # Used to get info for a certain command
     def do_help(self, line):
         print("Usage:: help cmd - returns information about \"cmd\"")
+        # TODO
 
     # Clear the terminal screen
     def do_clear(self, line):
