@@ -11,8 +11,8 @@ parser = argparse.ArgumentParser(description='OpenSIPSCTL Tool',
 
 # Argument used to run the command in batch mode
 parser.add_argument('-x', '--batch',
-                    action='store_true',
-                    default=False,
+                    default=None,
+                    metavar='[COMMAND]',
                     help='run the command in batch mode')
 # Argument used to specify a configuration file
 parser.add_argument('-f', '--config',

@@ -29,15 +29,18 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         cfg.set_instance(instance)
         self.current_instance = instance
         self.debug = options.debug
+        self.batch = options.batch
         cfg.set_custom_options(options.extra_options)
-        # __init__ of cmd.Cmd module
-        cmd.Cmd.__init__(self)
+
+        if not self.batch:
+            # __init__ of cmd.Cmd module
+            cmd.Cmd.__init__(self)
+
+            # Clear the modules and commands list
+            self.cmd_list = ['clear', 'help', 'history', 'exit', 'quit']
 
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
-
-        # Clear the modules and commands list
-        self.cmd_list = ['clear', 'help', 'history', 'exit', 'quit']
 
         # Create the modules list based on the current instance
         for mod in sys.modules.keys():
@@ -104,6 +107,10 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
 
     # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
+        if self.batch:
+            logger.debug("running in batch mode '{}'".format(self.batch))
+            self.run_command(self.batch)
+            return
         print(self.intro)
         while True:
             try:
@@ -148,8 +155,8 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         return self.cmd_list
 
     # Execute commands from Modules
-    def default(self, line):
-        aux = line.split(' ')
+    def run_command(self, cmd):
+        aux = cmd.split(' ')
         cmd = str(aux[0])
         params = []
         for i in aux[1:]:
@@ -161,6 +168,9 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
                     break
         else:
             print('%s: command not found' % cmd)
+
+    def default(self, line):
+        self.run_command(line)
 
     # Print history
     def do_history(self, line):
