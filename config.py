@@ -29,13 +29,9 @@ class OpenSIPSCTLConfig:
         if options is None:
             return
         for arg in options:
-            list = arg.split('.')
-            sec = list[0]
-            sec = sec.upper()
-            list = '.'.join(list[1:])
-            list = list.split('=')
-            key = list[0]
-            val = '='.join(list[1:])
+            parsed = arg.split('=')
+            key = parsed[0]
+            val = '='.join(parsed[1:])
             self.custom_options[key] = val
 
     # Function to get the value from a section.value
