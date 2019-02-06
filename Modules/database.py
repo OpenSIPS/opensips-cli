@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 
+from logger import logger
 from Modules import Module
-from sqlalchemy import *
-from sqlalchemy_utils import database_exists
-from os import listdir
+try:
+    from sqlalchemy import *
+    from sqlalchemy_utils import database_exists
+    database_module = True
+except ImportError:
+    logger.warning("cannot import database module!")
+    logger.info("make sure you have sqlalchemy package installed!")
+    database_module = False
 
+from os import listdir
 
 class Database(Module):
 
     def database_create(self):
+
+        if not database_module:
+            log.error("database module not initialized!")
+            return
         link = input("Please provide us the URL of the database:\n > ")
         db_name = input("Please provide the database to create (Default "
                         "is opensips):\n > ")
