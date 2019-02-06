@@ -19,6 +19,13 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     registered_atexit = False
 
     def __init__(self, options):
+
+        self.debug = options.debug
+        self.batch = options.batch
+
+        if self.debug:
+            logger.setLevel("DEBUG")
+
         # __init__ of the configuration file
         cfg.parse(options.config)
         if not cfg.has_instance(options.instance):
@@ -28,8 +35,6 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         else:
             instance = options.instance
         cfg.set_instance(instance)
-        self.debug = options.debug
-        self.batch = options.batch
         cfg.set_custom_options(options.extra_options)
 
         if not self.batch:
@@ -57,14 +62,14 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
                 self.cmd_to_mod[j] = i.__class__.__name__
             self.cmd_list += list
 
-    def update_instance(self, instance):
+    def update_logger(self):
 
         # first of all, let's handle logging
         if self.debug:
             level = "DEBUG"
         else:
             level = cfg.get("log_level")
-        logger.setLevel(logger.getLogLevel(level))
+        logger.setLevel(level)
 
     def update_instance(self, instance):
 

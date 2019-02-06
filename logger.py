@@ -55,10 +55,6 @@ class ColoredLogger(logging.Logger):
         self.addHandler(console)
         return
 
-    def getLogLevel(self, name):
-        return logging.getLevelName(name)
-
-
 logging.setLoggerClass(ColoredLogger)
 logger = logging.getLogger(__name__)
 
