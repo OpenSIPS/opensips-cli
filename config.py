@@ -36,6 +36,9 @@ class OpenSIPSCTLConfig:
     def get(self, section, key):
         return self.ConfigMap[section][key]
 
+    def get(self, key):
+        return self.ConfigMap[self.current_instance][key]
+
     # Create ConfigMap[section][key] = value
     def create_map(self):
         self.ConfigMap['default'] = {}
@@ -47,5 +50,4 @@ class OpenSIPSCTLConfig:
             for key, value in self.config.items(sec):
                 self.ConfigMap[sec][key] = value
 
-
-Config = OpenSIPSCTLConfig()
+cfg = OpenSIPSCTLConfig()

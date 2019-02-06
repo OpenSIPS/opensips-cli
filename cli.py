@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import cmd
-from config_parser import *
 import sys
 import os
 from types import FunctionType
@@ -19,19 +18,19 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
 
     def __init__(self, config_file, instance, new_options):
         # __init__ of the configuration file
-        Config.current_instance = instance
-        Config.parse(config_file)
-        Config.overwrite_map(new_options)
+        cfg.current_instance = instance
+        cfg.parse(config_file)
+        cfg.overwrite_map(new_options)
         # __init__ of cmd.Cmd module
         cmd.Cmd.__init__(self)
         # Opening the current working instance
-        self.update_instance(Config.current_instance)
-        # print(self.cmd_list)
+        self.update_instance(cfg.current_instance)
 
     def update_instance(self, instance):
         # Update the intro and prompt
-        self.intro = Config.ConfigMap[instance]['prompt_intro']
-        self.prompt = '(%s): ' % Config.ConfigMap[instance]['prompt_name']
+        self.intro = cfg.ConfigMap[instance]['prompt_intro']
+        self.prompt = '(%s): ' % cfg.ConfigMap[instance]['prompt_name']
+
         # Clear the modules and commands list
         self.mod_list.clear()
         self.cmd_list.clear()
@@ -59,7 +58,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             readline.read_history_file(history_file)
 
     def postcmd(self, stop, line):
-        self.update_instance(Config.current_instance)
+        self.update_instance(cfg.current_instance)
         if readline:
             readline.set_history_length(history_file_size)
             readline.write_history_file(history_file)
