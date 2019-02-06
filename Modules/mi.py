@@ -7,6 +7,7 @@ import communication
 class Mi(Module):
 
     def __invoke__(self, cmd, params=None):
+        # Mi Module works with JSON Communication
         res = communication.mi_json(cmd)
         if res is not None:
             print(res)

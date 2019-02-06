@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from config_parser import *
 from cli import *
 
 parser = argparse.ArgumentParser(description='OpenSIPSCTL Tool',
@@ -48,9 +47,9 @@ parser.add_argument('-V', '--version',
 args = parser.parse_args()
 
 # print(args)
-BATCH = args.batch
+BATCH = args.batch  # Not implemented
 CONFIG_FILE = args.config
-DEBUG = args.debug
+DEBUG = args.debug  # Not implemented
 INSTANCE = args.instance
 
 # Open the CLI

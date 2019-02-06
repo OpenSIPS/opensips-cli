@@ -30,7 +30,7 @@ def mi_json(cmd='ps', args=None):
         print('Decoding JSON has failed')
     return None
 
-
+# TODO: Print pretty JSON
 # print(mi_json(ps))
 # def recursive_print(src, dpth=0, key=''):
 #     tabs = lambda n: ' ' * n * 1

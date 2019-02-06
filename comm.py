@@ -3,7 +3,8 @@
 import communication
 from cli import *
 
-
+# Available only for JSON Communication
+# TODO: Solve this ^
 class OpenSIPSCTLComm:
     comm_type = ''
     comm_func = ''

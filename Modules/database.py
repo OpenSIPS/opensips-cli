@@ -30,9 +30,9 @@ class Database(Module):
 
         modules = input("Please indicate, separated by spaces, which modules "
                         "you would like to deploy:\n > ")
-        n = modules.split(' ')
+        modules = modules.split(' ')
         print("You have chosen to create the following modules:")
-        for i in n:
+        for i in modules:
             print(scripts[int(i)-1].split(' ')[1], end=' ')
         proc = input('\nWould you like to proceed [Y/n]? > ')
         if proc is 'n':
@@ -48,7 +48,7 @@ class Database(Module):
 
         # Adding the default module(s)
         if flag is 0:
-            n.insert(0, '35')
+            modules.insert(0, '35')
 
         # Creating the big script based on the chosen modules
         with open('/home/dorin/OpenSIPS_RSoC/tmp/db_script', 'w') as outfile:
