@@ -16,6 +16,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     cmd_list = []
     mod_list = []
     cmd_to_mod = {}
+    registered_atexit = False
 
     def __init__(self, options):
         # __init__ of the configuration file
@@ -27,7 +28,6 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         else:
             instance = options.instance
         cfg.set_instance(instance)
-        self.current_instance = instance
         self.debug = options.debug
         self.batch = options.batch
         cfg.set_custom_options(options.extra_options)
@@ -66,6 +66,12 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             level = cfg.get("log_level")
         logger.setLevel(logger.getLogLevel(level))
 
+    def update_instance(self, instance):
+
+        # first of all, let's handle logging
+        self.current_instance = instance
+        self.update_logger()
+
         # Update the intro and prompt
         self.intro = cfg.get('prompt_intro')
         self.prompt = '(%s): ' % cfg.get('prompt_name')
@@ -73,7 +79,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         # initialize communcation handler
         self.handler = comm.initialize()
 
-    def atexit(self):
+    def history_write(self):
         history_file = cfg.get('history_file')
         logger.debug("saving history in {}".format(history_file))
         readline.write_history_file(history_file)
@@ -84,11 +90,14 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             readline.read_history_file(history_file)
             logger.debug("using history file {}".format(history_file))
         readline.set_history_length(int(cfg.get('history_file_size')))
-        atexit.register(self.atexit)
+        if not self.registered_atexit:
+            atexit.register(self.history_write)
 
     def postcmd(self, stop, line):
 
         if self.current_instance != cfg.current_instance:
+            # make sure we dump everything before swapping files
+            self.history_write()
             self.update_instance(cfg.current_instance)
             # make sure we update all the history information
             self.preloop()
