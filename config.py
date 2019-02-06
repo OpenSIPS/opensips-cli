@@ -1,53 +1,57 @@
 #!/usr/bin/env python3
 
-import configparser
 import os
-
+import configparser
+import config_defaults
+from logger import logger
 
 class OpenSIPSCTLConfig:
-    current_instance = 'default'
+
+    current_instance = config_defaults.DEFAULT_SECTION
+    custom_options = None
 
     def __init__(self):
-        self.config = configparser.ConfigParser()
-        self.ConfigMap = {}
+        self.config = configparser.ConfigParser(
+                    defaults=config_defaults.DEFAULT_VALUES,
+                    default_section=config_defaults.DEFAULT_SECTION)
 
     # Read the file given as parameter in order to parse it
     def parse(self, in_file):
-        if os.path.isfile(in_file) and os.access(in_file, os.R_OK):
+        if not in_file:
+            logger.info("no config file used!")
+        elif os.path.isfile(in_file) and os.access(in_file, os.R_OK):
             self.config.read(in_file)
-            self.create_map()
         else:
-            print("Either file is missing or is not readable.")
+            logger.error("Either file is missing or is not readable.")
 
-    # Write the options given through -o argument
-    def overwrite_map(self, new_options):
-        if new_options is not None:
-            for arg in new_options:
-                list = arg.split('.')
-                sec = list[0]
-                sec = sec.upper()
-                list = '.'.join(list[1:])
-                list = list.split('=')
-                key = list[0]
-                val = '='.join(list[1:])
-                self.ConfigMap[sec][key] = val
+    def set_custom_options(self, options):
+        self.custom_options = {}
+        if options is None:
+            return
+        for arg in options:
+            list = arg.split('.')
+            sec = list[0]
+            sec = sec.upper()
+            list = '.'.join(list[1:])
+            list = list.split('=')
+            key = list[0]
+            val = '='.join(list[1:])
+            self.custom_options[key] = val
 
     # Function to get the value from a section.value
-    def get(self, section, key):
-        return self.ConfigMap[section][key]
-
     def get(self, key):
-        return self.ConfigMap[self.current_instance][key]
+        if self.custom_options and key in self.custom_options:
+            return self.custom_options[key]
+        elif self.current_instance not in self.config:
+            return config_defaults.DEFAULT_VALUES[key]
+        else:
+            return self.config[self.current_instance][key]
 
-    # Create ConfigMap[section][key] = value
-    def create_map(self):
-        self.ConfigMap['default'] = {}
-        for key, value in self.config.items('default'):
-            self.ConfigMap['default'][key] = value
-        for sec in self.config.sections():
-            # _sec = sec.upper()
-            self.ConfigMap[sec] = {}
-            for key, value in self.config.items(sec):
-                self.ConfigMap[sec][key] = value
+    def set_instance(self, instance):
+        self.current_instance = instance
+
+    def has_instance(self, instance):
+        return instance in self.config
+
 
 cfg = OpenSIPSCTLConfig()

@@ -2,6 +2,7 @@
 
 import argparse
 from cli import *
+import config_defaults
 
 parser = argparse.ArgumentParser(description='OpenSIPSCTL Tool',
                                  prog='opensipsctl',
@@ -17,7 +18,7 @@ parser.add_argument('-x', '--batch',
 parser.add_argument('-f', '--config',
                     metavar='[FILE]',
                     type=str,
-                    default='./docs/default_conf.ini',
+                    default=None,
                     help='used to specify a configuration file')
 # Argument used to enable debugging
 parser.add_argument('-d', '--debug',
@@ -35,21 +36,20 @@ parser.add_argument('-i', '--instance',
                     metavar='[INSTANCE]',
                     type=str,
                     action='store',
-                    default='default',
+                    default=config_defaults.DEFAULT_SECTION,
                     help='choose an opensips instance')
 # Argument used to print the current version
 parser.add_argument('-V', '--version',
                     action='version',
                     default=None,
-                    version='OpenSIPS 1.0')
+                    version='OpenSIPS CLI 1.0')
 
 # Parse all arguments
 args = parser.parse_args()
 
-# print(args)
 BATCH = args.batch  # Not implemented
-CONFIG_FILE = args.config
 DEBUG = args.debug  # Not implemented
+CONFIG_FILE = args.config
 INSTANCE = args.instance
 
 # Open the CLI

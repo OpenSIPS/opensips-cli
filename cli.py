@@ -6,6 +6,11 @@ import os
 from types import FunctionType
 import Modules
 import readline
+import comm
+import config_defaults
+from config import cfg
+from logger import logger
+from types import FunctionType
 
 history_file = os.path.expanduser('./.opensipsctl_history')
 history_file_size = 1000
@@ -18,34 +23,30 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
 
     def __init__(self, config_file, instance, new_options):
         # __init__ of the configuration file
-        cfg.current_instance = instance
         cfg.parse(config_file)
-        cfg.overwrite_map(new_options)
+        if not cfg.has_instance(instance):
+            logger.warning("Unknown instance '{}'! Using default instance '{}'!".
+                    format(instance, config_defaults.DEFAULT_SECTION))
+        cfg.set_instance(instance)
+        self.current_instance = instance
+        cfg.set_custom_options(new_options)
         # __init__ of cmd.Cmd module
         cmd.Cmd.__init__(self)
+
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
 
-    def update_instance(self, instance):
-        # Update the intro and prompt
-        self.intro = cfg.ConfigMap[instance]['prompt_intro']
-        self.prompt = '(%s): ' % cfg.ConfigMap[instance]['prompt_name']
-
         # Clear the modules and commands list
-        self.mod_list.clear()
-        self.cmd_list.clear()
         self.cmd_list = ['clear', 'help', 'history', 'exit', 'quit']
-        self.cmd_to_mod.clear()
+
         # Create the modules list based on the current instance
         for mod in sys.modules.keys():
             if mod.startswith('Modules.') and mod != 'Modules.module':
-                # print(mod)
                 mod_name = mod.split('.')[1]
                 if eval('Modules.' + mod_name.title() +
                         '.__exclude__(self)') is False:
                     new_mod = eval('Modules.' + mod_name.title() + '()')
                     self.mod_list.append(new_mod)
-                    # print(mod_name + " has been loaded.")
         # Create the command list based on the loaded modules
         for i in self.mod_list:
             list = i.__get_methods__()
@@ -53,12 +54,25 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
                 self.cmd_to_mod[j] = i.__class__.__name__
             self.cmd_list += list
 
+    def update_instance(self, instance):
+
+        # Update the intro and prompt
+        self.intro = cfg.get('prompt_intro')
+        self.prompt = '(%s): ' % cfg.get('prompt_name')
+
+        # initialize communcation handler
+        self.handler = comm.initialize()
+
+
     def preloop(self):
         if readline and os.path.exists(history_file):
             readline.read_history_file(history_file)
 
     def postcmd(self, stop, line):
-        self.update_instance(cfg.current_instance)
+
+        if self.current_instance != cfg.current_instance:
+            self.update_instance(cfg.current_instance)
+
         if readline:
             readline.set_history_length(history_file_size)
             readline.write_history_file(history_file)

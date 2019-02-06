@@ -2,6 +2,7 @@
 
 from Modules import Module
 from config import cfg
+from logger import logger
 import communication
 
 class Instance(Module):
@@ -14,4 +15,7 @@ class Instance(Module):
             print(sec)
 
     def instance_switch(self, new_instance):
-        cfg.current_instance = new_instance
+        if cfg.has_instance(new_instance):
+            cfg.set_instance(new_instance)
+        else:
+            logger.error("cannot switch to instance '{}': instance not found!".format(new_instance))
