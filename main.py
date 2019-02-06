@@ -30,6 +30,7 @@ parser.add_argument('-o', '--option',
                     metavar='[KEY=VALUE]',
                     action='append',
                     type=str,
+                    dest="extra_options",
                     default=None,
                     help='overwrite certain values in the config')
 parser.add_argument('-i', '--instance',
@@ -47,11 +48,6 @@ parser.add_argument('-V', '--version',
 # Parse all arguments
 args = parser.parse_args()
 
-BATCH = args.batch  # Not implemented
-DEBUG = args.debug  # Not implemented
-CONFIG_FILE = args.config
-INSTANCE = args.instance
-
 # Open the CLI
-Shell = OpenSIPSCTLShell(CONFIG_FILE, INSTANCE, args.option)
+Shell = OpenSIPSCTLShell(args)
 Shell.cmdloop()

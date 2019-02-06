@@ -45,7 +45,7 @@ class ColoredLogger(logging.Logger):
     FORMAT = "$BOLD%(levelname)s$RESET: %(message)s"
     COLOR_FORMAT = formatter_message(FORMAT, True)
     def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.DEBUG)
+        logging.Logger.__init__(self, name)
 
         color_formatter = ColoredFormatter(self.COLOR_FORMAT)
 
@@ -54,6 +54,10 @@ class ColoredLogger(logging.Logger):
 
         self.addHandler(console)
         return
+
+    def getLogLevel(self, name):
+        return logging.getLevelName(name)
+
 
 logging.setLoggerClass(ColoredLogger)
 logger = logging.getLogger(__name__)

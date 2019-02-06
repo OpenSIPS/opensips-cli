@@ -17,15 +17,19 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     mod_list = []
     cmd_to_mod = {}
 
-    def __init__(self, config_file, instance, new_options):
+    def __init__(self, options):
         # __init__ of the configuration file
-        cfg.parse(config_file)
-        if not cfg.has_instance(instance):
+        cfg.parse(options.config)
+        if not cfg.has_instance(options.instance):
             logger.warning("Unknown instance '{}'! Using default instance '{}'!".
-                    format(instance, config_defaults.DEFAULT_SECTION))
+                    format(options.instance, config_defaults.DEFAULT_SECTION))
+            instance = config_defaults.DEFAULT_SECTION
+        else:
+            instance = options.instance
         cfg.set_instance(instance)
         self.current_instance = instance
-        cfg.set_custom_options(new_options)
+        self.debug = options.debug
+        cfg.set_custom_options(options.extra_options)
         # __init__ of cmd.Cmd module
         cmd.Cmd.__init__(self)
 
@@ -51,6 +55,13 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             self.cmd_list += list
 
     def update_instance(self, instance):
+
+        # first of all, let's handle logging
+        if self.debug:
+            level = "DEBUG"
+        else:
+            level = cfg.get("log_level")
+        logger.setLevel(logger.getLogLevel(level))
 
         # Update the intro and prompt
         self.intro = cfg.get('prompt_intro')
