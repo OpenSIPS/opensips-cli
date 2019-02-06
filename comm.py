@@ -2,20 +2,23 @@
 
 import communication
 from cli import *
+from logger import logger
+from config import cfg
 
-# Available only for JSON Communication
-# TODO: Solve this ^
-class OpenSIPSCTLComm:
-    comm_type = ''
-    comm_func = ''
+comm_handler = None
 
-    def __init__(self, section):
-        comm_type = Config.get(section, 'comm_type')
-        comm_type = 'json'
-        if comm_type == 'json':
-            comm_func = 'communication/opensipsctl_json'
-        else:
-            print("Unknown communication protocol!")
+def initialize():
+    global comm_handler
+    comm_type = cfg.get('comm_type')
+    comm_func = 'communication.opensipsctl_{}'.format(comm_type)
+    try:
+        comm_handler = __import__(comm_func)
+    except ImportError as ie:
+        comm_handler = None
+        logger.error("cannot import '{}' handler: {}"
+            .format(comm_type, ie))
 
-    def execute(self, cmd, args=None):
-        print(communication.mi_json(cmd))
+def execute(cmd, params=[]):
+    global comm_handler
+    return comm_handler.execute(cmd, params)
+

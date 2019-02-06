@@ -17,6 +17,7 @@ DEFAULT_VALUES = {
     "prompt_intro": "Welcome to OpenSIPS Command Line Interface!",
     "history_file": HISTORY_FILE,
     "history_file_size": 1000,
+    "output_type": "pretty-print",
 
     # communication information
     "comm_type": "fifo",
