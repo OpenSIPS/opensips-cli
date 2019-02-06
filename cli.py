@@ -3,18 +3,14 @@
 import cmd
 import sys
 import os
-from types import FunctionType
 import Modules
 import readline
 import comm
+import atexit
 import config_defaults
 from config import cfg
 from logger import logger
 from types import FunctionType
-
-history_file = os.path.expanduser('./.opensipsctl_history')
-history_file_size = 1000
-
 
 class OpenSIPSCTLShell(cmd.Cmd, object):
     cmd_list = []
@@ -63,19 +59,26 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         # initialize communcation handler
         self.handler = comm.initialize()
 
+    def atexit(self):
+        history_file = cfg.get('history_file')
+        logger.debug("saving history in {}".format(history_file))
+        readline.write_history_file(history_file)
 
     def preloop(self):
+        history_file = cfg.get('history_file')
         if readline and os.path.exists(history_file):
             readline.read_history_file(history_file)
+            logger.debug("using history file {}".format(history_file))
+        readline.set_history_length(int(cfg.get('history_file_size')))
+        atexit.register(self.atexit)
 
     def postcmd(self, stop, line):
 
         if self.current_instance != cfg.current_instance:
             self.update_instance(cfg.current_instance)
+            # make sure we update all the history information
+            self.preloop()
 
-        if readline:
-            readline.set_history_length(history_file_size)
-            readline.write_history_file(history_file)
         return stop
 
     # Overwritten funtion in order not to print misc commands
@@ -151,7 +154,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     # Print history
     def do_history(self, line):
         if not line:
-            with open(history_file) as hf:
+            with open(cfg.get('history_file')) as hf:
                 for num, line in enumerate(hf, 1):
                     print(num, line, end='')
 
@@ -170,9 +173,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         return True
 
     def do_quit(self, line):
-        pass
         return True
 
     def do_exit(self, line):
-        pass
         return True
