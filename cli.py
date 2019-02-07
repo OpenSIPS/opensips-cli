@@ -12,7 +12,7 @@ from config import cfg
 from logger import logger
 from types import FunctionType
 
-class OpenSIPSCTLShell(cmd.Cmd, object):
+class OpenSIPSCLIShell(cmd.Cmd, object):
     cmd_list = []
     mod_list = []
     cmd_to_mod = {}
@@ -132,7 +132,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         print(self.intro)
         while True:
             try:
-                super(OpenSIPSCTLShell, self).cmdloop(intro='')
+                super(OpenSIPSCLIShell, self).cmdloop(intro='')
                 break
             except KeyboardInterrupt:
                 print('^C')

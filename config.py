@@ -5,7 +5,7 @@ import configparser
 import config_defaults
 from logger import logger
 
-class OpenSIPSCTLConfig:
+class OpenSIPSCLIConfig:
 
     current_instance = config_defaults.DEFAULT_SECTION
     custom_options = None
@@ -50,4 +50,4 @@ class OpenSIPSCTLConfig:
         return instance in self.config
 
 
-cfg = OpenSIPSCTLConfig()
+cfg = OpenSIPSCLIConfig()

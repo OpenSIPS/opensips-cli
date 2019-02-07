@@ -13,7 +13,7 @@ HISTORY_FILE = os.path.join(os.environ["HOME"], ".opensipscli.history")
 
 DEFAULT_VALUES = {
     # CLI settings
-    "prompt_name": "opensipsctl",
+    "prompt_name": "opensips-cli",
     "prompt_intro": "Welcome to OpenSIPS Command Line Interface!",
     "history_file": HISTORY_FILE,
     "history_file_size": 1000,

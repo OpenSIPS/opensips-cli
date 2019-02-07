@@ -10,7 +10,7 @@ comm_handler = None
 def initialize():
     global comm_handler
     comm_type = cfg.get('comm_type')
-    comm_func = 'communication.opensipsctl_{}'.format(comm_type)
+    comm_func = 'communication.{}'.format(comm_type)
     try:
         comm_handler = __import__(comm_func)
     except ImportError as ie:

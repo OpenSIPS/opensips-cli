@@ -54,5 +54,5 @@ parser.add_argument('-V', '--version',
 args = parser.parse_args()
 
 # Open the CLI
-Shell = OpenSIPSCTLShell(args)
+Shell = OpenSIPSCLIShell(args)
 Shell.cmdloop()
