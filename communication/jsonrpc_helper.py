@@ -21,7 +21,7 @@ class JSONRPCError(JSONRPCException):
         return self.data
 
     def __str__(self):
-        return '{}: {}'.format(self.code, self.data)
+        return '{}: {}'.format(self.code, self.message)
 
 def get_command(method, params={}):
     cmd = {
