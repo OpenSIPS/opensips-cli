@@ -22,6 +22,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
 
         self.debug = options.debug
         self.batch = options.batch
+        self.command = options.command
 
         if self.debug:
             logger.setLevel("DEBUG")
@@ -122,8 +123,11 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
     # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
         if self.batch:
-            logger.debug("running in batch mode '{}'".format(self.batch))
-            self.run_command(self.batch)
+            if len(self.command) < 1:
+                logger.error("no command to run specified!")
+            else:
+                logger.debug("running in batch mode '{}'".format(self.command))
+                self.run_command(self.command[0], self.command[1:])
             return
         print(self.intro)
         while True:
@@ -169,12 +173,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
         return self.cmd_list
 
     # Execute commands from Modules
-    def run_command(self, cmd):
-        aux = cmd.split(' ')
-        cmd = str(aux[0])
-        params = []
-        for i in aux[1:]:
-            params.append(str("\'%s\'" % i))
+    def run_command(self, cmd, params):
         if cmd in self.cmd_list:
             for mod in self.mod_list:
                 if self.cmd_to_mod[cmd] in str(mod):
@@ -184,7 +183,10 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
             print('%s: command not found' % cmd)
 
     def default(self, line):
-        self.run_command(line)
+        aux = line.split(' ')
+        cmd = str(aux[0])
+        params = aux[1:]
+        self.run_command(cmd, params)
 
     # Print history
     def do_history(self, line):

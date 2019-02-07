@@ -4,16 +4,21 @@ import argparse
 from cli import *
 import config_defaults
 
-parser = argparse.ArgumentParser(description='OpenSIPSCTL Tool',
-                                 prog='opensipsctl',
+parser = argparse.ArgumentParser(description='OpenSIPS CLI Tool',
+                                 prog='opensips-cli',
                                  usage='%(prog)s [OPTIONS]',
                                  epilog='\n')
 
 # Argument used to run the command in batch mode
 parser.add_argument('-x', '--batch',
-                    default=None,
-                    metavar='[COMMAND]',
+                    action='store_true',
+                    default=False,
                     help='run the command in batch mode')
+# Argument used to specify the command to run
+parser.add_argument('command',
+                    nargs='*',
+                    default=[],
+                    help='the command to run')
 # Argument used to specify a configuration file
 parser.add_argument('-f', '--config',
                     metavar='[FILE]',
