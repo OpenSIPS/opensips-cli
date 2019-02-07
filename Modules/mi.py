@@ -2,6 +2,7 @@
 
 import comm
 import json
+import yaml
 from config import cfg
 from logger import logger
 from Modules import Module
@@ -18,6 +19,9 @@ class Mi(Module):
         # TODO: print by line
         pass
 
+    def print_yaml(self, result):
+        print(yaml.dump(result, default_flow_style=False).strip())
+
     def __invoke__(self, cmd, params=None):
         # Mi Module works with JSON Communication
         res = comm.execute(cmd, params)
@@ -30,6 +34,8 @@ class Mi(Module):
             self.print_dictionary(res)
         elif output_type == "lines":
             self.print_lines(res)
+        elif output_type == "yaml":
+            self.print_yaml(res)
         elif output_type == "none":
             pass # no one interested in the reply
         else:
