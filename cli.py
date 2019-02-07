@@ -174,6 +174,7 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
 
     # Execute commands from Modules
     def run_command(self, cmd, params):
+        params = self.parse_params(params)
         if cmd in self.cmd_list:
             for mod in self.mod_list:
                 if self.cmd_to_mod[cmd] in str(mod):
@@ -181,6 +182,35 @@ class OpenSIPSCTLShell(cmd.Cmd, object):
                     break
         else:
             print('%s: command not found' % cmd)
+
+    def parse_params(self, params):
+        # search for any '[' and ']' pairs
+        new_params = []
+        new_tmp_params = None
+        for param in params:
+            if param[0] == '[':
+                new_tmp_params = []
+                param = param.strip()[1:]
+                if len(param) == 0:
+                    param = None
+            if param is not None and param[-1] == ']':
+                if new_tmp_params is not None:
+                    param = param.strip()[:-1]
+                    if len(param) != 0:
+                        new_tmp_params.append(param)
+                    param = new_tmp_params
+                    new_tmp_params = None
+            if param is not None:
+                if new_tmp_params is None:
+                    new_params.append(param)
+                else:
+                    new_tmp_params.append(param)
+        # move remaining nodes from tmp to new params
+        if new_tmp_params is not None:
+            # restore the first param
+            new_tmp_params[0] = '[' + new_tmp_params[0]
+            new_params = new_params + new_tmp_params
+        return new_params
 
     def default(self, line):
         aux = line.split(' ')
