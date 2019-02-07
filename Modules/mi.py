@@ -21,6 +21,8 @@ class Mi(Module):
     def __invoke__(self, cmd, params=None):
         # Mi Module works with JSON Communication
         res = comm.execute(cmd, params)
+        if res is None:
+            return
         output_type = cfg.get('output_type')
         if output_type == "pretty-print":
             self.print_pretty_print(res)

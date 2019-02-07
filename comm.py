@@ -20,5 +20,10 @@ def initialize():
 
 def execute(cmd, params=[]):
     global comm_handler
-    return comm_handler.execute(cmd, params)
+    try:
+        ret = comm_handler.execute(cmd, params)
+    except communication.jsonrpc_helper.JSONRPCError as ex:
+        logger.error("command '{}' returned {}".format(cmd, ex))
+        return None
+    return ret
 
