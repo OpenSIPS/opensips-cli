@@ -7,7 +7,7 @@ try:
     from sqlalchemy_utils import database_exists
     database_module = True
 except ImportError:
-    logger.warning("cannot import database module!")
+    logger.info("cannot import database module!")
     logger.info("make sure you have sqlalchemy package installed!")
     database_module = False
 
