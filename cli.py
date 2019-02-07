@@ -10,7 +10,6 @@ import atexit
 import config_defaults
 from config import cfg
 from logger import logger
-from types import FunctionType
 
 class OpenSIPSCLIShell(cmd.Cmd, object):
     cmd_list = []
