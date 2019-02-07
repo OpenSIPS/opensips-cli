@@ -15,8 +15,19 @@ class Mi(Module):
     def print_dictionary(self, result):
         print(str(result))
 
-    def print_lines(self, result):
-        # TODO: print by line
+    def print_lines(self, result, indent=0):
+        if type(result) == dict:
+            for k, v in result.items():
+                if type(v) in [dict, list]:
+                    print(" " * indent + k + ":")
+                    self.print_lines(v, indent + 4)
+                else:
+                    print(" " * indent + "{}: {}". format(k, v))
+        elif type(result) == list:
+            for v in result:
+                self.print_lines(v, indent)
+        else:
+            print(" " * indent + result)
         pass
 
     def print_yaml(self, result):
