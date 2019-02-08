@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import os
 import configparser
-import config_defaults
-from logger import logger
+from opensipscli import config_defaults
+from opensipscli.logger import logger
 
 class OpenSIPSCLIConfig:
 

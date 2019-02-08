@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import argparse
-from cli import *
-import config_defaults
+from opensipscli import cli, config_defaults
 
 parser = argparse.ArgumentParser(description='OpenSIPS CLI Tool',
                                  prog='opensips-cli',
@@ -50,9 +49,15 @@ parser.add_argument('-V', '--version',
                     default=None,
                     version='OpenSIPS CLI 1.0')
 
-# Parse all arguments
-args = parser.parse_args()
+def main():
 
-# Open the CLI
-Shell = OpenSIPSCLIShell(args)
-Shell.cmdloop()
+    # Parse all arguments
+    args = parser.parse_args()
+
+    # Open the CLI
+    shell = cli.OpenSIPSCLIShell(args)
+    if not shell.batch:
+        shell.cmdloop()
+
+if __name__ == '__main__':
+    main()

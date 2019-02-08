@@ -1,3 +1,6 @@
 *.pyc
 *.pyo
 __pycach*
+build/
+dist/
+*egg-info/

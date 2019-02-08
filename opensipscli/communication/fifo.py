@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import os
 import random
 import urllib.parse
 import urllib.request
-from config import cfg
-from logger import logger
-from communication import jsonrpc_helper
+from opensipscli.config import cfg
+from opensipscli.logger import logger
+from opensipscli.communication import jsonrpc_helper
 
 REPLY_FIFO_FILE_TEMPLATE='opensips_fifo_reply_{}'
 

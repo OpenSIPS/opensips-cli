@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-from config import cfg
-from logger import logger
-from module import Module
-import communication
+from opensipscli.config import cfg
+from opensipscli.logger import logger
+from opensipscli.module import Module
 
 class instance(Module):
 

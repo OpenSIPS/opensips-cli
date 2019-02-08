@@ -1,18 +1,17 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-import communication
-from cli import *
-from logger import logger
-from config import cfg
+from opensipscli.logger import logger
+from opensipscli.config import cfg
+from opensipscli import communication
 
 comm_handler = None
 
 def initialize():
     global comm_handler
     comm_type = cfg.get('comm_type')
-    comm_func = 'communication.{}'.format(comm_type)
+    comm_func = 'opensipscli.communication.{}'.format(comm_type)
     try:
-        comm_handler = __import__(comm_func)
+        comm_handler = __import__(comm_func, fromlist=[comm_type])
     except ImportError as ie:
         comm_handler = None
         logger.error("cannot import '{}' handler: {}"

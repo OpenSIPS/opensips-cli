@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Abstract class that has to be implemented by every Module available
 class Module:

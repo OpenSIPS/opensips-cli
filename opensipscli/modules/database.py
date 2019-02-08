@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-from module import Module
-from logger import logger
+from opensipscli.module import Module
+from opensipscli.logger import logger
 
 try:
     from sqlalchemy import *

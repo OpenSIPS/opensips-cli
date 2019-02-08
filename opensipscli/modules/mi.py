@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-import comm
 import json
 import yaml
-from config import cfg
-from logger import logger
-from module import Module
+from opensipscli.config import cfg
+from opensipscli.logger import logger
+from opensipscli.module import Module
+from opensipscli import comm
 
 class mi(Module):
 

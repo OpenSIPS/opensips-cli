@@ -1,25 +1,20 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import cmd
 import sys
 import os
 import readline
-import comm
 import atexit
-import config_defaults
 import importlib
-from config import cfg
-from logger import logger
+import opensipscli.config_defaults
+from opensipscli import comm
+from opensipscli.config import cfg
+from opensipscli.logger import logger
 
 class OpenSIPSCLIShell(cmd.Cmd, object):
 
     modules = {}
     registered_atexit = False
-
-    # TODO
-    cmd_list = []
-    mod_list = []
-    cmd_to_mod = {}
 
     def __init__(self, options):
 
@@ -48,7 +43,6 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             # Clear the modules and commands list
             for mod in ['clear', 'help', 'history', 'exit', 'quit']:
                 self.modules[mod] = (self, None)
-            self.modules['track'] = (self, None)
 
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
@@ -109,7 +103,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         self.prompt = '(%s): ' % cfg.get('prompt_name')
 
         # add modules_dir to the path
-        modules_dir = os.path.abspath(cfg.get('modules_dir'))
+        modules_dir = cfg.get('modules_dir')
         if not os.path.exists(modules_dir):
             logger.warning("Modules dir '{}' does not exist!".
                     format(modules_dir))
