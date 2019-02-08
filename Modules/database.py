@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+from module import Module
 from logger import logger
-from Modules import Module
+
 try:
     from sqlalchemy import *
     from sqlalchemy_utils import database_exists
@@ -13,9 +14,9 @@ except ImportError:
 
 from os import listdir
 
-class Database(Module):
+class database(Module):
 
-    def database_create(self):
+    def do_create(self):
 
         if not database_module:
             log.error("database module not initialized!")

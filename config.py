@@ -43,11 +43,23 @@ class OpenSIPSCLIConfig:
         else:
             return self.config[self.current_instance][key]
 
+    # checks if a configuration exists
+    def exists(self, key):
+        if self.custom_options and key in self.custom_options:
+            return True
+        elif self.current_instance not in self.config:
+            return key in config_defaults.DEFAULT_VALUES
+        else:
+            return key in self.config[self.current_instance]
+
     def set_instance(self, instance):
         self.current_instance = instance
 
     def has_instance(self, instance):
         return instance in self.config
+
+    def get_default_instance(self):
+        return config_defaults.DEFAULT_SECTION
 
 
 cfg = OpenSIPSCLIConfig()

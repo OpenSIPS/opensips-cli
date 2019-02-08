@@ -7,8 +7,9 @@ class Module:
         return False
 
     def __invoke__(self, cmd, params=None):
-        exec('self.' + cmd + '(' + ','.join(params) + ')')
+        f = getattr(self, 'do_' + cmd)
+        f(params)
 
     def __get_methods__(self):
-        return ([x for x in dir(self)
-                 if not x.startswith('__') and callable(getattr(self, x))])
+        return ([x[3:] for x in dir(self)
+                 if x.startswith('do_') and callable(getattr(self, x))])

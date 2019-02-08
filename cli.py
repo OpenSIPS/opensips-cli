@@ -3,25 +3,30 @@
 import cmd
 import sys
 import os
-import Modules
 import readline
 import comm
 import atexit
 import config_defaults
+import importlib
 from config import cfg
 from logger import logger
 
 class OpenSIPSCLIShell(cmd.Cmd, object):
+
+    modules = {}
+    registered_atexit = False
+
+    # TODO
     cmd_list = []
     mod_list = []
     cmd_to_mod = {}
-    registered_atexit = False
 
     def __init__(self, options):
 
         self.debug = options.debug
         self.batch = options.batch
         self.command = options.command
+        self.modules_dir_inserted = None
 
         if self.debug:
             logger.setLevel("DEBUG")
@@ -40,27 +45,42 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         if not self.batch:
             # __init__ of cmd.Cmd module
             cmd.Cmd.__init__(self)
-
             # Clear the modules and commands list
-            self.cmd_list = ['clear', 'help', 'history', 'exit', 'quit']
+            for mod in ['clear', 'help', 'history', 'exit', 'quit']:
+                self.modules[mod] = (self, None)
+            self.modules['track'] = (self, None)
 
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
 
-        # Create the modules list based on the current instance
-        for mod in sys.modules.keys():
-            if mod.startswith('Modules.') and mod != 'Modules.module':
-                mod_name = mod.split('.')[1]
-                if eval('Modules.' + mod_name.title() +
-                        '.__exclude__(self)') is False:
-                    new_mod = eval('Modules.' + mod_name.title() + '()')
-                    self.mod_list.append(new_mod)
-        # Create the command list based on the loaded modules
-        for i in self.mod_list:
-            list = i.__get_methods__()
-            for j in list:
-                self.cmd_to_mod[j] = i.__class__.__name__
-            self.cmd_list += list
+        if not cfg.exists('skip_modules'):
+            skip_modules = []
+        else:
+            skip_modules = cfg.get('skip_modules')
+
+        # load all modules from the 'modules_dir'
+        for fname in os.listdir(self.modules_dir_inserted):
+            if os.path.isfile(fname) or not fname.endswith(".py"):
+                continue
+            module = fname[:-3]
+            if fname in skip_modules:
+                logger.debug("Skipping module '{}'".format(module))
+                continue
+            m = importlib.import_module(module)
+            if not hasattr(m, module):
+                logger.debug("Skipping module '{}' - module implementation not found".
+                        format(module))
+                continue
+            mod = getattr(m, module)
+            if not hasattr(mod, '__exclude__') or not hasattr(mod, '__get_methods__'):
+                logger.debug("Skipping module '{}' - module does not implement Module".
+                        format(module))
+                continue
+            if mod.__exclude__(mod):
+                logger.debug("Skipping module '{}' - excluded on purpose".format(module))
+                continue
+            logger.debug("Loaded module '{}'".format(module))
+            self.modules[module] = (mod(), mod.__get_methods__(mod))
 
     def update_logger(self):
 
@@ -71,6 +91,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             level = cfg.get("log_level")
         logger.setLevel(level)
 
+    def clear_instance(self):
+        # make sure we dump everything before swapping files
+        self.history_write()
+        if self.modules_dir_inserted:
+            self.path.remove(self.modules_dir_inserted)
+            self.modules_dir_inserted = None
+
     def update_instance(self, instance):
 
         # first of all, let's handle logging
@@ -80,6 +107,15 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # Update the intro and prompt
         self.intro = cfg.get('prompt_intro')
         self.prompt = '(%s): ' % cfg.get('prompt_name')
+
+        # add modules_dir to the path
+        modules_dir = os.path.abspath(cfg.get('modules_dir'))
+        if not os.path.exists(modules_dir):
+            logger.warning("Modules dir '{}' does not exist!".
+                    format(modules_dir))
+        elif not modules_dir in sys.path:
+            sys.path.insert(0, modules_dir)
+            self.modules_dir_inserted = modules_dir
 
         # initialize communcation handler
         self.handler = comm.initialize()
@@ -101,8 +137,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def postcmd(self, stop, line):
 
         if self.current_instance != cfg.current_instance:
-            # make sure we dump everything before swapping files
-            self.history_write()
+            self.clear_instance()
             self.update_instance(cfg.current_instance)
             # make sure we update all the history information
             self.preloop()
@@ -123,10 +158,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def cmdloop(self, intro=None):
         if self.batch:
             if len(self.command) < 1:
-                logger.error("no command to run specified!")
+                logger.error("no modules to run specified!")
+            elif len(self.command) < 2:
+                logger.error("no method to in '{}' run specified!".
+                        format(self.command[0]))
             else:
                 logger.debug("running in batch mode '{}'".format(self.command))
-                self.run_command(self.command[0], self.command[1:])
+                self.run_command(self.command[0], self.command[1], self.command[2:])
             return
         print(self.intro)
         while True:
@@ -136,10 +174,33 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             except KeyboardInterrupt:
                 print('^C')
 
-    # Overwritten function for our customized auto-complete
-    def completenames(self, text, *ignored):
-        dotext = text
-        return [a for a in self.get_names() if a.startswith(dotext)]
+    def complete_modules(self, text):
+        l = [a for a in self.modules.keys() if a.startswith(text)]
+        if len(l) == 1:
+            l[0] = l[0] + " "
+        return l
+
+    def complete_functions(self, module, text, line, begidx, endidx):
+
+        # builtin commands
+        params = line.split()
+        if len(params) < 2 or len(params) == 2 and line[-1] != ' ':
+            # still looking for a module's command
+            if module[1] is None or len(module[1]) == 0:
+                return ['']
+            l = [a for a in module[1] if a.startswith(text)]
+        else:
+            try:
+                compfunc = getattr(module[0], 'complete_' + params[1])
+                l = compfunc(text, line, begidx, endidx)
+                if not l:
+                    return None
+            except AttributeError:
+                return ['']
+            # looking for a different command
+        if len(l) == 1:
+            l[0] = l[0] + " "
+        return l
 
     # Overwritten function for our customized auto-complete
     def complete(self, text, state):
@@ -150,37 +211,36 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             begidx = readline.get_begidx() - stripped
             endidx = readline.get_endidx() - stripped
             if begidx > 0:
-                # TODO: Autocomplete CMD's args
-                cmd, args, foo = self.parseline(line)
-                if cmd == '':
-                    compfunc = self.completedefault
+                mod, args, foo = self.parseline(line)
+                if mod == '':
+                    return self.complete_modules(text)[state]
+                elif not mod in self.modules:
+                    logger.error("BUG: mod '{}' not found!".format(mod))
                 else:
-                    try:
-                        compfunc = getattr(self, 'complete_' + cmd)
-                    except AttributeError:
-                        compfunc = self.completedefault
+                    module = self.modules[mod]
+                    self.completion_matches = \
+                        self.complete_functions(module, text, line, begidx, endidx)
             else:
-                compfunc = self.completenames
-            self.completion_matches = compfunc(text, line, begidx, endidx)
+                self.completion_matches = self.complete_modules(text)
         try:
             return self.completion_matches[state]
         except IndexError:
             return None
 
-    # Overwritten function for our customized auto-complete
-    def get_names(self):
-        return self.cmd_list
-
     # Execute commands from Modules
-    def run_command(self, cmd, params):
+    def run_command(self, module, cmd, params):
+        try:
+            mod = self.modules[module]
+        except AttributeError:
+            logger.error("no module '{}' loaded".format(module))
+            return
+        if not cmd in mod[1]:
+            logger.error("no command '{}' in module '{}'".
+                    format(cmd, module))
+            return
+        logger.debug("running command '{}' '{}'".format(cmd, params))
         params = self.parse_params(params)
-        if cmd in self.cmd_list:
-            for mod in self.mod_list:
-                if self.cmd_to_mod[cmd] in str(mod):
-                    mod.__invoke__(cmd, params)
-                    break
-        else:
-            print('%s: command not found' % cmd)
+        mod[0].__invoke__(cmd, params)
 
     def parse_params(self, params):
         # search for any '[' and ']' pairs
@@ -213,9 +273,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     def default(self, line):
         aux = line.split(' ')
-        cmd = str(aux[0])
-        params = aux[1:]
-        self.run_command(cmd, params)
+        if len(aux) < 2:
+            logger.error("imcomplete command '{}'".format(line))
+            return
+        module = str(aux[0])
+        cmd = str(aux[1])
+        params = aux[2:]
+        self.run_command(module, cmd, params)
 
     # Print history
     def do_history(self, line):

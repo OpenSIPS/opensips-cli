@@ -5,9 +5,9 @@ import json
 import yaml
 from config import cfg
 from logger import logger
-from Modules import Module
+from module import Module
 
-class Mi(Module):
+class mi(Module):
 
     def print_pretty_print(self, result):
         print(json.dumps(result, indent=4))
@@ -35,6 +35,7 @@ class Mi(Module):
 
     def __invoke__(self, cmd, params=None):
         # Mi Module works with JSON Communication
+        logger.debug("running command '{}' '{}'".format(cmd, params))
         res = comm.execute(cmd, params)
         if res is None:
             return
