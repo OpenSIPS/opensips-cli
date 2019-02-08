@@ -7,6 +7,7 @@ Default configuration for OpenSIPS CLI
 import os
 
 DEFAULT_SECTION = 'default'
+DEFAULT_NAME = 'opensips-cli'
 
 # history file should be in the home of the user
 HISTORY_FILE = os.path.join(os.environ["HOME"], ".opensipscli.history")

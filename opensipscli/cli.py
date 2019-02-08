@@ -6,8 +6,8 @@ import os
 import readline
 import atexit
 import importlib
-import opensipscli.config_defaults
 from opensipscli import comm
+from opensipscli import config_defaults
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 
@@ -26,8 +26,20 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         if self.debug:
             logger.setLevel("DEBUG")
 
+        if not options.config:
+            cfg_file = os.path.join(os.environ["HOME"],
+                    ".{}.ini".format(config_defaults.DEFAULT_NAME))
+            if not os.path.isfile(cfg_file) or \
+                        not os.access(cfg_file, os.R_OK):
+                cfg_file = '/etc/{}.ini'.format(config_defaults.DEFAULT_NAME)
+                if not os.path.isfile(cfg_file) or \
+                            not os.access(cfg_file, os.R_OK):
+                    cfg_file = None
+        else:
+            cfg_file = options.config
+
         # __init__ of the configuration file
-        cfg.parse(options.config)
+        cfg.parse(cfg_file)
         if not cfg.has_instance(options.instance):
             logger.warning("Unknown instance '{}'! Using default instance '{}'!".
                     format(options.instance, config_defaults.DEFAULT_SECTION))
