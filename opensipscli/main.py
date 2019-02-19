@@ -56,8 +56,7 @@ def main():
 
     # Open the CLI
     shell = cli.OpenSIPSCLIShell(args)
-    if not shell.batch:
-        shell.cmdloop()
+    shell.cmdloop()
 
 if __name__ == '__main__':
     main()
