@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import argparse
 from opensipscli import cli, config_defaults
 
@@ -56,7 +57,7 @@ def main():
 
     # Open the CLI
     shell = cli.OpenSIPSCLIShell(args)
-    shell.cmdloop()
+    sys.exit(shell.cmdloop())
 
 if __name__ == '__main__':
     main()

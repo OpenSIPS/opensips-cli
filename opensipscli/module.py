@@ -8,7 +8,7 @@ class Module:
 
     def __invoke__(self, cmd, params=None):
         f = getattr(self, 'do_' + cmd)
-        f(params)
+        return f(params)
 
     def __get_methods__(self):
         return ([x[3:] for x in dir(self)

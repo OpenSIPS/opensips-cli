@@ -163,6 +163,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
         if self.execute:
+            ret = -1
             if len(self.command) < 1:
                 logger.error("no modules to run specified!")
             elif len(self.command) < 2:
@@ -170,8 +171,11 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                         format(self.command[0]))
             else:
                 logger.debug("running in non-interactive mode '{}'".format(self.command))
-                self.run_command(self.command[0], self.command[1], self.command[2:])
-            return
+                ret = self.run_command(self.command[0], self.command[1], self.command[2:])
+                # assume that by default it exists with success
+                if ret is None:
+                    ret = 0
+            return ret
         print(self.intro)
         while True:
             try:
@@ -179,6 +183,9 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                 break
             except KeyboardInterrupt:
                 print('^C')
+                return 0
+        # any other commands exits with negative value
+        return -1
 
     def complete_modules(self, text):
         l = [a for a in self.modules.keys() if a.startswith(text)]
@@ -246,7 +253,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             return
         logger.debug("running command '{}' '{}'".format(cmd, params))
         params = self.parse_params(params)
-        mod[0].__invoke__(cmd, params)
+        return mod[0].__invoke__(cmd, params)
 
     def parse_params(self, params):
         # search for any '[' and ']' pairs

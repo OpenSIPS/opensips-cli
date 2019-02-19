@@ -38,7 +38,7 @@ class mi(Module):
         logger.debug("running command '{}' '{}'".format(cmd, params))
         res = comm.execute(cmd, params)
         if res is None:
-            return
+            return -1
         output_type = cfg.get('output_type')
         if output_type == "pretty-print":
             self.print_pretty_print(res)
@@ -53,6 +53,7 @@ class mi(Module):
         else:
             logger.error("unknown output_type='{}'! Dropping output!"
                     .format(output_type))
+        return 0
 
     def __get_methods__(self):
         return comm.execute('which')

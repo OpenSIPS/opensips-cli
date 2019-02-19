@@ -30,3 +30,4 @@ class instance(Module):
             cfg.set_instance(new_instance)
         else:
             logger.error("cannot switch to instance '{}': instance not found!".format(new_instance))
+            return -1
