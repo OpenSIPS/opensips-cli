@@ -8,11 +8,11 @@ parser = argparse.ArgumentParser(description='OpenSIPS CLI Tool',
                                  usage='%(prog)s [OPTIONS]',
                                  epilog='\n')
 
-# Argument used to run the command in batch mode
-parser.add_argument('-x', '--batch',
+# Argument used to run the command in non-interactive mode
+parser.add_argument('-x', '--execute',
                     action='store_true',
                     default=False,
-                    help='run the command in batch mode')
+                    help='run the command in non-interactive mode')
 # Argument used to specify the command to run
 parser.add_argument('command',
                     nargs='*',

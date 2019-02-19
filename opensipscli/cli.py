@@ -19,7 +19,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def __init__(self, options):
 
         self.debug = options.debug
-        self.batch = options.batch
+        self.execute = options.execute
         self.command = options.command
         self.modules_dir_inserted = None
 
@@ -49,7 +49,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         cfg.set_instance(instance)
         cfg.set_custom_options(options.extra_options)
 
-        if not self.batch:
+        if not self.execute:
             # __init__ of cmd.Cmd module
             cmd.Cmd.__init__(self)
             # Clear the modules and commands list
@@ -162,14 +162,14 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
-        if self.batch:
+        if self.execute:
             if len(self.command) < 1:
                 logger.error("no modules to run specified!")
             elif len(self.command) < 2:
                 logger.error("no method to in '{}' run specified!".
                         format(self.command[0]))
             else:
-                logger.debug("running in batch mode '{}'".format(self.command))
+                logger.debug("running in non-interactive mode '{}'".format(self.command))
                 self.run_command(self.command[0], self.command[1], self.command[2:])
             return
         print(self.intro)
