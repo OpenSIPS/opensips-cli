@@ -9,8 +9,23 @@ import os
 DEFAULT_SECTION = 'default'
 DEFAULT_NAME = 'opensips-cli'
 
-# history file should be in the home of the user
-HISTORY_FILE = os.path.join(os.environ["HOME"], ".opensipscli.history")
+"""
+Default history file is in ~/.opensips-cli.history
+"""
+HISTORY_FILE = os.path.join(os.environ["HOME"],
+        ".{}.history".format(DEFAULT_NAME))
+
+"""
+Try configuration files in this order:
+    * ~/.opensips-cli.cfg
+    * /etc/opensips-cli.cfg
+    * /etc/opensips/opensips-cli.cfg
+"""
+CFG_PATHS = [
+    os.path.join(os.environ["HOME"], ".{}.cfg".format(DEFAULT_NAME)),
+    "/etc/{}.cfg".format(DEFAULT_NAME),
+    "/etc/opensips/{}.cfg".format(DEFAULT_NAME),
+]
 
 DEFAULT_VALUES = {
     # CLI settings

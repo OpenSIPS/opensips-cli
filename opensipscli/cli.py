@@ -27,16 +27,19 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             logger.setLevel("DEBUG")
 
         if not options.config:
-            cfg_file = os.path.join(os.environ["HOME"],
-                    ".{}.ini".format(config_defaults.DEFAULT_NAME))
-            if not os.path.isfile(cfg_file) or \
-                        not os.access(cfg_file, os.R_OK):
-                cfg_file = '/etc/{}.ini'.format(config_defaults.DEFAULT_NAME)
-                if not os.path.isfile(cfg_file) or \
-                            not os.access(cfg_file, os.R_OK):
-                    cfg_file = None
+            cfg_file = None
+            for f in config_defaults.CFG_PATHS:
+                if os.path.isfile(f) and os.access(f, os.R_OK):
+                    # found a valid config file
+                    cfg_file = f
+                    break
         else:
             cfg_file = options.config
+        if not cfg_file:
+            logger.debug("no config file found in any of {}".
+                    format(", ".join(config_defaults.CFG_PATHS)))
+        else:
+            logger.debug("using config file {}".format(cfg_file))
 
         # __init__ of the configuration file
         cfg.parse(cfg_file)
