@@ -28,6 +28,10 @@ setuptools.setup(
     scripts = [
         "bin/opensips-cli"
     ],
+    project_urls = {
+        "Source Code": "https://github.com/OpenSIPS/opensips-cli",
+        "Issues Tracker": "https://github.com/OpenSIPS/opensips-cli/issues",
+    },
 )
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

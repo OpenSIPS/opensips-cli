@@ -8,7 +8,7 @@ comm_handler = None
 
 def initialize():
     global comm_handler
-    comm_type = cfg.get('comm_type')
+    comm_type = cfg.get('communication_type')
     comm_func = 'opensipscli.communication.{}'.format(comm_type)
     try:
         comm_handler = __import__(comm_func, fromlist=[comm_type])

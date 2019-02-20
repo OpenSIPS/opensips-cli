@@ -38,7 +38,7 @@ DEFAULT_VALUES = {
     "modules_dir": "opensipscli/modules",
 
     # communication information
-    "comm_type": "fifo",
+    "communication_type": "fifo",
     "fifo_file": "/tmp/opensips_fifo",
 
     # database module

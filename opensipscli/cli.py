@@ -104,7 +104,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # make sure we dump everything before swapping files
         self.history_write()
         if self.modules_dir_inserted:
-            self.path.remove(self.modules_dir_inserted)
+            sys.path.remove(self.modules_dir_inserted)
             self.modules_dir_inserted = None
 
     def update_instance(self, instance):
