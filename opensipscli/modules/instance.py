@@ -8,14 +8,15 @@ class instance(Module):
 
     def get_instances(self):
         l = cfg.config.sections()
-        if len(l) == 0:
-            return [ cfg.get_default_instance() ]
+        default_section = cfg.get_default_instance()
+        if default_section not in l:
+            l.insert(0, default_section)
         return l
 
-    def do_show(self):
+    def do_show(self, params):
         print(cfg.current_instance)
 
-    def do_list(self):
+    def do_list(self, params):
         for i in self.get_instances():
             print(i)
 
