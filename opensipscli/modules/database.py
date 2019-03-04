@@ -20,15 +20,7 @@
 from opensipscli.module import Module
 from opensipscli.logger import logger
 from opensipscli.config import cfg
-
-try:
-    from sqlalchemy import *
-    from sqlalchemy_utils import database_exists, drop_database
-    database_module = True
-except ImportError:
-    logger.info("cannot import database module!")
-    logger.info("make sure you have sqlalchemy and sqlalchemy_utols packages installed!")
-    database_module = False
+from opensipscli.db import osdb
 
 import os
 
@@ -58,7 +50,11 @@ STANDARD_DB_MODULES = [
 class database(Module):
 
     def __exclude__(self):
-        return not database_module
+        if cfg.exists("db_url"):
+            db_url = cfg.get("db_url")
+            return not osdb.has_dialect(osdb.get_dialect(db_url))
+        else:
+            return not osdb.has_sqlalchemy()
 
     def read_param(self, param, prompt, default=None, yes_no=False):
 
@@ -127,21 +123,20 @@ class database(Module):
             db_name = self.read_param("database_name",
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
+
+        db = osdb(db_url, db_name)
+
         # check to see if the database has already been created
-        try:
-            database_url = "{}/{}".format(db_url, db_name)
-            if database_exists(database_url):
-                if self.read_param("database_force_drop",
-                        "Do you really want to drop the '{}' database".
-                            format(db_name),
-                        False, True):
-                    drop_database(database_url)
+        if db.exists():
+            if self.read_param("database_force_drop",
+                    "Do you really want to drop the '{}' database".
+                        format(db_name),
+                    False, True):
+                db.drop()
             else:
-                logger.warning("database '{}' does not exist!".format(db_name))
-        except ModuleNotFoundError as me:
-            logger.error("cannot check if database {} exists: {}".
-                    format(db_name, me))
-            return -1
+                logger.info("database '{}' not dropped!".format(db_name))
+        else:
+            logger.warning("database '{}' does not exist!".format(db_name))
 
     def do_add(self, params):
 
@@ -164,18 +159,13 @@ class database(Module):
             logger.error("no URL specified: aborting!")
             return -1
 
-        # check to see if the database exists
-        try:
-            database_url = "{}/{}".format(db_url, db_name)
-            if not database_exists(database_url):
-                logger.warning("database '{}' does not exist!".format(db_name))
-                return -1
-        except ModuleNotFoundError as me:
-            logger.error("cannot check if database {} exists: {}".
-                    format(db_name, me))
+        db = osdb(db_url, db_name)
+
+        if not db.exists():
+            logger.warning("database '{}' does not exist!".format(db_name))
             return -1
 
-        db_schema = db_url.split(":")[0]
+        db_schema = db.dialect
         schema_path = self.get_schema_path(db_schema)
         if schema_path is None:
             return -1
@@ -187,16 +177,10 @@ class database(Module):
                     format(module_file_path))
             return -1
 
-        conn = create_engine(database_url).connect()
-        with open(module_file_path, 'r') as f:
-            try:
-                conn.execute(f.read())
-            except Exception as e:
-                logger.error("cannot add module {}: {}".
-                        format(module, e))
-                return -2
+        db.use()
+        db.create_module(module_file_path)
 
-        conn.close()
+        db.destroy()
         logger.info("Module {} has been successfully added!".
                 format(module))
         return 0
@@ -209,22 +193,20 @@ class database(Module):
             print()
             logger.error("no URL specified: aborting!")
             return -1
+
         if params and len(params) > 1:
             db_name = params[0]
         else:
             db_name = self.read_param("database_name",
                     "Please provide the database to create",
                     DEFAULT_DB_NAME)
+
+        db = osdb(db_url, db_name)
+
         # check to see if the database has already been created
-        try:
-            database_url = "{}/{}".format(db_url, db_name)
-            if database_exists(database_url):
-                logger.warn("database '{}' already exists!".format(db_name))
-                return -2
-        except ModuleNotFoundError as me:
-            logger.error("cannot check if database {} exists: {}".
-                    format(db_name, me))
-            return -1
+        if db.exists():
+            logger.warn("database '{}' already exists!".format(db_name))
+            return -2
         db_schema = db_url.split(":")[0]
         schema_path = self.get_schema_path(db_schema)
         if schema_path is None:
@@ -256,17 +238,12 @@ class database(Module):
             else:
                 tables_files.append(table_file_path)
 
-        engine = create_engine(db_url)
-        conn = engine.connect()
-
-        # all good - it's time to create the database
-        conn.execute("CREATE DATABASE {}".format(db_name))
-        conn.execute("USE {}".format(db_name))
+        db.create()
+        db.use()
 
         for table_file in tables_files:
-            with open(table_file, 'r') as f:
-                conn.execute(f.read())
+            db.create_module(table_file)
 
-        conn.close()
+        db.destroy()
         logger.info("The database has been successfully created.")
         return 0
