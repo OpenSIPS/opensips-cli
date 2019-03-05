@@ -81,8 +81,12 @@ class OpenSIPSCLIConfig:
     # reads a param or returns a default
     def read_param(self, param, prompt, default=None, yes_no=False):
 
-        if self.exists(param):
-            return self.get(param);
+        if param:
+            if type(param) != list:
+                param = list(param)
+            for p in param:
+                if self.exists(p):
+                    return self.get(p);
         val = ""
         if yes_no:
             prompt = prompt + " [Y/n]"
