@@ -46,8 +46,8 @@ def get_command(method, params={}):
             'id': str(randint(0, 32767)),
             'method': method,
             'params': params
-    };
-    return json.dumps(cmd);
+    }
+    return json.dumps(cmd)
 
 def get_reply(cmd):
     try:
