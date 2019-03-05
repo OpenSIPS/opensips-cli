@@ -72,5 +72,8 @@ class mi(Module):
                     .format(output_type))
         return 0
 
+    def __exclude__(self):
+        return not comm.valid()
+
     def __get_methods__(self):
         return comm.execute('which')

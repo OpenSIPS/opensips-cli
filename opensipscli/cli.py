@@ -264,7 +264,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def run_command(self, module, cmd, params):
         try:
             mod = self.modules[module]
-        except AttributeError:
+        except (AttributeError, KeyError):
             logger.error("no module '{}' loaded".format(module))
             return
         if not cmd in mod[1]:

@@ -19,8 +19,6 @@
 
 import os
 import random
-import urllib.parse
-import urllib.request
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.communication import jsonrpc_helper
@@ -36,16 +34,24 @@ def execute(method, params):
     try:
         os.unlink(reply_fifo_file)
         logger.debug("removed reply fifo '{}'".format(reply_fifo_file))
-    except OSError:
+    except OSError as ex:
         if os.path.exists(reply_fifo_file):
-            raise
+            raise jsonrpc_helper.JSONRPCException(
+                    "cannot remove repl file {}: {}!".
+                    format(reply_fifo_file, ex))
 
     try:
         os.mkfifo(reply_fifo_file)
-    except OSError:
-        raise
+    except OSError as ex:
+        raise jsonrpc_helper.JSONRPCException(
+                "cannot create reply file {}: {}!".
+                format(reply_fifo_file, ex))
 
     opensips_fifo = cfg.get('fifo_file')
+    if not os.path.exists(opensips_fifo):
+        raise jsonrpc_helper.JSONRPCException(
+                "fifo file {} does not exist!".
+                format(opensips_fifo))
 
     fifocmd = ":{}:{}". format(reply_fifo_file_name, jsoncmd)
     with open(opensips_fifo, 'w') as fifo:
@@ -59,3 +65,9 @@ def execute(method, params):
     # TODO: should we add this in a loop?
     os.unlink(reply_fifo_file)
     return jsonrpc_helper.get_reply(replycmd)
+
+def valid():
+    opensips_fifo = cfg.get('fifo_file')
+    if not os.path.exists(opensips_fifo):
+        return False
+    return True
