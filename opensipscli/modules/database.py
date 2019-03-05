@@ -50,8 +50,8 @@ STANDARD_DB_MODULES = [
 class database(Module):
 
     def __exclude__(self):
-        if cfg.exists("db_url"):
-            db_url = cfg.get("db_url")
+        if cfg.exists("database_url"):
+            db_url = cfg.get("database_url")
             return not osdb.has_dialect(osdb.get_dialect(db_url))
         else:
             return not osdb.has_sqlalchemy()
