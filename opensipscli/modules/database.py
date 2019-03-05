@@ -115,6 +115,13 @@ class database(Module):
             return -1
         module = params[0]
 
+        db_url = cfg.read_param("database_url",
+                "Please provide us the URL of the database")
+        if db_url is None:
+            print()
+            logger.error("no URL specified: aborting!")
+            return -1
+
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
                     "Please provide the database to add the module to",
@@ -122,12 +129,6 @@ class database(Module):
         else:
             db_name = params[1]
 
-        db_url = cfg.read_param("database_url",
-                "Please provide us the URL of the database")
-        if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
 
         db = osdb(db_url, db_name)
 

@@ -87,7 +87,7 @@ class OpenSIPSCLIConfig:
 
         if param:
             if type(param) != list:
-                param = list(param)
+                param = [param]
             for p in param:
                 if self.exists(p):
                     return self.get(p);
