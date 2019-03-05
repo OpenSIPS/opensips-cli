@@ -60,6 +60,10 @@ class OpenSIPSCLIConfig:
         else:
             return self.config[self.current_instance][key]
 
+    def getBool(self, key):
+        val = self.get(key)
+        return val.lower() in ['yes', '1', 'true']
+
     # checks if a configuration exists
     def exists(self, key):
         if self.custom_options and key in self.custom_options:
