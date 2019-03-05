@@ -111,13 +111,13 @@ class database(Module):
     def do_add(self, params):
 
         if len(params) < 1:
-            logger.error("No module added")
+            logger.error("No module to add added")
             return -1
         module = params[0]
 
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
-                    "Please provide the database to drop",
+                    "Please provide the database to add the module to",
                     DEFAULT_DB_NAME)
         else:
             db_name = params[1]
