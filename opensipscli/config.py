@@ -78,5 +78,36 @@ class OpenSIPSCLIConfig:
     def get_default_instance(self):
         return defaults.DEFAULT_SECTION
 
+    # reads a param or returns a default
+    def read_param(self, param, prompt, default=None, yes_no=False):
+
+        if self.exists(param):
+            return self.get(param);
+        val = ""
+        if yes_no:
+            prompt = prompt + " [Y/n]"
+            if default is not None:
+                prompt = prompt + " (Default is {})".format("Y" if default else "n")
+        elif default is not None:
+            prompt = prompt + " (Default value is {})".format(default)
+        prompt = prompt + ": "
+        while val == "":
+            try:
+                val = input(prompt).strip()
+            except Exception as e:
+                return None
+            if val == "":
+                if default is not None:
+                    return default
+            elif yes_no:
+                if val.lower() in ['y', 'yes']:
+                    return True
+                elif val.lower() in ['n', 'no']:
+                    return False
+                else:
+                    prompt = "Please choose 'Y' or 'n': "
+            else:
+                return val
+
 
 cfg = OpenSIPSCLIConfig()

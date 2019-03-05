@@ -56,38 +56,8 @@ class database(Module):
         else:
             return not osdb.has_sqlalchemy()
 
-    def read_param(self, param, prompt, default=None, yes_no=False):
-
-        if cfg.exists(param):
-            return cfg.get(param);
-        val = ""
-        if yes_no:
-            prompt = prompt + " [Y/n]"
-            if default is not None:
-                prompt = prompt + " (Default is {})".format("Y" if default else "n")
-        elif default is not None:
-            prompt = prompt + " (Default value is {})".format(default)
-        prompt = prompt + ": "
-        while val == "":
-            try:
-                val = input(prompt).strip()
-            except Exception as e:
-                return None
-            if val == "":
-                if default is not None:
-                    return default
-            elif yes_no:
-                if val.lower() in ['y', 'yes']:
-                    return True
-                elif val.lower() in ['n', 'no']:
-                    return False
-                else:
-                    prompt = "Please choose 'Y' or 'n': "
-            else:
-                return val
-
     def get_schema_path(self, db_schema):
-        db_path = self.read_param("database_path",
+        db_path = cfg.read_param("database_path",
                 "Please provide the path to the OpenSIPS DB scripts")
         if db_path is None:
             print()
@@ -110,7 +80,7 @@ class database(Module):
 
     def do_drop(self, params=None):
 
-        db_url = self.read_param("database_url",
+        db_url = cfg.read_param("database_url",
                 "Please provide us the URL of the database")
         if db_url is None:
             print()
@@ -120,7 +90,7 @@ class database(Module):
         if params and len(params) > 1:
             db_name = params[0]
         else:
-            db_name = self.read_param("database_name",
+            db_name = cfg.read_param("database_name",
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
 
@@ -128,7 +98,7 @@ class database(Module):
 
         # check to see if the database has already been created
         if db.exists():
-            if self.read_param("database_force_drop",
+            if cfg.read_param("database_force_drop",
                     "Do you really want to drop the '{}' database".
                         format(db_name),
                     False, True):
@@ -146,13 +116,13 @@ class database(Module):
         module = params[0]
 
         if len(params) < 2:
-            db_name = self.read_param("database_name",
+            db_name = cfg.read_param("database_name",
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
         else:
             db_name = params[1]
 
-        db_url = self.read_param("database_url",
+        db_url = cfg.read_param("database_url",
                 "Please provide us the URL of the database")
         if db_url is None:
             print()
@@ -187,7 +157,7 @@ class database(Module):
 
     def do_create(self, params=None):
 
-        db_url = self.read_param("database_url",
+        db_url = cfg.read_param("database_url",
                 "Please provide us the URL of the database")
         if db_url is None:
             print()
@@ -197,7 +167,7 @@ class database(Module):
         if params and len(params) > 1:
             db_name = params[0]
         else:
-            db_name = self.read_param("database_name",
+            db_name = cfg.read_param("database_name",
                     "Please provide the database to create",
                     DEFAULT_DB_NAME)
 
