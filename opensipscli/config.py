@@ -19,18 +19,18 @@
 
 import os
 import configparser
-from opensipscli import config_defaults
+from opensipscli import defaults
 from opensipscli.logger import logger
 
 class OpenSIPSCLIConfig:
 
-    current_instance = config_defaults.DEFAULT_SECTION
+    current_instance = defaults.DEFAULT_SECTION
     custom_options = None
 
     def __init__(self):
         self.config = configparser.ConfigParser(
-                    defaults=config_defaults.DEFAULT_VALUES,
-                    default_section=config_defaults.DEFAULT_SECTION)
+                    defaults=defaults.DEFAULT_VALUES,
+                    default_section=defaults.DEFAULT_SECTION)
 
     # Read the file given as parameter in order to parse it
     def parse(self, in_file):
@@ -56,7 +56,7 @@ class OpenSIPSCLIConfig:
         if self.custom_options and key in self.custom_options:
             return self.custom_options[key]
         elif self.current_instance not in self.config:
-            return config_defaults.DEFAULT_VALUES[key]
+            return defaults.DEFAULT_VALUES[key]
         else:
             return self.config[self.current_instance][key]
 
@@ -65,7 +65,7 @@ class OpenSIPSCLIConfig:
         if self.custom_options and key in self.custom_options:
             return True
         elif self.current_instance not in self.config:
-            return key in config_defaults.DEFAULT_VALUES
+            return key in defaults.DEFAULT_VALUES
         else:
             return key in self.config[self.current_instance]
 
@@ -76,7 +76,7 @@ class OpenSIPSCLIConfig:
         return instance in self.config
 
     def get_default_instance(self):
-        return config_defaults.DEFAULT_SECTION
+        return defaults.DEFAULT_SECTION
 
 
 cfg = OpenSIPSCLIConfig()

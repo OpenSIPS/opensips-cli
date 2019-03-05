@@ -24,7 +24,7 @@ import readline
 import atexit
 import importlib
 from opensipscli import comm
-from opensipscli import config_defaults
+from opensipscli import defaults
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 
@@ -45,7 +45,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
         if not options.config:
             cfg_file = None
-            for f in config_defaults.CFG_PATHS:
+            for f in defaults.CFG_PATHS:
                 if os.path.isfile(f) and os.access(f, os.R_OK):
                     # found a valid config file
                     cfg_file = f
@@ -54,7 +54,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             cfg_file = options.config
         if not cfg_file:
             logger.debug("no config file found in any of {}".
-                    format(", ".join(config_defaults.CFG_PATHS)))
+                    format(", ".join(defaults.CFG_PATHS)))
         else:
             logger.debug("using config file {}".format(cfg_file))
 
@@ -62,8 +62,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         cfg.parse(cfg_file)
         if not cfg.has_instance(options.instance):
             logger.warning("Unknown instance '{}'! Using default instance '{}'!".
-                    format(options.instance, config_defaults.DEFAULT_SECTION))
-            instance = config_defaults.DEFAULT_SECTION
+                    format(options.instance, defaults.DEFAULT_SECTION))
+            instance = defaults.DEFAULT_SECTION
         else:
             instance = options.instance
         cfg.set_instance(instance)

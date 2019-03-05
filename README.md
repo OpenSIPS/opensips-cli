@@ -57,7 +57,7 @@ file, that can store certain parameters that influence the behavior of the
 OpenSIPS CLI tool. You can find [here](etc/default.cfg) an example of a
 configuration file that behaves exactly as the default parameters. The set of
 default values used, when no configuration file is specified, can be found
-[here](opensipscli/config_defaults.py).
+[here](opensipscli/defaults.py).
 
 The configuration file can have multiple sections/instances, managed by the
 [Instance](docs/Modules/instance.md) module. One can choose different

@@ -19,7 +19,7 @@
 
 import sys
 import argparse
-from opensipscli import cli, config_defaults
+from opensipscli import cli, defaults
 
 parser = argparse.ArgumentParser(description='OpenSIPS CLI interactive tool',
                                  prog=sys.argv[0],
@@ -47,7 +47,7 @@ parser.add_argument('-i', '--instance',
                     metavar='[INSTANCE]',
                     type=str,
                     action='store',
-                    default=config_defaults.DEFAULT_SECTION,
+                    default=defaults.DEFAULT_SECTION,
                     help='choose an opensips instance')
 # Argument used to overwrite certain values in the config
 parser.add_argument('-o', '--option',
