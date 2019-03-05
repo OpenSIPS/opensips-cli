@@ -20,7 +20,7 @@
 from opensipscli.module import Module
 from opensipscli.logger import logger
 from opensipscli.config import cfg
-from opensipscli.db import osdb
+from opensipscli.db import osdb, osdbError
 
 import os
 
@@ -149,7 +149,11 @@ class database(Module):
             return -1
 
         db.use()
-        db.create_module(module_file_path)
+        try:
+            db.create_module(module_file_path)
+        except osdbError as ex:
+            logger.error("cannot import: {}".format(ex))
+            return -1
 
         db.destroy()
         logger.info("Module {} has been successfully added!".
@@ -213,7 +217,10 @@ class database(Module):
         db.use()
 
         for table_file in tables_files:
-            db.create_module(table_file)
+            try:
+                db.create_module(table_file)
+            except osdbError as ex:
+                logger.error("cannot import: {}".format(ex))
 
         db.destroy()
         logger.info("The database has been successfully created.")
