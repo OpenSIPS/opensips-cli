@@ -38,6 +38,14 @@ class osdb(object):
     def has_sqlalchemy():
         return sqlalchemy_available
 
+    def has_dialect(dialect):
+        # TODO: do this only for SQLAlchemy
+        try:
+            sqlalchemy.create_engine('{}://'.format(dialect))
+        except sqlalchemy.exc.NoSuchModuleError:
+            return False
+        return True
+
     def __init__(self, db_url, db_name):
         self.db_url = db_url
         self.db_name = db_name
