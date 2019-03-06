@@ -64,6 +64,8 @@ DEFAULT_VALUES = {
     "database_user": "opensips",
     "database_password": "opensipsrw",
 
+    # user module
+    "plain_text_passwords": False,
 }
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

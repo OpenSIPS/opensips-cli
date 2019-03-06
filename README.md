@@ -95,6 +95,7 @@ The OpenSIPS CLI tool consists of the following modules:
 migrate an OpenSIPS database
 * [Instance](docs/Modules/instance.md) - used to switch through different
 instances/configuration within the config file
+* [User](docs/Modules/User.md) - utility used to add and remove OpenSIPS users
 
 ## Communication
 
