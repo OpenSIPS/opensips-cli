@@ -224,8 +224,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             l = [a for a in module[1] if a.startswith(text)]
         else:
             try:
-                compfunc = getattr(module[0], 'complete_' + params[1])
-                l = compfunc(text, line, begidx, endidx)
+                compfunc = getattr(module[0], '__complete__')
+                l = module[0].__complete__(params[1], text, line, begidx, endidx)
                 if not l:
                     return None
             except AttributeError:

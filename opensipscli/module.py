@@ -30,3 +30,13 @@ class Module:
     def __get_methods__(self):
         return ([x[3:] for x in dir(self)
                  if x.startswith('do_') and callable(getattr(self, x))])
+
+    def __complete__(self, command, text, line, begidx, endidx):
+        try:
+            compfunc = getattr(self, 'complete_' + command)
+            l = compfunc(text, line, begidx, endidx)
+            if not l:
+                return None
+        except AttributeError:
+            return None
+        return l
