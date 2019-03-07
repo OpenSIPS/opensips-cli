@@ -50,7 +50,38 @@ class mi(Module):
     def print_yaml(self, result):
         print(yaml.dump(result, default_flow_style=False).strip())
 
+    def parse_params(self, params):
+        # search for any '[' and ']' pairs
+        new_params = []
+        new_tmp_params = None
+        for param in params:
+            if param[0] == '[':
+                new_tmp_params = []
+                param = param.strip()[1:]
+                if len(param) == 0:
+                    param = None
+            if param is not None and param[-1] == ']':
+                if new_tmp_params is not None:
+                    param = param.strip()[:-1]
+                    if len(param) != 0:
+                        new_tmp_params.append(param)
+                    param = new_tmp_params
+                    new_tmp_params = None
+            if param is not None:
+                if new_tmp_params is None:
+                    new_params.append(param)
+                else:
+                    new_tmp_params.append(param)
+        # move remaining nodes from tmp to new params
+        if new_tmp_params is not None:
+            # restore the first param
+            new_tmp_params[0] = '[' + new_tmp_params[0]
+            new_params = new_params + new_tmp_params
+        return new_params
+
+
     def __invoke__(self, cmd, params=None):
+        params = self.parse_params(params)
         # Mi Module works with JSON Communication
         logger.debug("running command '{}' '{}'".format(cmd, params))
         res = comm.execute(cmd, params)

@@ -20,6 +20,7 @@
 import cmd
 import sys
 import os
+import shlex
 import readline
 import atexit
 import importlib
@@ -272,40 +273,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                     format(cmd, module))
             return
         logger.debug("running command '{}' '{}'".format(cmd, params))
-        params = self.parse_params(params)
         return mod[0].__invoke__(cmd, params)
 
-    def parse_params(self, params):
-        # search for any '[' and ']' pairs
-        new_params = []
-        new_tmp_params = None
-        for param in params:
-            if param[0] == '[':
-                new_tmp_params = []
-                param = param.strip()[1:]
-                if len(param) == 0:
-                    param = None
-            if param is not None and param[-1] == ']':
-                if new_tmp_params is not None:
-                    param = param.strip()[:-1]
-                    if len(param) != 0:
-                        new_tmp_params.append(param)
-                    param = new_tmp_params
-                    new_tmp_params = None
-            if param is not None:
-                if new_tmp_params is None:
-                    new_params.append(param)
-                else:
-                    new_tmp_params.append(param)
-        # move remaining nodes from tmp to new params
-        if new_tmp_params is not None:
-            # restore the first param
-            new_tmp_params[0] = '[' + new_tmp_params[0]
-            new_params = new_params + new_tmp_params
-        return new_params
-
     def default(self, line):
-        aux = line.split(' ')
+        aux = shlex.split(line)
         if len(aux) < 2:
             logger.error("imcomplete command '{}'".format(line))
             return
