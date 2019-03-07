@@ -43,6 +43,8 @@ class instance(Module):
         return [ a for a in self.get_instances() if a.startswith(text)]
 
     def do_switch(self, params):
+        if len(params) == 0:
+            return
         new_instance = params[0]
         if cfg.has_instance(new_instance):
             cfg.set_instance(new_instance)
