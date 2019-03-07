@@ -102,6 +102,7 @@ instances/configuration within the config file
 OpenSIPS CLI can communicate with an OpenSIPS instance through MI using
 different transports. Supported transports at the moment are:
 * `FIFO` - communicate over the `mi_fifo` module
+* `HTTP` - use JSONRPC over HTTP through the `mi_http` module
 
 ## Install
 
