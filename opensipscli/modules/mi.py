@@ -17,8 +17,10 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
+import re
 import json
 import yaml
+import shlex
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.module import Module
@@ -79,6 +81,23 @@ class mi(Module):
             new_params = new_params + new_tmp_params
         return new_params
 
+    def get_params_set(self, cmds):
+        l = set()
+        for p in cmds:
+            m = re.match('([a-zA-Z\.\-_]+)=', p)
+            # if it's not a parameter name, skip
+            if m:
+                l.add(m.group(1))
+            else:
+                return None
+        return l
+
+    def get_params_names(self, line):
+        cmds = shlex.split(line)
+        # cmd[0] = module, cmd[1] = command
+        if len(cmds) < 2:
+            return None
+        return self.get_params_set(cmds[2:])
 
     def __invoke__(self, cmd, params=None):
         params = self.parse_params(params)
@@ -102,6 +121,33 @@ class mi(Module):
             logger.error("unknown output_type='{}'! Dropping output!"
                     .format(output_type))
         return 0
+
+    def __complete__(self, command, text, line, begidx, endidx):
+        # TODO: shall we cache this?
+        params_arr = comm.execute('which', {'command': command})
+        if len(text) == 0:
+            # if last character is an equal, it's probably a value, or it will
+            if line[-1] == "=":
+                return ['']
+            params = self.get_params_names(line)
+            if params is None:
+                flat_list = list([item for sublist in params_arr for item in sublist])
+            else:
+                # check in the line to see the parameters we've used
+                flat_list = set()
+                for p in params_arr:
+                    sp = set(p)
+                    if params.issubset(sp):
+                        flat_list = flat_list.union(sp)
+                flat_list = flat_list - params
+        else:
+            flat_list = []
+            for l in params_arr:
+                p = [ x for x in l if x.startswith(text) ]
+                if len(p) != 0:
+                    flat_list += p
+        l = [ x + "=" for x in list(dict.fromkeys(flat_list)) ]
+        return l if len(l) > 0 else ['']
 
     def __exclude__(self):
         return not comm.valid()
