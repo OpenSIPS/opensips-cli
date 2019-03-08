@@ -39,4 +39,6 @@ class Module:
                 return None
         except AttributeError:
             return None
+        if len(l) == 1:
+            l[0] += " "
         return l

@@ -223,6 +223,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             if module[1] is None or len(module[1]) == 0:
                 return ['']
             l = [a for a in module[1] if a.startswith(text)]
+            if len(l) == 1:
+                l[0] += " "
         else:
             try:
                 compfunc = getattr(module[0], '__complete__')
@@ -232,8 +234,6 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             except AttributeError:
                 return ['']
             # looking for a different command
-        if len(l) == 1:
-            l[0] = l[0] + " "
         return l
 
     # Overwritten function for our customized auto-complete
