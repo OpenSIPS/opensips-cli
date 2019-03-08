@@ -36,7 +36,7 @@ class Module:
             compfunc = getattr(self, 'complete_' + command)
             l = compfunc(text, line, begidx, endidx)
             if not l:
-                return None
+                return ['']
         except AttributeError:
             return None
         if len(l) == 1:

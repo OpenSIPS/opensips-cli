@@ -259,7 +259,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         try:
             return self.completion_matches[state]
         except IndexError:
-            return None
+            return ['']
 
     # Execute commands from Modules
     def run_command(self, module, cmd, params):
