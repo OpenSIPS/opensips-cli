@@ -87,7 +87,7 @@ class database(Module):
             logger.error("no URL specified: aborting!")
             return -1
 
-        if params and len(params) > 1:
+        if params and len(params) > 0:
             db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
@@ -169,7 +169,7 @@ class database(Module):
             logger.error("no URL specified: aborting!")
             return -1
 
-        if params and len(params) > 1:
+        if params and len(params) > 0:
             db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
