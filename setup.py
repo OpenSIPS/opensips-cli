@@ -25,7 +25,6 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-print(setuptools.find_namespace_packages())
 
 setuptools.setup(
     name = "opensipscli",
