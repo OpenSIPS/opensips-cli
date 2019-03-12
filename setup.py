@@ -21,21 +21,26 @@
 Installs OpenSIPS Command Line Interface
 """
 
-import setuptools
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 from opensipscli import defaults
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name = "opensipscli",
     version = defaults.VERSION,
     author = "OpenSIPS Project",
     author_email = "project@opensips.org",
+    maintainer = "Razvan Crainea",
+    maintainer_email = "razvan@opensips.org",
     description = "OpenSIPS Command Line Interface",
     long_description = long_description,
-    long_description_content_type = "text/markdown",
     url = "https://github.com/OpenSIPS/opensips-cli",
+    download_url = "https://github.com/OpenSIPS/opensips-cli/archive/master.zip",
     packages = [
         "opensipscli",
         "opensipscli.communication"
