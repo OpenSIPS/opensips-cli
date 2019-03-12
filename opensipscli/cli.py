@@ -86,28 +86,35 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             skip_modules = cfg.get('skip_modules')
 
         # load all modules from the 'modules_dir'
-        for fname in os.listdir(self.modules_dir_inserted):
-            if os.path.isfile(fname) or not fname.endswith(".py"):
-                continue
-            module = fname[:-3]
-            if fname in skip_modules:
-                logger.debug("Skipping module '{}'".format(module))
-                continue
-            m = importlib.import_module(module)
-            if not hasattr(m, module):
-                logger.debug("Skipping module '{}' - module implementation not found".
-                        format(module))
-                continue
-            mod = getattr(m, module)
-            if not hasattr(mod, '__exclude__') or not hasattr(mod, '__get_methods__'):
-                logger.debug("Skipping module '{}' - module does not implement Module".
-                        format(module))
-                continue
-            if mod.__exclude__(mod):
-                logger.debug("Skipping module '{}' - excluded on purpose".format(module))
-                continue
-            logger.debug("Loaded module '{}'".format(module))
-            self.modules[module] = (mod(), mod.__get_methods__(mod))
+        loaded_modules = []
+        for module_dir in self.modules_dir_inserted:
+            for fname in os.listdir(module_dir):
+                if os.path.isfile(fname) or not fname.endswith(".py"):
+                    continue
+                module = fname[:-3]
+                if module in skip_modules:
+                    logger.debug("Skipping module '{}'".format(module))
+                    continue
+                if module in loaded_modules:
+                    logger.debug("Module '{}' already loaded".format(module))
+                    continue
+                m = importlib.import_module(module)
+                if not hasattr(m, module):
+                    logger.debug("Skipping module '{}' - module implementation not found".
+                            format(module))
+                    continue
+                mod = getattr(m, module)
+                if not hasattr(mod, '__exclude__') or not hasattr(mod, '__get_methods__'):
+                    logger.debug("Skipping module '{}' - module does not implement Module".
+                            format(module))
+                    continue
+                if mod.__exclude__(mod):
+                    logger.debug("Skipping module '{}' - excluded on purpose".format(module))
+                    continue
+                logger.debug("Loaded module '{}'".format(module))
+                self.modules[module] = (mod(), mod.__get_methods__(mod))
+                loaded_modules.append(module)
+        logger.debug("Loaded modules '{}'".format(loaded_modules))
 
     def update_logger(self):
 
@@ -122,8 +129,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # make sure we dump everything before swapping files
         self.history_write()
         if self.modules_dir_inserted:
-            sys.path.remove(self.modules_dir_inserted)
-            self.modules_dir_inserted = None
+            for module_dir in self.modules_dir_inserted:
+                sys.path.remove(module_dir)
 
     def update_instance(self, instance):
 
@@ -136,13 +143,15 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         self.prompt = '(%s): ' % cfg.get('prompt_name')
 
         # add modules_dir to the path
+        self.modules_dir_inserted = []
         modules_dir = cfg.get('modules_dir')
-        if not os.path.exists(modules_dir):
-            logger.warning("Modules dir '{}' does not exist!".
-                    format(modules_dir))
-        elif not modules_dir in sys.path:
-            sys.path.insert(0, modules_dir)
-            self.modules_dir_inserted = modules_dir
+        for module_dir in modules_dir.split(":"):
+            if not os.path.exists(module_dir):
+                logger.info("Modules dir '{}' does not exist!".
+                        format(module_dir))
+            elif not module_dir in sys.path:
+                sys.path.insert(0, module_dir)
+                self.modules_dir_inserted.append(module_dir)
 
         # initialize communcation handler
         self.handler = comm.initialize()
