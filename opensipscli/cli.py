@@ -155,6 +155,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
         # initialize communcation handler
         self.handler = comm.initialize()
+        print(self.intro)
 
     def history_write(self):
         history_file = cfg.get('history_file')
@@ -210,7 +211,6 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             if ret is None:
                 ret = 0
             return ret
-        print(self.intro)
         while True:
             try:
                 super(OpenSIPSCLIShell, self).cmdloop(intro='')
