@@ -30,6 +30,8 @@ class Module:
         return f(params)
 
     # returns all the available methods of the module
+    # if the method returns None, the do_`module_name`
+    # method is called for each command
     def __get_methods__(self):
         return ([x[3:] for x in dir(self)
                  if x.startswith('do_') and callable(getattr(self, x))])

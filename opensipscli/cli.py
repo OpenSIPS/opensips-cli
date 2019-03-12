@@ -184,18 +184,22 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
         if self.execute:
-            ret = -1
             if len(self.command) < 1:
                 logger.error("no modules to run specified!")
-            elif len(self.command) < 2:
-                logger.error("no method to in '{}' run specified!".
+                return -1
+            if len(self.command) < 2:
+                logger.debug("no method to in '{}' run specified!".
                         format(self.command[0]))
+                command = None
+                params = None
             else:
-                logger.debug("running in non-interactive mode '{}'".format(self.command))
-                ret = self.run_command(self.command[0], self.command[1], self.command[2:])
-                # assume that by default it exists with success
-                if ret is None:
-                    ret = 0
+                command = self.command[1]
+                params = self.command[2:]
+            logger.debug("running in non-interactive mode '{}'".format(self.command))
+            ret = self.run_command(self.command[0], command, params)
+            # assume that by default it exists with success
+            if ret is None:
+                ret = 0
             return ret
         print(self.intro)
         while True:
@@ -267,11 +271,20 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             mod = self.modules[module]
         except (AttributeError, KeyError):
             logger.error("no module '{}' loaded".format(module))
-            return
-        if not cmd in mod[1]:
+            return -1
+        # if the module dones not return any methods (returned None)
+        # we simply call the module's name method
+        if not mod[1]:
+            params.insert(0, cmd)
+            cmd = mod[0].__module__
+        elif not cmd:
+           logger.error("module '{}' expects to run one of {} commands".
+                   format(module, ", ".join(mod[1])))
+           return -1
+        elif not cmd in mod[1]:
             logger.error("no command '{}' in module '{}'".
                     format(cmd, module))
-            return
+            return -1
         logger.debug("running command '{}' '{}'".format(cmd, params))
         return mod[0].__invoke__(cmd, params)
 
