@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description='OpenSIPS CLI interactive tool',
 parser.add_argument('-v', '--version',
                     action='version',
                     default=None,
-                    version='OpenSIPS CLI 1.0')
+                    version='OpenSIPS CLI {}'.format(defaults.VERSION))
 # Argument used to enable debugging
 parser.add_argument('-d', '--debug',
                     action='store_true',

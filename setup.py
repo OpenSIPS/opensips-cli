@@ -22,13 +22,14 @@ Installs OpenSIPS Command Line Interface
 """
 
 import setuptools
+from opensipscli import defaults
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name = "opensipscli",
-    version = "1.0.0",
+    version = defaults.VERSION,
     author = "OpenSIPS Project",
     author_email = "project@opensips.org",
     description = "OpenSIPS Command Line Interface",

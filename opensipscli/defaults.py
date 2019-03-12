@@ -23,6 +23,8 @@ Default configuration for OpenSIPS CLI
 
 import os
 
+VERSION = '0.1'
+
 DEFAULT_SECTION = 'default'
 DEFAULT_NAME = 'opensips-cli'
 
