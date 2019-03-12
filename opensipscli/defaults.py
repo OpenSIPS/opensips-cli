@@ -51,7 +51,7 @@ DEFAULT_VALUES = {
     "prompt_name": "opensips-cli",
     "prompt_intro": "Welcome to OpenSIPS Command Line Interface!",
     "history_file": HISTORY_FILE,
-    "history_file_size": 1000,
+    "history_file_size": "1000",
     "output_type": "pretty-print",
     "log_level": "WARNING", # this is the default level in python logging
     "modules_dir": "opensipscli/modules",
