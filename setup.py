@@ -43,6 +43,7 @@ setup(
     download_url = "https://github.com/OpenSIPS/opensips-cli/archive/master.zip",
     packages = [
         "opensipscli",
+        "opensipscli.modules",
         "opensipscli.communication"
     ],
     classifiers = [
