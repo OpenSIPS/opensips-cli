@@ -66,7 +66,7 @@ class mi(Module):
 
     def print_yaml(self, result):
         if not yaml_available:
-            log.warning("yaml not available on your platform! "
+            logger.warning("yaml not available on your platform! "
                 "Please install `python-yaml` package or similar!")
         else:
             print(yaml.dump(result, default_flow_style=False).strip())
