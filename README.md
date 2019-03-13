@@ -35,7 +35,7 @@ OpenSIPS CLI accepts the following arguments:
 * `-f|--config` - specifies a configuration file (see [Configuration
 Section](#configuration) for more information)
 * `-i|--instance INSTANCE` - changes the configuration instance (see [Instance
-Module](docs/Modules/instance.md) Documentation for more information)
+Module](docs/modules/instance.md) Documentation for more information)
 * `-o|--option KEY=VALUE` - sets/overwrites the `KEY` configuration parameter
 with the specified `VALUE`. Works for both core and modules parameters. Can be
 used multiple times, for different options
@@ -60,7 +60,7 @@ default values used, when no configuration file is specified, can be found
 [here](opensipscli/defaults.py).
 
 The configuration file can have multiple sections/instances, managed by the
-[Instance](docs/Modules/instance.md) module. One can choose different
+[Instance](docs/modules/instance.md) module. One can choose different
 instances from the configuration file by specifying the `-i INSTANCE` argument
 when starting the cli tool.
 
@@ -89,12 +89,12 @@ are using.
 ## Modules
 
 The OpenSIPS CLI tool consists of the following modules:
-* [Management Interface](docs/Modules/mi.md) - run MI commands
-* [Database](docs/Modules/database.md) - commands to create, modify, drop, or
+* [Management Interface](docs/modules/mi.md) - run MI commands
+* [Database](docs/modules/database.md) - commands to create, modify, drop, or
 migrate an OpenSIPS database
-* [Instance](docs/Modules/instance.md) - used to switch through different
+* [Instance](docs/modules/instance.md) - used to switch through different
 instances/configuration within the config file
-* [User](docs/Modules/User.md) - utility used to add and remove OpenSIPS users
+* [User](docs/modules/User.md) - utility used to add and remove OpenSIPS users
 
 ## Communication
 
