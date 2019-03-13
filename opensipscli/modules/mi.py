@@ -19,12 +19,17 @@
 
 import re
 import json
-import yaml
 import shlex
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.module import Module
 from opensipscli import comm
+
+try:
+    import yaml
+    yaml_available = True
+except ImportError:
+    yaml_available = False
 
 # temporary special handling for commands that require array params
 # format is: command: (idx, name)
@@ -60,7 +65,11 @@ class mi(Module):
         pass
 
     def print_yaml(self, result):
-        print(yaml.dump(result, default_flow_style=False).strip())
+        if not yaml_available:
+            log.warning("yaml not available on your platform! "
+                "Please install `python-yaml` package or similar!")
+        else:
+            print(yaml.dump(result, default_flow_style=False).strip())
 
     def get_params_set(self, cmds):
         l = set()
