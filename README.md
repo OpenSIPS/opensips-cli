@@ -76,7 +76,6 @@ The OpenSIPS CLI core can use the following parameters:
 * `history_file_size`: The backlog size of the history file (Defaults to
 `1000`)
 * `log_level`: The level of the console logging (Defaults to `WARNING`)
-* `modules_dir`: The directory that contains the OpenSIPS CLI modules
 * `communication_type`: Communication transport used by OpenSIPS CLI (Defaults
 to `fifo`)
 * `fifo_file`: The file OpenSIPS uses to communicate with OpenSIPS through

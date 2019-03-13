@@ -28,6 +28,7 @@ from opensipscli import comm
 from opensipscli import defaults
 from opensipscli.config import cfg
 from opensipscli.logger import logger
+from opensipscli.modules import *
 
 class OpenSIPSCLIShell(cmd.Cmd, object):
 
@@ -73,48 +74,9 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         if not self.execute:
             # __init__ of cmd.Cmd module
             cmd.Cmd.__init__(self)
-            # Clear the modules and commands list
-            for mod in ['clear', 'help', 'history', 'exit', 'quit']:
-                self.modules[mod] = (self, None)
 
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
-
-        if not cfg.exists('skip_modules'):
-            skip_modules = []
-        else:
-            skip_modules = cfg.get('skip_modules')
-
-        # load all modules from the 'modules_dir'
-        loaded_modules = []
-        for module_dir in self.modules_dir_inserted:
-            for fname in os.listdir(module_dir):
-                if os.path.isfile(fname) or not fname.endswith(".py"):
-                    continue
-                module = fname[:-3]
-                if module in skip_modules:
-                    logger.debug("Skipping module '{}'".format(module))
-                    continue
-                if module in loaded_modules:
-                    logger.debug("Module '{}' already loaded".format(module))
-                    continue
-                m = importlib.import_module(module)
-                if not hasattr(m, module):
-                    logger.debug("Skipping module '{}' - module implementation not found".
-                            format(module))
-                    continue
-                mod = getattr(m, module)
-                if not hasattr(mod, '__exclude__') or not hasattr(mod, '__get_methods__'):
-                    logger.debug("Skipping module '{}' - module does not implement Module".
-                            format(module))
-                    continue
-                if mod.__exclude__(mod):
-                    logger.debug("Skipping module '{}' - excluded on purpose".format(module))
-                    continue
-                logger.debug("Loaded module '{}'".format(module))
-                self.modules[module] = (mod(), mod.__get_methods__(mod))
-                loaded_modules.append(module)
-        logger.debug("Loaded modules '{}'".format(loaded_modules))
 
     def update_logger(self):
 
@@ -128,9 +90,6 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def clear_instance(self):
         # make sure we dump everything before swapping files
         self.history_write()
-        if self.modules_dir_inserted:
-            for module_dir in self.modules_dir_inserted:
-                sys.path.remove(module_dir)
 
     def update_instance(self, instance):
 
@@ -142,20 +101,48 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         self.intro = cfg.get('prompt_intro')
         self.prompt = '(%s): ' % cfg.get('prompt_name')
 
-        # add modules_dir to the path
-        self.modules_dir_inserted = []
-        modules_dir = cfg.get('modules_dir')
-        for module_dir in modules_dir.split(":"):
-            if not os.path.exists(module_dir):
-                logger.info("Modules dir '{}' does not exist!".
-                        format(module_dir))
-            elif not module_dir in sys.path:
-                sys.path.insert(0, module_dir)
-                self.modules_dir_inserted.append(module_dir)
-
         # initialize communcation handler
         self.handler = comm.initialize()
         print(self.intro)
+
+        # remove all loaded modules
+        self.modules = {}
+
+        if not self.execute:
+            # add the built-in modules and commands list
+            for mod in ['clear', 'help', 'history', 'exit', 'quit']:
+                self.modules[mod] = (self, None)
+
+        if not cfg.exists('skip_modules'):
+            skip_modules = []
+        else:
+            skip_modules = cfg.get('skip_modules')
+
+        available_modules = { key[20:]: sys.modules[key] for key in
+                sys.modules.keys() if
+                key.startswith("opensipscli.modules.") and
+                key[20:] not in skip_modules }
+        for name, module in available_modules.items():
+            m = importlib.import_module("opensipscli.modules.{}".format(name))
+            if not hasattr(m, "Module"):
+                logger.debug("Skipping module '{}' - does not extend Module".
+                        format(name))
+                continue
+            if not hasattr(m, name):
+                logger.debug("Skipping module '{}' - module implementation not found".
+                        format(name))
+                continue
+            mod = getattr(module, name)
+            if not hasattr(mod, '__exclude__') or not hasattr(mod, '__get_methods__'):
+                logger.debug("Skipping module '{}' - module does not implement Module".
+                        format(name))
+                continue
+            if mod.__exclude__(mod):
+                logger.debug("Skipping module '{}' - excluded on purpose".format(name))
+                continue
+            logger.debug("Loaded module '{}'".format(name))
+            imod = mod()
+            self.modules[name] = (imod, mod.__get_methods__(imod))
 
     def history_write(self):
         history_file = cfg.get('history_file')
