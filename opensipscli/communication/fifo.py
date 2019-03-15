@@ -18,6 +18,7 @@
 ##
 
 import os
+import stat
 import random
 from opensipscli.config import cfg
 from opensipscli.logger import logger
@@ -42,6 +43,7 @@ def execute(method, params):
 
     try:
         os.mkfifo(reply_fifo_file)
+        os.chmod(reply_fifo_file, 0o666)
     except OSError as ex:
         raise jsonrpc_helper.JSONRPCException(
                 "cannot create reply file {}: {}!".
