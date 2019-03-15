@@ -271,9 +271,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # if the module dones not return any methods (returned None)
         # we simply call the module's name method
         if not mod[1]:
-            if params is None:
-                params = [cmd]
-            else:
+            if params is not None:
                 params.insert(0, cmd)
             cmd = mod[0].__module__
             if cmd.startswith("opensipscli.modules."):
@@ -294,7 +292,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         module = str(aux[0])
         if len(aux) == 1:
             cmd = None
-            params = [cmd]
+            params = None
         else:
             cmd = str(aux[1])
             params = aux[2:]
