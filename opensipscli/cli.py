@@ -271,8 +271,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # if the module dones not return any methods (returned None)
         # we simply call the module's name method
         if not mod[1]:
-            params.insert(0, cmd)
+            if params is None:
+                params = [cmd]
+            else:
+                params.insert(0, cmd)
             cmd = mod[0].__module__
+            if cmd.startswith("opensipscli.modules."):
+                cmd = cmd[20:]
         elif not cmd:
            logger.error("module '{}' expects to run one of {} commands".
                    format(module, ", ".join(mod[1])))
@@ -286,12 +291,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     def default(self, line):
         aux = shlex.split(line)
-        if len(aux) < 2:
-            logger.error("imcomplete command '{}'".format(line))
-            return
         module = str(aux[0])
-        cmd = str(aux[1])
-        params = aux[2:]
+        if len(aux) == 1:
+            cmd = None
+            params = [cmd]
+        else:
+            cmd = str(aux[1])
+            params = aux[2:]
         self.run_command(module, cmd, params)
 
     # Print history
