@@ -103,12 +103,12 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
         # initialize communcation handler
         self.handler = comm.initialize()
-        print(self.intro)
 
         # remove all loaded modules
         self.modules = {}
 
         if not self.execute:
+            print(self.intro)
             # add the built-in modules and commands list
             for mod in ['clear', 'help', 'history', 'exit', 'quit']:
                 self.modules[mod] = (self, None)
