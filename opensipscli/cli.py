@@ -204,7 +204,6 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                 break
             except KeyboardInterrupt:
                 print('^C')
-                return 0
         # any other commands exits with negative value
         return -1
 
