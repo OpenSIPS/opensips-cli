@@ -43,6 +43,7 @@ def execute(cmd, params=[]):
         return None
     except communication.jsonrpc_helper.JSONRPCException as ex:
         logger.error("communication exception for '{}' returned {}".format(cmd, ex))
+        logger.error("Is OpenSIPS running?")
         return None
     return ret
 
