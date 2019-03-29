@@ -38,11 +38,14 @@ from json.decoder import WHITESPACE
 JSONRPC_RCV_HOST = '127.0.0.1'
 JSONRPC_RCV_PORT = 8888
 
-dns_alerts = {}
-dns_slowest = []
+thr_summary = {}
+thr_slowest = []
 
-def JSONRPCListener():
-    global dns_alerts, dns_slowest
+def thresholdEventListener(subsystem=None):
+    global thr_summary, thr_slowest
+
+    thr_summary = {}
+    thr_slowest = []
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -68,18 +71,37 @@ def JSONRPCListener():
                 idx = WHITESPACE.match(string, 0).end()
                 while idx < len(string):
                     obj, end = decoder.raw_decode(string, idx)
-                    try:
-                        dns_alerts[obj['params']['extra']] += 1
-                    except:
-                        dns_alerts[obj['params']['extra']] = 1
-                    bisect.insort(dns_slowest, (-obj['params']['time'],
-                                                obj['params']['extra']))
-                    dns_slowest = dns_slowest[:3]
+
+                    # only process threshold events we're interested in
+                    if subsystem is None or obj['params']['source'] == subsystem:
+                        try:
+                            thr_summary[obj['params']['extra']] += 1
+                        except:
+                            thr_summary[obj['params']['extra']] = 1
+                        bisect.insort(thr_slowest, (-obj['params']['time'],
+                                                 obj['params']['extra']))
+                        thr_slowest = thr_slowest[:3]
+
                     string = string[end:]
                     idx = WHITESPACE.match(string, 0).end()
 
+def DNSThresholdEventListener():
+    thresholdEventListener('dns')
+
 class diagnose(Module):
+    def startThresholdListener(self, job):
+        # subscribe and listen for "query threshold exceeded" events
+        self.t = threading.Thread(target=job)
+        self.t.daemon = True
+        self.t.start()
+
+    def restartThresholdListener(self, job):
+        self.t.join()
+        self.startThresholdListener(job)
+
     def diagnose_dns(self):
+        global thr_summary, thr_slowest
+
         # quickly ensure opensips is running
         ans = comm.execute('get_statistics', {
                 'statistics': ['dns_total_queries', 'dns_slow_queries']
@@ -89,31 +111,40 @@ class diagnose(Module):
 
         ini_total = int(ans['dns:dns_total_queries'])
         ini_slow = int(ans['dns:dns_slow_queries'])
+        total = ini_total
+        slow = ini_slow
 
-        # subscribe and listen for DNS "query threshold exceeded" events
-        t = threading.Thread(target=JSONRPCListener)
-        t.daemon = True
-        t.start()
+        self.startThresholdListener(DNSThresholdEventListener)
 
         sec = 0
         while True:
             os.system("clear")
             print("In the last {} seconds...".format(sec))
-            if not dns_alerts:
+            if not thr_summary:
                 print("    DNS Queries [OK]".format(sec))
             else:
                 print("    DNS Queries [WARNING]".format(sec))
                 print("        * Slowest queries:")
-                for q in dns_slowest:
+                for q in thr_slowest:
                     print("            {} ({} us)".format(q[1], -q[0]))
                 print("        * Constantly slow queries")
-                for q in sorted([(v, k) for k, v in dns_alerts.items()], reverse=True)[:3]:
+                for q in sorted([(v, k) for k, v in thr_summary.items()], reverse=True)[:3]:
                     print("            {} ({} times exceeded threshold)".format(
                             q[1], q[0]))
 
             ans = comm.execute('get_statistics', {
                     'statistics': ['dns_total_queries', 'dns_slow_queries']
                     })
+
+            # was opensips restarted in the meantime? if yes, resubscribe!
+            if int(ans['dns:dns_total_queries']) < total:
+                ini_total = int(ans['dns:dns_total_queries'])
+                ini_slow = int(ans['dns:dns_slow_queries'])
+                thr_summary = {}
+                thr_slowest = []
+                sec = 1
+                self.restartThresholdListener(DNSThresholdEventListener)
+
             total = int(ans['dns:dns_total_queries']) - ini_total
             slow = int(ans['dns:dns_slow_queries']) - ini_slow
 
