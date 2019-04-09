@@ -39,10 +39,10 @@ def execute(cmd, params=[]):
     try:
         ret = comm_handler.execute(cmd, params)
     except communication.jsonrpc_helper.JSONRPCError as ex:
-        logger.error("command '{}' returned {}".format(cmd, ex))
+        logger.error("command '{}' returned: {}".format(cmd, ex))
         return None
     except communication.jsonrpc_helper.JSONRPCException as ex:
-        logger.error("communication exception for '{}' returned {}".format(cmd, ex))
+        logger.error("communication exception for '{}' returned: {}".format(cmd, ex))
         logger.error("Is OpenSIPS running?")
         return None
     return ret
