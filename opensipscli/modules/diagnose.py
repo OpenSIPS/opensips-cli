@@ -40,6 +40,8 @@ JSONRPC_RCV_PORT = 8888
 
 DNS_THR_EVENTS = ['dns']
 SQL_THR_EVENTS = ['mysql', 'pgsql']
+NOSQL_THR_EVENTS = ['Cassandra', 'cachedb_local', 'MongoDB',
+                    'cachedb_memcached', 'cachedb_couchbase']
 
 thr_summary = {}
 thr_slowest = []
@@ -264,28 +266,35 @@ class diagnose(Module):
         return True
 
     def diagnose_sql(self):
+        return self.diagnose_db(('sql', 'SQL'), SQL_THR_EVENTS)
+
+    def diagnose_nosql(self):
+        return self.diagnose_db(('cdb', 'NoSQL (CacheDB)'), NOSQL_THR_EVENTS)
+
+    def diagnose_db(self, dbtype, events):
         global thr_summary, thr_slowest
 
         # quickly ensure opensips is running
         ans = comm.execute('get_statistics', {
-                'statistics': ['sql_total_queries', 'sql_slow_queries']
+                'statistics': ['{}_total_queries'.format(dbtype[0]),
+                                '{}_slow_queries'.format(dbtype[0])]
                 })
         if ans is None:
             return
 
         stats = {
-            'ini_total': int(ans['sql:sql_total_queries']),
-            'ini_slow': int(ans['sql:sql_slow_queries']),
+            'ini_total': int(ans['{}:{}_total_queries'.format(dbtype[0], dbtype[0])]),
+            'ini_slow': int(ans['{}:{}_slow_queries'.format(dbtype[0], dbtype[0])]),
             }
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        self.startThresholdListener(SQL_THR_EVENTS)
+        self.startThresholdListener(events)
 
         sec = 0
         try:
             while True:
-                if not self.diagnose_sql_loop(sec, stats):
+                if not self.diagnose_db_loop(sec, stats, dbtype, events):
                     break
                 time.sleep(1)
                 sec += 1
@@ -294,15 +303,18 @@ class diagnose(Module):
         finally:
             self.stopThresholdListener()
 
-    def diagnose_sql_loop(self, sec, stats):
+    def diagnose_db_loop(self, sec, stats, dbtype, events):
         global thr_summary, thr_slowest
+
+        total_stat = '{}_total_queries'.format(dbtype[0])
+        slow_stat = '{}_slow_queries'.format(dbtype[0])
 
         os.system("clear")
         print("In the last {} seconds...".format(sec))
         if not thr_summary:
-            print("    SQL Queries [OK]".format(sec))
+            print("    {} Queries [OK]".format(dbtype[1]))
         else:
-            print("    SQL Queries [WARNING]".format(sec))
+            print("    {} Queries [WARNING]".format(dbtype[1]))
             print("        * Slowest queries:")
             for q in thr_slowest:
                 print("            {}: {} ({} us)".format(q[2], q[1], -q[0]))
@@ -311,28 +323,31 @@ class diagnose(Module):
                 print("            {}: {} ({} times exceeded threshold)".format(
                         q[1][1], q[1][0], q[0]))
 
-        ans = comm.execute('get_statistics', {
-                'statistics': ['sql_total_queries', 'sql_slow_queries']
-                })
+        ans = comm.execute('get_statistics',
+                    {'statistics': [total_stat, slow_stat]
+            })
         if not ans:
             return False
 
         # was opensips restarted in the meantime? if yes, resubscribe!
-        if int(ans['sql:sql_total_queries']) < stats['total']:
-            stats['ini_total'] = int(ans['sql:sql_total_queries'])
-            stats['ini_slow'] = int(ans['sql:sql_slow_queries'])
+        if int(ans["{}:{}".format(dbtype[0], total_stat)]) < stats['total']:
+            stats['ini_total'] = int(ans["{}:{}".format(dbtype[0], total_stat)])
+            stats['ini_slow'] = int(ans["{}:{}".format(dbtype[0], slow_stat)])
             thr_summary = {}
             thr_slowest = []
             sec = 1
-            self.restartThresholdListener(SQL_THR_EVENTS)
+            self.restartThresholdListener(events)
 
-        stats['total'] = int(ans['sql:sql_total_queries']) - stats['ini_total']
-        stats['slow'] = int(ans['sql:sql_slow_queries']) - stats['ini_slow']
+        stats['total'] = int(ans["{}:{}".format(dbtype[0], total_stat)]) - \
+                            stats['ini_total']
+        stats['slow'] = int(ans["{}:{}".format(dbtype[0], slow_stat)]) - \
+                            stats['ini_slow']
 
         print("        * {} / {} queries ({}%) exceeded threshold".format(
             stats['slow'], stats['total'],
             int((stats['slow'] / stats['total']) * 100) \
                     if stats['total'] > 0 else 0))
+        self.print_diag_footer()
 
         return True
 
@@ -341,9 +356,11 @@ class diagnose(Module):
             return self.diagnose_dns()
         elif cmd == 'sql':
             return self.diagnose_sql()
+        elif cmd == 'nosql':
+            return self.diagnose_nosql()
 
     def __complete__(self, command, text, line, begidx, endidx):
         return ['']
 
     def __get_methods__(self):
-        return ['dns', 'sql', 'brief', 'full']
+        return ['dns', 'sql', 'nosql', 'brief', 'full']
