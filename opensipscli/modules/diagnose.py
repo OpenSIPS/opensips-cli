@@ -39,8 +39,7 @@ JSONRPC_RCV_HOST = '127.0.0.1'
 JSONRPC_RCV_PORT = 8888
 
 DNS_THR_EVENTS = ['dns']
-SQL_THR_EVENTS = ['mysql query', 'mysql prep stmt', 'mysql async query',
-                    'pgsql query', 'postgres async query']
+SQL_THR_EVENTS = ['mysql', 'pgsql']
 
 thr_summary = {}
 thr_slowest = []
@@ -145,17 +144,20 @@ class ThresholdListener(StoppableThread):
                             string = string[end:]
                             continue
 
+                        params = obj['params']
+
                         # only process threshold events we're interested in
-                        if events is None or obj['params']['source'] in events:
-                            if 'extra' not in obj['params']:
-                                obj['params']['extra'] = "<unknown>"
+                        if events is None or \
+                                any(params['source'].startswith(e) for e in events):
+                            if 'extra' not in params:
+                                params['extra'] = "<unknown>"
 
                             try:
-                                thr_summary[obj['params']['extra']] += 1
+                                thr_summary[(params['extra'], params['source'])] += 1
                             except:
-                                thr_summary[obj['params']['extra']] = 1
-                            bisect.insort(thr_slowest, (-obj['params']['time'],
-                                                     obj['params']['extra']))
+                                thr_summary[(params['extra'], params['source'])] = 1
+                            bisect.insort(thr_slowest, (-params['time'],
+                                                     params['extra'], params['source']))
                             thr_slowest = thr_slowest[:3]
 
                         string = string[end:]
@@ -183,6 +185,9 @@ class diagnose(Module):
     def restartThresholdListener(self, events):
         self.stopThresholdListener()
         self.startThresholdListener(events)
+
+    def print_diag_footer(self):
+        print("\n{}(press Ctrl-c to exit)".format('\t' * 5))
 
     def diagnose_dns(self):
         global thr_summary, thr_slowest
@@ -230,7 +235,7 @@ class diagnose(Module):
             print("        * Constantly slow queries")
             for q in sorted([(v, k) for k, v in thr_summary.items()], reverse=True)[:3]:
                 print("            {} ({} times exceeded threshold)".format(
-                        q[1], q[0]))
+                        q[1][0], q[0]))
 
         ans = comm.execute('get_statistics', {
                 'statistics': ['dns_total_queries', 'dns_slow_queries']
@@ -254,6 +259,7 @@ class diagnose(Module):
             stats['slow'], stats['total'],
             int((stats['slow'] / stats['total']) * 100) \
                     if stats['total'] > 0 else 0))
+        self.print_diag_footer()
 
         return True
 
@@ -299,11 +305,11 @@ class diagnose(Module):
             print("    SQL Queries [WARNING]".format(sec))
             print("        * Slowest queries:")
             for q in thr_slowest:
-                print("            {} ({} us)".format(q[1], -q[0]))
+                print("            {}: {} ({} us)".format(q[2], q[1], -q[0]))
             print("        * Constantly slow queries")
             for q in sorted([(v, k) for k, v in thr_summary.items()], reverse=True)[:3]:
-                print("            {} ({} times exceeded threshold)".format(
-                        q[1], q[0]))
+                print("            {}: {} ({} times exceeded threshold)".format(
+                        q[1][1], q[1][0], q[0]))
 
         ans = comm.execute('get_statistics', {
                 'statistics': ['sql_total_queries', 'sql_slow_queries']
