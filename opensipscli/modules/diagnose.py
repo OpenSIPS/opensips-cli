@@ -430,6 +430,138 @@ class diagnose(Module):
 
         return True
 
+    def diagnose_mem(self):
+        try:
+            while True:
+                if not self.diagnose_mem_loop():
+                    break
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print('^C')
+
+    def diagnose_mem_loop(self):
+        os.system("clear")
+        ans = comm.execute('get_statistics', {
+                                'statistics': ['shmem:', 'pkmem:']})
+        ps = comm.execute('ps')
+        if ans is None or ps is None:
+            return False
+
+        try:
+            self.diagnose_shm_stats(ans)
+            print()
+            self.diagnose_pkg_stats(ans, ps)
+        except:
+            return False
+
+        self.print_diag_footer()
+        return True
+
+    def diagnose_shm_stats(self, stats):
+        shm_total = int(stats['shmem:total_size'])
+        shm_used = int(stats['shmem:real_used_size'])
+        shm_max_used = int(stats['shmem:max_used_size'])
+
+        usage_perc = int(shm_used / shm_total * 100)
+        max_usage_perc = int(shm_max_used / shm_total * 100)
+
+        if usage_perc <= 70 and max_usage_perc <= 80:
+            shm_status = "OK"
+        elif usage_perc <= 85 and max_usage_perc <= 90:
+            shm_status = "WARNING"
+        else:
+            shm_status = "CRITICAL"
+
+        print("Shared Memory Status")
+        print("--------------------")
+        print("    Current Usage: {} / {} ({}%)".format(human_size(shm_used),
+                    human_size(shm_total), usage_perc))
+        print("    Peak Usage: {} / {} ({}%)".format(human_size(shm_max_used),
+                    human_size(shm_total), max_usage_perc))
+        print()
+
+        if shm_status == "OK":
+            print("    {}: no issues detected.".format(shm_status))
+        elif shm_status == "WARNING":
+            print("""    {}: {} shared memory usage > {}%, please
+             increase the "-m" command line parameter!""".format(shm_status,
+                            "Current" if usage_perc > 70 else "Peak",
+                            70 if usage_perc > 70 else 80))
+        else:
+            print("""    {}: {} shared memory usage > {}%, increase
+              the "-m" command line parameter as soon as possible!!""".format(
+                            shm_status, "Current" if usage_perc > 85 else "Peak",
+                            85 if usage_perc > 85 else 90))
+
+    def diagnose_pkg_stats(self, stats, ps):
+        print("Private Memory Status")
+        print("---------------------")
+
+        pk_total = None
+        for pno in range(1, len(ps['Processes'])):
+            st_used = "pkmem:{}-real_used_size".format(pno)
+            st_free = "pkmem:{}-free_size".format(pno)
+            st_max_used = "pkmem:{}-max_used_size".format(pno)
+            if any(s not in stats for s in [st_used, st_free, st_max_used]):
+                continue
+
+            pk_total = int(stats[st_used]) + int(stats[st_free])
+            if pk_total == 0:
+                continue
+            break
+
+        if not pk_total:
+            return
+
+        print("Each process has {} of private (packaged) memory.\n".format(
+                human_size(pk_total)))
+
+        issues_found = False
+
+        for proc in ps['Processes']:
+            st_used = "pkmem:{}-real_used_size".format(proc['ID'])
+            st_free = "pkmem:{}-free_size".format(proc['ID'])
+            st_max_used = "pkmem:{}-max_used_size".format(proc['ID'])
+            if any(s not in stats for s in [st_used, st_free, st_max_used]):
+                continue
+
+            pk_used = int(stats[st_used])
+            pk_total = pk_used + int(stats[st_free])
+            pk_max_used = int(stats[st_max_used])
+            if pk_total == 0:
+                print("    Process {:>2}: no pkg memory stats found ({})".format(
+                        proc['ID'], proc['Type']))
+                continue
+
+            usage_perc = int(pk_used / pk_total * 100)
+            max_usage_perc = int(pk_max_used / pk_total * 100)
+
+            if usage_perc <= 70 and max_usage_perc <= 80:
+                pk_status = "OK"
+            elif usage_perc <= 85 and max_usage_perc <= 90:
+                pk_status = "WARNING"
+                issues_found = True
+            else:
+                pk_status = "CRITICAL"
+                issues_found = True
+
+            print("    Process {:>2}: {:>2}% usage, {:>2}% peak usage ({})".format(
+                    proc['ID'], usage_perc, max_usage_perc, proc['Type']))
+
+            if pk_status == "WARNING":
+                print("""        {}: {} private memory usage > {}%, please
+                 increase the "-M" command line parameter!""".format(pk_status,
+                                "Current" if usage_perc > 70 else "Peak",
+                                70 if usage_perc > 70 else 80))
+            elif pk_status == "CRITICAL":
+                print("""        {}: {} private memory usage > {}%, increase
+                  the "-M" command line parameter as soon as possible!!""".format(
+                                pk_status, "Current" if usage_perc > 85 else "Peak",
+                                85 if usage_perc > 85 else 90))
+
+        if not issues_found:
+            print("\n    OK: no issues detected.")
+
     def __invoke__(self, cmd, params=None):
         logger.error(params)
         if cmd == 'dns':
@@ -440,12 +572,14 @@ class diagnose(Module):
             return self.diagnose_nosql()
         elif cmd == 'sip':
             return self.diagnose_sip()
+        elif cmd == 'memory':
+            return self.diagnose_mem()
 
     def __complete__(self, command, text, line, begidx, endidx):
         return ['']
 
     def __get_methods__(self):
-        return ['sip', 'dns', 'sql', 'nosql', 'brief', 'full']
+        return ['sip', 'dns', 'sql', 'nosql', 'memory', 'brief', 'full']
 
 def desc_sip_msg(sip_msg):
     """summarizes a SIP message into a useful one-liner"""
@@ -466,6 +600,13 @@ def desc_sip_msg(sip_msg):
         callid = ""
 
     if not desc and not callid:
-        desc = "??? (unknown)"
+        if not sip_msg or not isinstance(sip_msg, str):
+            desc = "??? (unknown)"
+        else:
+            desc = sip_msg[:20]
 
     return "{}{}{}".format(desc, ", " if desc and callid else "", callid)
+
+def human_size(bytes, units=[' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']):
+    """ Returns a human readable string reprentation of bytes"""
+    return str(bytes) + units[0] if bytes < 1024 else human_size(bytes>>10, units[1:])
