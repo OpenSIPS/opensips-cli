@@ -27,6 +27,7 @@ import subprocess
 import shutil
 import time
 import os
+import re
 import time
 import threading
 import bisect
@@ -42,6 +43,7 @@ DNS_THR_EVENTS = ['dns']
 SQL_THR_EVENTS = ['mysql', 'pgsql']
 NOSQL_THR_EVENTS = ['Cassandra', 'cachedb_local', 'MongoDB',
                     'cachedb_memcached', 'cachedb_couchbase']
+SIP_THR_EVENTS = ['msg processing']
 
 thr_summary = {}
 thr_slowest = []
@@ -61,8 +63,15 @@ class StoppableThread(threading.Thread):
 class ThresholdListener(StoppableThread):
     def __init__(self, *args, **kwargs):
         kwargs['target'] = self.listen
-        kwargs['args'] = (kwargs['events'],)
-        del kwargs['events']
+
+        try:
+            kwargs['args'] = (kwargs['events'],)
+            del kwargs['events']
+            self.skip_summ = kwargs['skip_summ']
+            del kwargs['skip_summ']
+        except:
+            self.skip_summ = False
+
         super().__init__(*args, **kwargs)
         self.last_subscribe_ts = 0
 
@@ -154,12 +163,16 @@ class ThresholdListener(StoppableThread):
                             if 'extra' not in params:
                                 params['extra'] = "<unknown>"
 
-                            try:
-                                thr_summary[(params['extra'], params['source'])] += 1
-                            except:
-                                thr_summary[(params['extra'], params['source'])] = 1
+                            if not self.skip_summ:
+                                try:
+                                    thr_summary[(params['extra'],
+                                                params['source'])] += 1
+                                except:
+                                    thr_summary[(params['extra'],
+                                                params['source'])] = 1
+
                             bisect.insort(thr_slowest, (-params['time'],
-                                                     params['extra'], params['source']))
+                                            params['extra'], params['source']))
                             thr_slowest = thr_slowest[:3]
 
                         string = string[end:]
@@ -172,9 +185,9 @@ class diagnose(Module):
         super().__init__(*args, **kwargs)
         self.t = None
 
-    def startThresholdListener(self, events):
+    def startThresholdListener(self, events, skip_summ=False):
         # subscribe and listen for "query threshold exceeded" events
-        self.t = ThresholdListener(events=events)
+        self.t = ThresholdListener(events=events, skip_summ=skip_summ)
         self.t.daemon = True
         self.t.start()
 
@@ -184,16 +197,14 @@ class diagnose(Module):
             self.t.join()
             self.t = None
 
-    def restartThresholdListener(self, events):
+    def restartThresholdListener(self, events, skip_summ=False):
         self.stopThresholdListener()
-        self.startThresholdListener(events)
+        self.startThresholdListener(events, skip_summ)
 
     def print_diag_footer(self):
         print("\n{}(press Ctrl-c to exit)".format('\t' * 5))
 
     def diagnose_dns(self):
-        global thr_summary, thr_slowest
-
         # quickly ensure opensips is running
         ans = comm.execute('get_statistics', {
                 'statistics': ['dns_total_queries', 'dns_slow_queries']
@@ -272,8 +283,6 @@ class diagnose(Module):
         return self.diagnose_db(('cdb', 'NoSQL (CacheDB)'), NOSQL_THR_EVENTS)
 
     def diagnose_db(self, dbtype, events):
-        global thr_summary, thr_slowest
-
         # quickly ensure opensips is running
         ans = comm.execute('get_statistics', {
                 'statistics': ['{}_total_queries'.format(dbtype[0]),
@@ -351,16 +360,112 @@ class diagnose(Module):
 
         return True
 
+    def diagnose_sip(self):
+        # quickly ensure opensips is running
+        ans = comm.execute('get_statistics', {
+                'statistics': ['rcv_requests', 'rcv_replies', 'slow_messages']
+                })
+        if ans is None:
+            return
+
+        stats = {
+            'ini_total': int(ans['core:rcv_requests']) + int(ans['core:rcv_replies']),
+            'ini_slow': int(ans['core:slow_messages']),
+            }
+        stats['total'] = stats['ini_total']
+        stats['slow'] = stats['ini_slow']
+
+        self.startThresholdListener(SIP_THR_EVENTS, skip_summ=True)
+
+        sec = 0
+        try:
+            while True:
+                if not self.diagnose_sip_loop(sec, stats):
+                    break
+                time.sleep(1)
+                sec += 1
+        except KeyboardInterrupt:
+            print('^C')
+        finally:
+            self.stopThresholdListener()
+
+    def diagnose_sip_loop(self, sec, stats):
+        global thr_slowest
+
+        os.system("clear")
+        print("In the last {} seconds...".format(sec))
+        if not thr_slowest:
+            print("    SIP Processing [OK]")
+        else:
+            print("    SIP Processing [WARNING]")
+            print("        * Slowest SIP messages:")
+            for q in thr_slowest:
+                print("            {} ({} us)".format(desc_sip_msg(q[1]), -q[0]))
+
+        ans = comm.execute('get_statistics', {'statistics':
+                            ['rcv_requests', 'rcv_replies', 'slow_messages']})
+        if not ans:
+            return False
+
+        rcv_req = int(ans["core:rcv_requests"])
+        rcv_rpl = int(ans["core:rcv_replies"])
+        slow_msgs = int(ans["core:slow_messages"])
+
+        # was opensips restarted in the meantime? if yes, resubscribe!
+        if rcv_req + rcv_rpl < stats['total']:
+            stats['ini_total'] = rcv_req + rcv_rpl
+            stats['ini_slow'] = slow_msgs
+            thr_slowest = []
+            sec = 1
+            self.restartThresholdListener(SIP_THR_EVENTS, skip_summ=True)
+
+        stats['total'] = rcv_req + rcv_rpl - stats['ini_total']
+        stats['slow'] = slow_msgs - stats['ini_slow']
+
+        print("        * {} / {} SIP messages ({}%) exceeded threshold".format(
+            stats['slow'], stats['total'],
+            int((stats['slow'] / stats['total']) * 100) \
+                    if stats['total'] > 0 else 0))
+        self.print_diag_footer()
+
+        return True
+
     def __invoke__(self, cmd, params=None):
+        logger.error(params)
         if cmd == 'dns':
             return self.diagnose_dns()
         elif cmd == 'sql':
             return self.diagnose_sql()
         elif cmd == 'nosql':
             return self.diagnose_nosql()
+        elif cmd == 'sip':
+            return self.diagnose_sip()
 
     def __complete__(self, command, text, line, begidx, endidx):
         return ['']
 
     def __get_methods__(self):
-        return ['dns', 'sql', 'nosql', 'brief', 'full']
+        return ['sip', 'dns', 'sql', 'nosql', 'brief', 'full']
+
+def desc_sip_msg(sip_msg):
+    """summarizes a SIP message into a useful one-liner"""
+    try:
+        if sip_msg.startswith("SIP/2.0"):
+            # a SIP reply
+            desc = sip_msg[7:sip_msg.find("\r\n")].strip()
+        else:
+            # a SIP request
+            desc = sip_msg[:sip_msg.find("SIP/2.0\r\n")].strip()
+    except:
+        desc = ""
+
+    try:
+        callid = "Call-ID: {}".format(re.search('Call-ID:(.*)\r\n',
+                                    sip_msg, re.IGNORECASE).group(1).strip())
+    except:
+        callid = ""
+
+    if not desc and not callid:
+        desc = "??? (unknown)"
+
+    return "{}{}{}".format(desc, ", " if desc and callid else "", callid)
