@@ -60,9 +60,9 @@ class StoppableThread(threading.Thread):
     def stopped(self):
         return self._stop_event.is_set()
 
-class ThresholdListener(StoppableThread):
+class ThresholdCollector(StoppableThread):
     def __init__(self, *args, **kwargs):
-        kwargs['target'] = self.listen
+        kwargs['target'] = self.collect_events
 
         try:
             kwargs['args'] = (kwargs['events'],)
@@ -97,7 +97,7 @@ class ThresholdListener(StoppableThread):
                 'expire': 0, # there is no "event_unsubscribe", this is good enough
                 }, silent=True)
 
-    def listen(self, events=None):
+    def collect_events(self, events=None):
         global thr_summary, thr_slowest
 
         thr_summary = {}
@@ -124,70 +124,73 @@ class ThresholdListener(StoppableThread):
                     return
 
             with conn:
-                string = ""
-                while True:
-                    self.mi_refresh_sub()
+                self.collect_loop(conn, events)
 
-                    try:
-                        new = conn.recv(1024).decode('utf-8')
-                    except socket.timeout:
-                        new = ""
+    def collect_loop(self, conn, events):
+        global thr_summary, thr_slowest
 
-                    if threading.current_thread().stopped():
-                        self.mi_unsub()
-                        break
+        string = ""
+        while True:
+            self.mi_refresh_sub()
 
-                    if not new:
-                        continue
+            try:
+                new = conn.recv(1024).decode('utf-8')
+            except socket.timeout:
+                new = ""
 
-                    string += new
+            if threading.current_thread().stopped():
+                self.mi_unsub()
+                break
 
-                    decoder = json.JSONDecoder()
-                    idx = WHITESPACE.match(string, 0).end()
-                    while idx < len(string):
+            if not new:
+                continue
+
+            string += new
+
+            decoder = json.JSONDecoder()
+            idx = WHITESPACE.match(string, 0).end()
+            while idx < len(string):
+                try:
+                    obj, end = decoder.raw_decode(string, idx)
+                except json.decoder.JSONDecodeError:
+                    # partial JSON -- just let it accumulate
+                    break
+
+                if 'params' not in obj:
+                    string = string[end:]
+                    continue
+
+                params = obj['params']
+
+                # only process threshold events we're interested in
+                if events is None or \
+                        any(params['source'].startswith(e) for e in events):
+                    if 'extra' not in params:
+                        params['extra'] = "<unknown>"
+
+                    if not self.skip_summ:
                         try:
-                            obj, end = decoder.raw_decode(string, idx)
-                        except json.decoder.JSONDecodeError:
-                            # partial JSON -- just let it accumulate
-                            break
+                            thr_summary[(params['extra'],
+                                        params['source'])] += 1
+                        except:
+                            thr_summary[(params['extra'],
+                                        params['source'])] = 1
 
-                        if 'params' not in obj:
-                            string = string[end:]
-                            continue
+                    bisect.insort(thr_slowest, (-params['time'],
+                                    params['extra'], params['source']))
+                    thr_slowest = thr_slowest[:3]
 
-                        params = obj['params']
-
-                        # only process threshold events we're interested in
-                        if events is None or \
-                                any(params['source'].startswith(e) for e in events):
-                            if 'extra' not in params:
-                                params['extra'] = "<unknown>"
-
-                            if not self.skip_summ:
-                                try:
-                                    thr_summary[(params['extra'],
-                                                params['source'])] += 1
-                                except:
-                                    thr_summary[(params['extra'],
-                                                params['source'])] = 1
-
-                            bisect.insort(thr_slowest, (-params['time'],
-                                            params['extra'], params['source']))
-                            thr_slowest = thr_slowest[:3]
-
-                        string = string[end:]
-                        idx = WHITESPACE.match(string, 0).end()
-
-                conn.close()
+                string = string[end:]
+                idx = WHITESPACE.match(string, 0).end()
 
 class diagnose(Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.t = None
 
-    def startThresholdListener(self, events, skip_summ=False):
-        # subscribe and listen for "query threshold exceeded" events
-        self.t = ThresholdListener(events=events, skip_summ=skip_summ)
+    def startThresholdCollector(self, events, skip_summ=False):
+        # subscribe for, then collect "query threshold exceeded" events
+        self.t = ThresholdCollector(events=events, skip_summ=skip_summ)
         self.t.daemon = True
         self.t.start()
         for i in range(15):
@@ -197,19 +200,19 @@ class diagnose(Module):
 
         logger.error("Failed to subscribe for JSON-RPC events")
         logger.error("Is the event_jsonrpc.so OpenSIPS module loaded?")
-        self.stopThresholdListener()
+        self.stopThresholdCollector()
 
         return False
 
-    def stopThresholdListener(self):
+    def stopThresholdCollector(self):
         if self.t:
             self.t.stop()
             self.t.join()
             self.t = None
 
-    def restartThresholdListener(self, events, skip_summ=False):
-        self.stopThresholdListener()
-        return self.startThresholdListener(events, skip_summ)
+    def restartThresholdCollector(self, events, skip_summ=False):
+        self.stopThresholdCollector()
+        return self.startThresholdCollector(events, skip_summ)
 
     def print_diag_footer(self):
         print("\n{}(press Ctrl-c to exit)".format('\t' * 5))
@@ -229,7 +232,7 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        if not self.startThresholdListener(DNS_THR_EVENTS):
+        if not self.startThresholdCollector(DNS_THR_EVENTS):
             return
 
         sec = 0
@@ -242,7 +245,7 @@ class diagnose(Module):
         except KeyboardInterrupt:
             print('^C')
         finally:
-            self.stopThresholdListener()
+            self.stopThresholdCollector()
 
     def diagnose_dns_loop(self, sec, stats):
         global thr_summary, thr_slowest
@@ -274,7 +277,7 @@ class diagnose(Module):
             thr_summary = {}
             thr_slowest = []
             sec = 1
-            if not self.restartThresholdListener(DNS_THR_EVENTS):
+            if not self.restartThresholdCollector(DNS_THR_EVENTS):
                 return
 
         stats['total'] = int(ans['dns:dns_total_queries']) - stats['ini_total']
@@ -310,7 +313,7 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        if not self.startThresholdListener(events):
+        if not self.startThresholdCollector(events):
             return
 
         sec = 0
@@ -323,7 +326,7 @@ class diagnose(Module):
         except KeyboardInterrupt:
             print('^C')
         finally:
-            self.stopThresholdListener()
+            self.stopThresholdCollector()
 
     def diagnose_db_loop(self, sec, stats, dbtype, events):
         global thr_summary, thr_slowest
@@ -358,7 +361,7 @@ class diagnose(Module):
             thr_summary = {}
             thr_slowest = []
             sec = 1
-            if not self.restartThresholdListener(events):
+            if not self.restartThresholdCollector(events):
                 return
 
         stats['total'] = int(ans["{}:{}".format(dbtype[0], total_stat)]) - \
@@ -389,7 +392,7 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        if not self.startThresholdListener(SIP_THR_EVENTS, skip_summ=True):
+        if not self.startThresholdCollector(SIP_THR_EVENTS, skip_summ=True):
             return
 
         sec = 0
@@ -402,7 +405,7 @@ class diagnose(Module):
         except KeyboardInterrupt:
             print('^C')
         finally:
-            self.stopThresholdListener()
+            self.stopThresholdCollector()
 
     def diagnose_sip_loop(self, sec, stats):
         global thr_slowest
@@ -432,7 +435,7 @@ class diagnose(Module):
             stats['ini_slow'] = slow_msgs
             thr_slowest = []
             sec = 1
-            if not self.restartThresholdListener(SIP_THR_EVENTS, skip_summ=True):
+            if not self.restartThresholdCollector(SIP_THR_EVENTS, skip_summ=True):
                 return
 
         stats['total'] = rcv_req + rcv_rpl - stats['ini_total']
