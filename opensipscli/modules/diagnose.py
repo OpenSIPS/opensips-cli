@@ -80,14 +80,14 @@ class ThresholdListener(StoppableThread):
         if now <= self.last_subscribe_ts + 5:
             return
 
-        comm.execute("event_subscribe", {
+        ans = comm.execute("event_subscribe", {
                 'event': 'E_CORE_THRESHOLD',
                 'socket': 'jsonrpc:{}:{}'.format(
                             JSONRPC_RCV_HOST, JSONRPC_RCV_PORT),
                 'expire': 10,
-                })
+                }, silent=True)
 
-        self.last_subscribe_ts = now
+        self.last_subscribe_ts = now if ans == "OK" else 0
 
     def mi_unsub(self):
         comm.execute("event_subscribe", {
@@ -95,7 +95,7 @@ class ThresholdListener(StoppableThread):
                 'socket': 'jsonrpc:{}:{}'.format(
                             JSONRPC_RCV_HOST, JSONRPC_RCV_PORT),
                 'expire': 0, # there is no "event_unsubscribe", this is good enough
-                })
+                }, silent=True)
 
     def listen(self, events=None):
         global thr_summary, thr_slowest
@@ -190,6 +190,16 @@ class diagnose(Module):
         self.t = ThresholdListener(events=events, skip_summ=skip_summ)
         self.t.daemon = True
         self.t.start()
+        for i in range(15):
+            if self.t.last_subscribe_ts != 0:
+                return True
+            time.sleep(0.05)
+
+        logger.error("Failed to subscribe for JSON-RPC events")
+        logger.error("Is the event_jsonrpc.so OpenSIPS module loaded?")
+        self.stopThresholdListener()
+
+        return False
 
     def stopThresholdListener(self):
         if self.t:
@@ -199,7 +209,7 @@ class diagnose(Module):
 
     def restartThresholdListener(self, events, skip_summ=False):
         self.stopThresholdListener()
-        self.startThresholdListener(events, skip_summ)
+        return self.startThresholdListener(events, skip_summ)
 
     def print_diag_footer(self):
         print("\n{}(press Ctrl-c to exit)".format('\t' * 5))
@@ -219,7 +229,8 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        self.startThresholdListener(DNS_THR_EVENTS)
+        if not self.startThresholdListener(DNS_THR_EVENTS):
+            return
 
         sec = 0
         try:
@@ -263,7 +274,8 @@ class diagnose(Module):
             thr_summary = {}
             thr_slowest = []
             sec = 1
-            self.restartThresholdListener(DNS_THR_EVENTS)
+            if not self.restartThresholdListener(DNS_THR_EVENTS):
+                return
 
         stats['total'] = int(ans['dns:dns_total_queries']) - stats['ini_total']
         stats['slow'] = int(ans['dns:dns_slow_queries']) - stats['ini_slow']
@@ -298,7 +310,8 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        self.startThresholdListener(events)
+        if not self.startThresholdListener(events):
+            return
 
         sec = 0
         try:
@@ -345,7 +358,8 @@ class diagnose(Module):
             thr_summary = {}
             thr_slowest = []
             sec = 1
-            self.restartThresholdListener(events)
+            if not self.restartThresholdListener(events):
+                return
 
         stats['total'] = int(ans["{}:{}".format(dbtype[0], total_stat)]) - \
                             stats['ini_total']
@@ -375,7 +389,8 @@ class diagnose(Module):
         stats['total'] = stats['ini_total']
         stats['slow'] = stats['ini_slow']
 
-        self.startThresholdListener(SIP_THR_EVENTS, skip_summ=True)
+        if not self.startThresholdListener(SIP_THR_EVENTS, skip_summ=True):
+            return
 
         sec = 0
         try:
@@ -417,7 +432,8 @@ class diagnose(Module):
             stats['ini_slow'] = slow_msgs
             thr_slowest = []
             sec = 1
-            self.restartThresholdListener(SIP_THR_EVENTS, skip_summ=True)
+            if not self.restartThresholdListener(SIP_THR_EVENTS, skip_summ=True):
+                return
 
         stats['total'] = rcv_req + rcv_rpl - stats['ini_total']
         stats['slow'] = slow_msgs - stats['ini_slow']
@@ -563,7 +579,6 @@ class diagnose(Module):
             print("\n    OK: no issues detected.")
 
     def __invoke__(self, cmd, params=None):
-        logger.error(params)
         if cmd == 'dns':
             return self.diagnose_dns()
         elif cmd == 'sql':

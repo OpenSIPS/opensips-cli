@@ -34,16 +34,18 @@ def initialize():
         logger.error("cannot import '{}' handler: {}"
             .format(comm_type, ie))
 
-def execute(cmd, params=[]):
+def execute(cmd, params=[], silent=False):
     global comm_handler
     try:
         ret = comm_handler.execute(cmd, params)
     except communication.jsonrpc_helper.JSONRPCError as ex:
-        logger.error("command '{}' returned: {}".format(cmd, ex))
+        if not silent:
+            logger.error("command '{}' returned: {}".format(cmd, ex))
         return None
     except communication.jsonrpc_helper.JSONRPCException as ex:
-        logger.error("communication exception for '{}' returned: {}".format(cmd, ex))
-        logger.error("Is OpenSIPS running?")
+        if not silent:
+            logger.error("communication exception for '{}' returned: {}".format(cmd, ex))
+            logger.error("Is OpenSIPS running?")
         return None
     return ret
 
