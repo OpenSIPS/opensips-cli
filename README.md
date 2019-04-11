@@ -70,17 +70,17 @@ CLI searches for one in the following locations, in this exact order:
 
 The OpenSIPS CLI core can use the following parameters:
 
-* `prompt_name`: The name of the OpenSIPS CLI prompt (Defaults to `opensips-cli`)
+* `prompt_name`: The name of the OpenSIPS CLI prompt (Default: `opensips-cli`)
 * `prompt_intro`: Introduction message when entering the OpenSIPS CLI
-* `history_file`: The path of the history file (Defaults to `~/.opensips-cli.history`)
-* `history_file_size`: The backlog size of the history file (Defaults to
-`1000`)
-* `log_level`: The level of the console logging (Defaults to `WARNING`)
-* `communication_type`: Communication transport used by OpenSIPS CLI (Defaults
-to `fifo`)
-* `fifo_file`: The file OpenSIPS uses to communicate with OpenSIPS through
+* `prompt_emptyline_repeat_cmd`: Repeat the last command on an emptyline (Default: `False`)
+* `history_file`: The path of the history file (Default: `~/.opensips-cli.history`)
+* `history_file_size`: The backlog size of the history file (Default: `1000`)
+* `log_level`: The level of the console logging (Default: `WARNING`)
+* `communication_type`: Communication transport used by OpenSIPS CLI (Default: `fifo`)
+* `fifo_file`: The OpenSIPS FIFO file to which the CLI will write commands
+(Default: `/tmp/opensips_fifo`)
 * `url`: The default URL used when `http` `communication_type` is used
-(Defaults to `http://127.0.0.1:8888/json`).
+(Default: `http://127.0.0.1:8888/json`).
 
 Each module can use each of the parameters above, but can also declare their
 own. You can find in each module's documentation page the parameters that they

@@ -207,6 +207,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # any other commands exits with negative value
         return -1
 
+    def emptyline(self):
+        if cfg.getBool('prompt_emptyline_repeat_cmd'):
+            super().emptyline()
+
     def complete_modules(self, text):
         l = [a for a in self.modules.keys() if a.startswith(text)]
         if len(l) == 1:
