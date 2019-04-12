@@ -33,6 +33,12 @@ import threading
 import bisect
 import random
 
+try:
+    import psutil
+    have_psutil = True
+except:
+    have_psutil = False
+
 import json
 from json.decoder import WHITESPACE
 
@@ -581,6 +587,225 @@ class diagnose(Module):
         if not issues_found:
             print("\n    OK: no issues detected.")
 
+    def diagnose_load(self, transports):
+        """first, we group processes by scope/interface!"""
+        pgroups = self.get_opensips_pgroups()
+        if pgroups is None:
+            return False
+        ppgroups = [pgroups]
+
+        try:
+            while True:
+                if not self.diagnose_load_loop(ppgroups, transports):
+                    break
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print('^C')
+
+    def diagnose_load_loop(self, ppgroups, transports):
+        pgroups = ppgroups[0]
+        os.system("clear")
+
+        print("{}OpenSIPS Processing Status".format(25 * " "))
+        print()
+
+        load = comm.execute('get_statistics', {
+                                'statistics': ['load:', 'timestamp']})
+        if not load:
+            return False
+
+        # if opensips restarted in the meantime -> refresh the proc groups
+        if 'ts' in pgroups and int(load['core:timestamp']) < pgroups['ts']:
+            pgroups = self.get_opensips_pgroups()
+            pgroups['ts'] = int(load['core:timestamp'])
+            ppgroups[0] = pgroups
+        else:
+            pgroups['ts'] = int(load['core:timestamp'])
+
+        # fetch the network waiting queues
+        try:
+            # TODO: add Debian/Red Hat logic for the ss path (@ startup?)
+            p1 = subprocess.Popen(['ss', '-uln'], stdout=subprocess.PIPE)
+            net_wait = p1.communicate()[0].decode('utf-8').splitlines()[1:]
+        except:
+            net_wait = None
+
+        if 'udp' in transports and pgroups['udp']:
+            self.diagnose_transport_load('udp', pgroups, load, net_wait)
+
+        if 'tcp' in transports and pgroups['tcp']:
+            self.diagnose_transport_load('tcp', pgroups, load, net_wait)
+
+        if 'hep' in transports and pgroups['hep']:
+            self.diagnose_transport_load('hep', pgroups, load, net_wait)
+
+        print()
+        print("Info: the load percentages represent the amount of time spent by an")
+        print("      OpenSIPS worker processing SIP messages, as opposed to waiting")
+        print("      for new ones.  The three numbers represent the 'busy' percentage")
+        print("      over the last 1 sec, last 1 min and last 10 min, respectively.")
+        self.print_diag_footer()
+
+        return True
+
+    def diagnose_transport_load(self, transport, pgroups, load, net_wait):
+        for i, (iface, procs) in enumerate(pgroups[transport].items()):
+            # TODO: add SCTP support
+            if iface != 'TCP' and not iface.startswith('{}'.format(transport)):
+                continue
+
+            recvq = None
+
+            if iface == 'TCP':
+                print("TCP Processing")
+            else:
+                print("{} UDP Interface #{} ({})".format(
+                        'HEP' if transport == 'hep' else 'SIP',
+                        i + 1, iface))
+                try:
+                    for line in net_wait:
+                        line = line.split()
+                        if iface.startswith("hep_"):
+                            iface = iface[4:]
+                        if iface[4:] == line[3]:
+                            recvq = int(line[1])
+                            break
+                except:
+                    pass
+
+                print("    Receive Queue: {}".format(
+                        "???" if recvq is None else human_size(recvq)))
+
+            tot_cpu = 0.0
+            tot_l1 = 0
+            tot_l2 = 0
+            tot_l3 = 0
+            proc_lines = []
+            for proc in procs:
+                try:
+                    l1 = int(load['load:load-proc-{}'.format(proc['ID'])])
+                    tot_l1 += l1
+                except:
+                    l1 = "??"
+
+                try:
+                    l2 = int(load['load:load1m-proc-{}'.format(proc['ID'])])
+                    tot_l2 += l2
+                except:
+                    l2 = "??"
+
+                try:
+                    l3 = int(load['load:load10m-proc-{}'.format(proc['ID'])])
+                    tot_l3 += l3
+                except:
+                    l3 = "??"
+
+                proc_lines.append(
+                    "    Process {:>2} load: {:>2}%, {:>2}%, {:>2}% ({})".format(
+                    proc['ID'], l1, l2, l3, proc['Type']))
+
+                if have_psutil:
+                    try:
+                        tot_cpu += proc['cpumon'].cpu_percent(interval=None)
+                    except psutil._exceptions.NoSuchProcess:
+                        """opensips may be restarted in the meantime!"""
+
+            avg_cpu = round(tot_cpu / len(procs))
+            print("    Avg. CPU usage: {}% (last 1 sec)".format(avg_cpu))
+            print()
+
+            for proc_line in proc_lines:
+                print(proc_line)
+            print()
+
+            if recvq:
+                print("    WARNING: the receive queue is NOT empty, SIP signaling may be slower!")
+
+            tot_l1 = round(tot_l1 / len(procs))
+            tot_l2 = round(tot_l2 / len(procs))
+            tot_l3 = round(tot_l3 / len(procs))
+
+            severity = "WARNING"
+
+            if tot_l1 > 50:
+                if tot_l1 > 80:
+                    severity = "CRITICAL"
+                print("    {}: {}% avg. currently used worker capacity!!".format(
+                            severity, tot_l1))
+            elif tot_l2 > 50:
+                if tot_l2 > 80:
+                    severity = "CRITICAL"
+                print("    {}: {}% avg. used worker capacity over the last 1 minute!".format(
+                            severity, tot_l2))
+            elif tot_l3 > 50:
+                if tot_l3 > 80:
+                    severity = "CRITICAL"
+                print("    {}: {}% avg. used worker capacity over the last 10 minutes!".format(
+                            severity, tot_l3))
+            else:
+                if not recvq:
+                    print("    OK: no issues detected.")
+                print("-" * 70)
+                continue
+
+            if not have_psutil:
+                print("""\n    Suggestion: see the DNS/SQL/NoSQL diagnosis for any slow query
+                reports, otherwise increase 'use_workers' or 'udp_workers'!""")
+                print("-" * 70)
+                continue
+
+            if avg_cpu > 25:
+                if avg_cpu > 50:
+                    severity = "CRITICAL"
+                else:
+                    severity = "WARNING"
+                print("    {}: CPU intensive workload detected!".format(severity))
+                print("""\n    Suggestion: increase the 'use_workers' or 'udp_workers'
+                OpenSIPS settings or add more servers!""")
+            else:
+                print("    {}: I/O intensive (blocking) workload detected!".format(severity))
+                print("""\n    Suggestion: see the DNS/SQL/NoSQL diagnosis for any slow query
+                reports, otherwise increase 'use_workers' or 'udp_workers'!""")
+
+            print("-" * 70)
+
+    def get_opensips_pgroups(self):
+        ps = comm.execute('ps')
+        if ps is None:
+            return None
+
+        pgroups = {
+            'udp': {},
+            'tcp': {},
+            'hep': {},
+            }
+        for proc in ps['Processes']:
+            if have_psutil:
+                proc['cpumon'] = psutil.Process(proc['PID'])
+                proc['cpumon'].cpu_percent(interval=None) # begin cyle count
+
+            if proc['Type'].startswith("TCP "):
+                """ OpenSIPS TCP is simplified, but normalize the format"""
+                try:
+                    pgroups['tcp']['TCP'].append(proc)
+                except:
+                    pgroups['tcp']['TCP'] = [proc]
+            elif "hep_" in proc['Type']:
+                if proc['Type'].startswith("SIP"):
+                    proc['Type'] = "HEP" + proc['Type'][3:]
+
+                try:
+                    pgroups['hep'][proc['Type'][13:]].append(proc)
+                except:
+                    pgroups['hep'][proc['Type'][13:]] = [proc]
+            elif proc['Type'].startswith("SIP receiver "):
+                try:
+                    pgroups['udp'][proc['Type'][13:]].append(proc)
+                except:
+                    pgroups['udp'][proc['Type'][13:]] = [proc]
+
+        return pgroups
+
     def __invoke__(self, cmd, params=None):
         if cmd == 'dns':
             return self.diagnose_dns()
@@ -592,12 +817,16 @@ class diagnose(Module):
             return self.diagnose_sip()
         elif cmd == 'memory':
             return self.diagnose_mem()
+        elif cmd == 'load':
+            if not params:
+                params = ['udp', 'tcp', 'hep']
+            return self.diagnose_load(params)
 
     def __complete__(self, command, text, line, begidx, endidx):
         return ['']
 
     def __get_methods__(self):
-        return ['sip', 'dns', 'sql', 'nosql', 'memory', 'brief', 'full']
+        return ['sip', 'dns', 'sql', 'nosql', 'memory', 'load', 'brief', 'full']
 
 def desc_sip_msg(sip_msg):
     """summarizes a SIP message into a useful one-liner"""
