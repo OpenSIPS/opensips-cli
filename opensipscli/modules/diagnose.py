@@ -750,7 +750,8 @@ class diagnose(Module):
 
             if not have_psutil:
                 print("""\n    Suggestion: see the DNS/SQL/NoSQL diagnosis for any slow query
-                reports, otherwise increase 'use_workers' or 'udp_workers'!""")
+                reports, otherwise increase 'use_workers' or '{}_workers'!""".format(
+                    "tcp" if transport == "tcp" else "udp"))
                 print("-" * 70)
                 continue
 
@@ -760,12 +761,14 @@ class diagnose(Module):
                 else:
                     severity = "WARNING"
                 print("    {}: CPU intensive workload detected!".format(severity))
-                print("""\n    Suggestion: increase the 'use_workers' or 'udp_workers'
-                OpenSIPS settings or add more servers!""")
+                print("""\n    Suggestion: increase the 'use_workers' or '{}_workers'
+                OpenSIPS settings or add more servers!""".format(
+                        "tcp" if transport == "tcp" else "udp"))
             else:
                 print("    {}: I/O intensive (blocking) workload detected!".format(severity))
                 print("""\n    Suggestion: see the DNS/SQL/NoSQL diagnosis for any slow query
-                reports, otherwise increase 'use_workers' or 'udp_workers'!""")
+                reports, otherwise increase 'use_workers' or '{}_workers'!""".format(
+                        "tcp" if transport == "tcp" else "udp"))
 
             print("-" * 70)
 
@@ -806,18 +809,194 @@ class diagnose(Module):
 
         return pgroups
 
+    def diagnosis_summary(self):
+        try:
+            while True:
+                if not self.diagnosis_summary_loop():
+                    break
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print('^C')
+
+    def diagnosis_summary_loop(self):
+        stats = comm.execute('get_statistics', {
+            'statistics': [
+                'load', 'load1m', 'load10m', 'total_size', 'real_used_size',
+                'max_used_size',  'rcv_requests', 'rcv_replies', 'processes_number',
+                'slow_messages', 'pkmem:', 'dns:', 'sql:', 'cdb:'
+                ]})
+        if not stats:
+            return False
+
+        os.system("clear")
+        print("{}OpenSIPS Overview".format(" " * 25))
+        print("{}-----------------".format(" " * 25))
+
+        if 'load:load' in stats:
+            l1 = int(stats['load:load'])
+            l2 = int(stats['load:load1m'])
+            l3 = int(stats['load:load10m'])
+            if l1 > 20 or l2 > 20 or l3 > 20:
+                if l1 > 40 or l2 > 40 or l3 > 40:
+                    if l1 > 66 or l2 > 66 or l3 > 66:
+                        severity = "CRITICAL"
+                    else:
+                        severity = "WARNING"
+                else:
+                    severity = "NOTICE"
+            else:
+                severity = "OK"
+
+            print("Worker Capacity: {}{}".format(severity, "" if severity == "OK" else \
+                " (run 'diagnose load' for more info)"))
+
+        if 'shmem:total_size' in stats:
+            used = int(stats['shmem:real_used_size'])
+            max_used = int(stats['shmem:max_used_size'])
+            total = int(stats['shmem:total_size'])
+
+            used_perc = round(used / total * 100)
+            max_used_perc = round(max_used / total * 100)
+            if used_perc > 70 or max_used_perc > 80:
+                if used_perc > 85 or max_used_perc > 90:
+                    severity = "CRITICAL"
+                else:
+                    severity = "WARNING"
+            else:
+                severity = "OK"
+
+            print("{:<16} {}{}".format("Shared Memory:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose memory' for more info)"))
+
+        if 'load:processes_number' in stats:
+            procs = int(stats['load:processes_number'])
+
+            severity = "OK"
+
+            for proc in range(1, procs):
+                used = int(stats['pkmem:{}-real_used_size'.format(proc)])
+                total = used + int(stats['pkmem:{}-free_size'.format(proc)])
+                max_used = int(stats['pkmem:{}-max_used_size'.format(proc)])
+                if total == 0:
+                    continue
+
+                used_perc = round(used / total * 100)
+                max_used_perc = round(max_used / total * 100)
+
+                if used_perc > 70 or max_used_perc > 80:
+                    if used_perc > 85 or max_used_perc > 90:
+                        severity = "CRITICAL"
+                        break
+                    else:
+                        severity = "WARNING"
+
+            print("{:<16} {}{}".format("Private Memory:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose memory' for more info)"))
+
+        if 'core:slow_messages' in stats:
+            slow = int(stats['core:slow_messages'])
+            total = int(stats['core:rcv_requests']) + int(stats['core:rcv_replies'])
+
+            try:
+                slow_perc = round(slow / total * 100)
+            except:
+                slow_perc = 0
+
+            if 0 <= slow_perc <= 1:
+                severity = "OK"
+            elif 2 <= slow_perc <= 5:
+                severity = "NOTICE"
+            elif 6 <= slow_perc <= 50:
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+
+            print("{:<16} {}{}".format("SIP Processing:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose sip' for more info)"))
+
+        if 'dns:dns_slow_queries' in stats:
+            slow = int(stats['dns:dns_slow_queries'])
+            total = int(stats['dns:dns_total_queries'])
+
+            slow_perc = round(slow / total * 100)
+
+            if 0 <= slow_perc <= 1:
+                severity = "OK"
+            elif 2 <= slow_perc <= 5:
+                severity = "NOTICE"
+            elif 6 <= slow_perc <= 50:
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+
+            print("{:<16} {}{}".format("DNS Queries:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose dns' for more info)"))
+
+        if 'sql:sql_slow_queries' in stats:
+            slow = int(stats['sql:sql_slow_queries'])
+            total = int(stats['sql:sql_total_queries'])
+
+            try:
+                slow_perc = round(slow / total * 100)
+            except:
+                slow_perc = 0
+
+            if 0 <= slow_perc <= 1:
+                severity = "OK"
+            elif 2 <= slow_perc <= 5:
+                severity = "NOTICE"
+            elif 6 <= slow_perc <= 50:
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+
+            print("{:<16} {}{}".format("SQL queries:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose sql' for more info)"))
+
+        if 'cdb:cdb_slow_queries' in stats:
+            slow = int(stats['cdb:cdb_slow_queries'])
+            total = int(stats['cdb:cdb_total_queries'])
+
+            try:
+                slow_perc = round(slow / total * 100)
+            except:
+                slow_perc = 0
+
+            if 0 <= slow_perc <= 1:
+                severity = "OK"
+            elif 2 <= slow_perc <= 5:
+                severity = "NOTICE"
+            elif 6 <= slow_perc <= 50:
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+
+            print("{:<16} {}{}".format("NoSQL Queries:", severity,
+                "" if severity == "OK" else \
+                " (run 'diagnose nosql' for more info)"))
+
+        self.print_diag_footer()
+        return True
+
     def __invoke__(self, cmd, params=None):
+        if cmd is None:
+            return self.diagnosis_summary()
         if cmd == 'dns':
             return self.diagnose_dns()
-        elif cmd == 'sql':
+        if cmd == 'sql':
             return self.diagnose_sql()
-        elif cmd == 'nosql':
+        if cmd == 'nosql':
             return self.diagnose_nosql()
-        elif cmd == 'sip':
+        if cmd == 'sip':
             return self.diagnose_sip()
-        elif cmd == 'memory':
+        if cmd == 'memory':
             return self.diagnose_mem()
-        elif cmd == 'load':
+        if cmd == 'load':
             if not params:
                 params = ['udp', 'tcp', 'hep']
             return self.diagnose_load(params)
@@ -826,7 +1005,7 @@ class diagnose(Module):
         return ['']
 
     def __get_methods__(self):
-        return ['sip', 'dns', 'sql', 'nosql', 'memory', 'load', 'brief', 'full']
+        return ['', 'sip', 'dns', 'sql', 'nosql', 'memory', 'load', 'brief', 'full']
 
 def desc_sip_msg(sip_msg):
     """summarizes a SIP message into a useful one-liner"""
@@ -856,4 +1035,5 @@ def desc_sip_msg(sip_msg):
 
 def human_size(bytes, units=[' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']):
     """ Returns a human readable string reprentation of bytes"""
-    return str(bytes) + units[0] if bytes < 1024 else human_size(bytes>>10, units[1:])
+    return "{:.1f}".format(bytes) + units[0] \
+            if bytes < 1024 else human_size(bytes / 1024, units[1:])
