@@ -50,6 +50,7 @@ DEFAULT_VALUES = {
     # CLI settings
     "prompt_name": "opensips-cli",
     "prompt_intro": "Welcome to OpenSIPS Command Line Interface!",
+    "prompt_emptyline_repeat_cmd": "False",
     "history_file": HISTORY_FILE,
     "history_file_size": "1000",
     "output_type": "pretty-print",
@@ -66,7 +67,7 @@ DEFAULT_VALUES = {
     "database_password": "opensipsrw",
 
     # user module
-    "plain_text_passwords": False,
+    "plain_text_passwords": "False",
 }
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

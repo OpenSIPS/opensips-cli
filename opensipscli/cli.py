@@ -207,6 +207,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # any other commands exits with negative value
         return -1
 
+    def emptyline(self):
+        if cfg.getBool('prompt_emptyline_repeat_cmd'):
+            super().emptyline()
+
     def complete_modules(self, text):
         l = [a for a in self.modules.keys() if a.startswith(text)]
         if len(l) == 1:
@@ -275,11 +279,11 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             cmd = mod[0].__module__
             if cmd.startswith("opensipscli.modules."):
                 cmd = cmd[20:]
-        elif not cmd:
-           logger.error("module '{}' expects to run one of {} commands".
+        elif not cmd and '' not in mod[1]:
+            logger.error("module '{}' expects the following commands: {}".
                    format(module, ", ".join(mod[1])))
-           return -1
-        elif not cmd in mod[1]:
+            return -1
+        elif cmd and not cmd in mod[1]:
             logger.error("no command '{}' in module '{}'".
                     format(cmd, module))
             return -1
