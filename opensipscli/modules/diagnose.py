@@ -1002,7 +1002,15 @@ class diagnose(Module):
             return self.diagnose_load(params)
 
     def __complete__(self, command, text, line, begidx, endidx):
-        return ['']
+        if command != 'load':
+            return ['']
+
+        transports = ['udp', 'tcp', 'hep']
+        if not text:
+            return transports
+
+        ret = [t for t in transports if t.startswith(text)]
+        return ret if ret else ['']
 
     def __get_methods__(self):
         return ['', 'sip', 'dns', 'sql', 'nosql', 'memory', 'load', 'brief', 'full']
