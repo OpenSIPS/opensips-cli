@@ -92,10 +92,11 @@ The OpenSIPS CLI tool consists of the following modules:
 * [Management Interface](docs/modules/mi.md) - run MI commands
 * [Database](docs/modules/database.md) - commands to create, modify, drop, or
 migrate an OpenSIPS database
+* [Diagnose](docs/modules/diagnose.md) - instantly diagnose OpenSIPS instances
 * [Instance](docs/modules/instance.md) - used to switch through different
 instances/configuration within the config file
 * [User](docs/modules/user.md) - utility used to add and remove OpenSIPS users
-* [Trap](docs/modules/trap.md) - trap with gdb OpenSIPS processes
+* [Trap](docs/modules/trap.md) - use `gdb` to take snapshots of OpenSIPS workers
 
 ## Communication
 
