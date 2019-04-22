@@ -38,6 +38,8 @@ class Module:
 
     # returns a list with all the auto-completion values
     def __complete__(self, command, text, line, begidx, endidx):
+        if not command:
+            return ['']
         try:
             compfunc = getattr(self, 'complete_' + command)
             l = compfunc(text, line, begidx, endidx)

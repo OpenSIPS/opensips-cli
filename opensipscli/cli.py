@@ -221,17 +221,16 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
         # builtin commands
         params = line.split()
-        if len(params) < 2 or len(params) == 2 and line[-1] != ' ':
-            # still looking for a module's command
-            if module[1] is None or len(module[1]) == 0:
-                return ['']
+        if module[1] is not None and \
+                (len(params) < 2 or (len(params) == 2 and line[-1] != ' ')):
             l = [a for a in module[1] if a.startswith(text)]
             if len(l) == 1:
                 l[0] += " "
         else:
             try:
                 compfunc = getattr(module[0], '__complete__')
-                l = module[0].__complete__(params[1], text, line, begidx, endidx)
+                p = params[1] if len(params) > 1 and line[-1] != ' ' else None
+                l = compfunc(p, text, line, begidx, endidx)
                 if not l:
                     return None
             except AttributeError:
