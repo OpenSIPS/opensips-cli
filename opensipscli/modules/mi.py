@@ -39,6 +39,7 @@ MI_ARRAY_PARAMS_COMMANDS = {
     "b2b_trigger_scenario": (1, "scenario_params"),
     "dlg_push_var": (2, "DID"),
     "get_statistics": (0, "statistics"),
+    "trace_start": (0, "filter"),
 }
 
 class mi(Module):
