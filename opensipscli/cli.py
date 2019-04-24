@@ -229,7 +229,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         else:
             try:
                 compfunc = getattr(module[0], '__complete__')
-                p = params[1] if len(params) > 1 and line[-1] != ' ' else None
+                p = params[1] if len(params) > 1 else None
                 l = compfunc(p, text, line, begidx, endidx)
                 if not l:
                     return None
