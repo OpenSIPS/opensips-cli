@@ -111,7 +111,7 @@ Install the `opensips-cli` tool using `setuptools` by running in the root of
 the project:
 
 ```
-python setup.py install
+python3 setup.py install
 ```
 
 ## Contribute
