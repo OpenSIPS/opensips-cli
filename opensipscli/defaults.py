@@ -27,12 +27,16 @@ VERSION = '0.1'
 
 DEFAULT_SECTION = 'default'
 DEFAULT_NAME = 'opensips-cli'
+try:
+    home_dir = os.environ["HOME"]
+except:
+    # default home dir to root
+    home_dir = "/"
 
 """
 Default history file is in ~/.opensips-cli.history
 """
-HISTORY_FILE = os.path.join(os.environ["HOME"],
-        ".{}.history".format(DEFAULT_NAME))
+HISTORY_FILE = os.path.join(home_dir, ".{}.history".format(DEFAULT_NAME))
 
 """
 Try configuration files in this order:
@@ -41,7 +45,7 @@ Try configuration files in this order:
     * /etc/opensips/opensips-cli.cfg
 """
 CFG_PATHS = [
-    os.path.join(os.environ["HOME"], ".{}.cfg".format(DEFAULT_NAME)),
+    os.path.join(home_dir, ".{}.cfg".format(DEFAULT_NAME)),
     "/etc/{}.cfg".format(DEFAULT_NAME),
     "/etc/opensips/{}.cfg".format(DEFAULT_NAME),
 ]
