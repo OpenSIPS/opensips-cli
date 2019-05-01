@@ -179,27 +179,30 @@ class trace(Module):
         # this works as a HEP parser
         logger.debug("initial packet size is {}".format(len(packet)))
 
-        # currently only HEPv3 is accepted
-        if packet[0:4] != b'HEP3':
-            logger.warning("packet not HEPv3: [{}]".format(packet[0:4]))
-            return None
-        length = int.from_bytes(packet[4:6], byteorder="big", signed=False)
-        if length > len(packet):
-            logger.debug("partial packet: {} out of {}".
-                    format(len(packet), length))
-            # wait for entire packet to parse it
-            return packet
-        logger.debug("packet size is {}".format(length))
-        # skip the header
-        hep_packet = HEPpacket(packet[6:length])
-        try:
-            hep_packet.parse()
-        except HEPpacketException:
-            return None
-        remaining = packet[length:]
-        print(hep_packet)
+        while len(packet) > 0:
+            if len(packet) < 4:
+                return packet
+            # currently only HEPv3 is accepted
+            if packet[0:4] != b'HEP3':
+                logger.warning("packet not HEPv3: [{}]".format(packet[0:4]))
+                return None
+            length = int.from_bytes(packet[4:6], byteorder="big", signed=False)
+            if length > len(packet):
+                logger.debug("partial packet: {} out of {}".
+                        format(len(packet), length))
+                # wait for entire packet to parse it
+                return packet
+            logger.debug("packet size is {}".format(length))
+            # skip the header
+            hep_packet = HEPpacket(packet[6:length])
+            try:
+                hep_packet.parse()
+            except HEPpacketException:
+                return None
+            packet = packet[length:]
+            print(hep_packet)
 
-        return remaining
+        return packet
 
     def __complete__(self, command, text, line, begidx, endidx):
         filters = [ "caller", "callee", "ip" ]
