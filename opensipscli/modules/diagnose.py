@@ -921,7 +921,10 @@ class diagnose(Module):
             slow = int(stats['dns:dns_slow_queries'])
             total = int(stats['dns:dns_total_queries'])
 
-            slow_perc = round(slow / total * 100)
+            try:
+                slow_perc = round(slow / total * 100)
+            except:
+                slow_perc = 0
 
             if 0 <= slow_perc <= 1:
                 severity = "OK"
