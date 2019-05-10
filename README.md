@@ -86,6 +86,10 @@ Each module can use each of the parameters above, but can also declare their
 own. You can find in each module's documentation page the parameters that they
 are using.
 
+It is also possible to set a parameters dynamically, using the `set` command.
+This configuration is only available during the current interactive session,
+and also gets cleaned up when an instance is switched.
+
 ## Modules
 
 The OpenSIPS CLI tool consists of the following modules:

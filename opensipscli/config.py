@@ -31,6 +31,7 @@ class OpenSIPSCLIConfig:
         self.config = configparser.ConfigParser(
                     defaults=defaults.DEFAULT_VALUES,
                     default_section=defaults.DEFAULT_SECTION)
+        self.dynamic_options = {}
 
     # Read the file given as parameter in order to parse it
     def parse(self, in_file):
@@ -53,6 +54,8 @@ class OpenSIPSCLIConfig:
 
     # Function to get the value from a section.value
     def get(self, key):
+        if self.dynamic_options and key in self.dynamic_options:
+            return self.dynamic_options[key]
         if self.custom_options and key in self.custom_options:
             return self.custom_options[key]
         elif self.current_instance not in self.config:
@@ -60,12 +63,19 @@ class OpenSIPSCLIConfig:
         else:
             return self.config[self.current_instance][key]
 
+    # Function to set a dynamic value
+    def set(self, key, value):
+        self.dynamic_options[key] = value
+        logger.debug("set {}={}".format(key, value))
+
     def getBool(self, key):
         val = self.get(key)
         return val.lower() in ['yes', '1', 'true']
 
     # checks if a configuration exists
     def exists(self, key):
+        if self.dynamic_options and key in self.dynamic_options:
+            return True
         if self.custom_options and key in self.custom_options:
             return True
         elif self.current_instance not in self.config:
@@ -75,6 +85,7 @@ class OpenSIPSCLIConfig:
 
     def set_instance(self, instance):
         self.current_instance = instance
+        self.dynamic_options = {}
 
     def has_instance(self, instance):
         return instance in self.config

@@ -110,7 +110,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         if not self.execute:
             print(self.intro)
             # add the built-in modules and commands list
-            for mod in ['clear', 'help', 'history', 'exit', 'quit']:
+            for mod in ['set', 'clear', 'help', 'history', 'exit', 'quit']:
                 self.modules[mod] = (self, None)
 
         if not cfg.exists('skip_modules'):
@@ -306,6 +306,16 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             with open(cfg.get('history_file')) as hf:
                 for num, line in enumerate(hf, 1):
                     print(num, line, end='')
+
+    # Used to set a dynamic setting
+    def do_set(self, line):
+        parsed = line.split('=', 1)
+        if len(parsed) < 2:
+            logger.error("setting value format is 'key=value'!")
+            return
+        key = parsed[0]
+        value = parsed[1]
+        cfg.set(key, value)
 
     # Used to get info for a certain command
     def do_help(self, line):
