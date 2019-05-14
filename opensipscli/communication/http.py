@@ -46,7 +46,8 @@ def valid():
         s.connect((url_parsed.hostname, url_parsed.port))
         s.close()
         return True
-    except:
+    except Exception as e:
+        logger.debug("could not connect to {} ({})".format(url, e))
         return False
     return False
 
