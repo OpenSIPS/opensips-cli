@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+VERSION=0.1.0
+NAME=opensips-cli
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+.PHONY: tar
+tar:
+	tar --transform 's,^\.,$(NAME),' \
+		--exclude=.git \
+		--exclude=.gitignore \
+		--exclude=*.swp \
+		--exclude=build \
+		-czf ../$(NAME)_$(VERSION).orig.tar.gz .

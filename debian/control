@@ -1,0 +1,29 @@
+Source: opensips-cli
+Section: python
+Priority: optional
+Maintainer: Razvan Crainea <razvan@opensips.org>
+Build-Depends: debhelper (>= 9), python3
+Standards-Version: 3.9.8
+Homepage: https://github.com/OpenSIPS/opensips-cli
+
+Package: opensips-cli
+Architecture: any
+Multi-Arch: foreign
+Depends: python, ${misc:Depends}, ${python3:Depends}
+Description: very fast and configurable SIP server
+ OpenSIPS is a very fast and flexible SIP (RFC3261)
+ server. Written entirely in C, OpenSIPS can handle thousands calls
+ per second even on low-budget hardware.
+ .
+ C Shell-like scripting language provides full control over the server's
+ behaviour. Its modular architecture allows only required functionality to be
+ loaded.
+ .
+ Among others, the following modules are available: Digest Authentication, CPL
+ scripts, Instant Messaging, MySQL support, Presence Agent, Radius
+ Authentication, Record Routing, SMS Gateway, Jabber/XMPP Gateway, Transaction
+ Module, Registrar and User Location, Load Balaning/Dispatching/LCR,
+ XMLRPC Interface.
+ .
+ This package contains the OpenSIPS CLI tool, an interactive command line tool
+ that can be used to control and monitor OpenSIPS servers.

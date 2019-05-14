@@ -1,0 +1,8 @@
+/usr/
+/DEBIAN/
+/.pybuild/
+/files
+/opensips-cli/
+/debhelper-build-stamp
+/opensips-cli.substvars
+/opensips-cli\.*debhelper*
