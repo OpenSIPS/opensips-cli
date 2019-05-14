@@ -63,7 +63,7 @@ DEFAULT_VALUES = {
     # communication information
     "communication_type": "fifo",
     "fifo_file": "/tmp/opensips_fifo",
-    "url": "http://127.0.0.1:8888/json",
+    "url": "http://127.0.0.1:8888/mi",
 
     # database module
     "database_name": "opensips",

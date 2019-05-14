@@ -80,7 +80,7 @@ The OpenSIPS CLI core can use the following parameters:
 * `fifo_file`: The OpenSIPS FIFO file to which the CLI will write commands
 (Default: `/tmp/opensips_fifo`)
 * `url`: The default URL used when `http` `communication_type` is used
-(Default: `http://127.0.0.1:8888/json`).
+(Default: `http://127.0.0.1:8888/mi`).
 
 Each module can use each of the parameters above, but can also declare their
 own. You can find in each module's documentation page the parameters that they
