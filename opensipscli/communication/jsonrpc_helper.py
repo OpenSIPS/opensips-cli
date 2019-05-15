@@ -19,6 +19,7 @@
 
 import json
 from random import randint
+from collections import OrderedDict
 
 """
 This function contains helper functions to build and parse JSONRPC commands
@@ -51,7 +52,7 @@ def get_command(method, params={}):
 
 def get_reply(cmd):
     try:
-        j = json.loads(cmd)
+        j = json.loads(cmd, object_pairs_hook=OrderedDict)
         if 'error' in j and j['error'] is not None:
             error = j['error']
             raise JSONRPCError(j['error']['code'], j['error']['message'])
