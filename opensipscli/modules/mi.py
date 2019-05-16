@@ -52,9 +52,9 @@ class mi(Module):
         print(str(result))
 
     def print_lines(self, result, indent=0):
-        if type(result) == OrderedDict:
+        if type(result) in [OrderedDict, dict]:
             for k, v in result.items():
-                if type(v) in [dict, list]:
+                if type(v) in [OrderedDict, list, dict]:
                     print(" " * indent + k + ":")
                     self.print_lines(v, indent + 4)
                 else:
