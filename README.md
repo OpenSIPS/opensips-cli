@@ -112,11 +112,24 @@ different transports. Supported transports at the moment are:
 
 ## Install
 
-Install the `opensips-cli` tool using `setuptools` by running in the root of
-the project:
+Forget about `opensipsctl` and move on to a pleasant console environment!
 
 ```
-python3 setup.py install
+# required OS packages
+sudo apt-get install python3 python3-pip # Debian & Ubuntu
+sudo yum install python36 python36-pip # Red Hat & CentOS
+
+# required Python3 packages
+sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils
+
+# download & install the CLI
+git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
+cd ~/src/opensips-cli
+sudo python3 setup.py install
+
+# enjoy!
+opensips-cli
+(opensips-cli): quit
 ```
 
 ## Contribute
