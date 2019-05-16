@@ -20,6 +20,7 @@
 import re
 import json
 import shlex
+from collections import OrderedDict
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.module import Module
@@ -51,7 +52,7 @@ class mi(Module):
         print(str(result))
 
     def print_lines(self, result, indent=0):
-        if type(result) == dict:
+        if type(result) == OrderedDict:
             for k, v in result.items():
                 if type(v) in [dict, list]:
                     print(" " * indent + k + ":")
@@ -62,7 +63,7 @@ class mi(Module):
             for v in result:
                 self.print_lines(v, indent)
         else:
-            print(" " * indent + result)
+            print(" " * indent + str(result))
         pass
 
     def print_yaml(self, result):
