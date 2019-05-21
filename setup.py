@@ -25,7 +25,7 @@ import os
 try:
     from setuptools import setup, Command
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, Command
 from opensipscli import defaults
 
 with open("README.md", "r") as fh:
