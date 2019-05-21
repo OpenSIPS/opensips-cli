@@ -147,13 +147,16 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     def history_write(self):
         history_file = cfg.get('history_file')
         logger.debug("saving history in {}".format(history_file))
-        readline.write_history_file(history_file)
+        os.makedirs(os.path.expanduser(os.path.dirname(history_file)), exist_ok=True)
+        readline.write_history_file(os.path.expanduser(history_file))
 
     def preloop(self):
         history_file = cfg.get('history_file')
-        if readline and os.path.exists(history_file):
-            readline.read_history_file(history_file)
-            logger.debug("using history file {}".format(history_file))
+        logger.debug("using history file {}".format(history_file))
+        try:
+            readline.read_history_file(os.path.expanduser(history_file))
+        except FileNotFoundError:
+            pass
         readline.set_history_length(int(cfg.get('history_file_size')))
         if not self.registered_atexit:
             atexit.register(self.history_write)
@@ -303,9 +306,12 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     # Print history
     def do_history(self, line):
         if not line:
-            with open(cfg.get('history_file')) as hf:
-                for num, line in enumerate(hf, 1):
-                    print(num, line, end='')
+            try:
+                with open(os.path.expanduser(cfg.get('history_file'))) as hf:
+                    for num, line in enumerate(hf, 1):
+                        print(num, line, end='')
+            except FileNotFoundError:
+                pass
 
     # Used to set a dynamic setting
     def do_set(self, line):
