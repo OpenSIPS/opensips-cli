@@ -524,9 +524,13 @@ class diagnose(Module):
 
         pk_total = None
         for pno in range(1, len(ps['Processes'])):
-            st_used = "pkmem:{}-real_used_size".format(pno)
-            st_free = "pkmem:{}-free_size".format(pno)
-            st_max_used = "pkmem:{}-max_used_size".format(pno)
+            try:
+                st_used = "pkmem:{}-real_used_size".format(pno)
+                st_free = "pkmem:{}-free_size".format(pno)
+                st_max_used = "pkmem:{}-max_used_size".format(pno)
+            except:
+                continue
+
             if any(s not in stats for s in [st_used, st_free, st_max_used]):
                 continue
 
@@ -875,9 +879,13 @@ class diagnose(Module):
             severity = "OK"
 
             for proc in range(1, procs):
-                used = int(stats['pkmem:{}-real_used_size'.format(proc)])
-                total = used + int(stats['pkmem:{}-free_size'.format(proc)])
-                max_used = int(stats['pkmem:{}-max_used_size'.format(proc)])
+                try:
+                    used = int(stats['pkmem:{}-real_used_size'.format(proc)])
+                    total = used + int(stats['pkmem:{}-free_size'.format(proc)])
+                    max_used = int(stats['pkmem:{}-max_used_size'.format(proc)])
+                except:
+                    used = total = max_used = 0
+
                 if total == 0:
                     continue
 
