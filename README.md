@@ -125,7 +125,7 @@ sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils
 # download & install the CLI
 git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
 cd ~/src/opensips-cli
-sudo python3 setup.py install
+sudo python3 setup.py install clean
 
 # enjoy!
 opensips-cli

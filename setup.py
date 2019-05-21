@@ -21,14 +21,24 @@
 Installs OpenSIPS Command Line Interface
 """
 
+import os
 try:
-    from setuptools import setup
+    from setuptools import setup, Command
 except ImportError:
     from distutils.core import setup
 from opensipscli import defaults
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+class CleanCommand(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        os.system('rm -vrf ./build ./dist ./*.pyc ./*.tgz ./*.egg-info')
 
 setup(
     name = "opensipscli",
@@ -58,6 +68,9 @@ setup(
         "Source Code": "https://github.com/OpenSIPS/opensips-cli",
         "Issues Tracker": "https://github.com/OpenSIPS/opensips-cli/issues",
     },
+    cmdclass={
+        'clean': CleanCommand,
+    }
 )
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
