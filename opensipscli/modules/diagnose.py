@@ -627,21 +627,18 @@ class diagnose(Module):
             pgroups['ts'] = int(load['core:timestamp'])
 
         # fetch the network waiting queues
-        try:
-            # TODO: add Debian/Red Hat logic for the ss path (@ startup?)
-            p1 = subprocess.Popen(['ss', '-uln'], stdout=subprocess.PIPE)
-            net_wait = p1.communicate()[0].decode('utf-8').splitlines()[1:]
-        except:
-            net_wait = None
-
         if 'udp' in transports and pgroups['udp']:
-            self.diagnose_transport_load('udp', pgroups, load, net_wait)
+            with open('/proc/net/udp') as f:
+                udp_wait = [line.split() for line in f.readlines()[1:]]
+            self.diagnose_transport_load('udp', pgroups, load, udp_wait)
 
         if 'tcp' in transports and pgroups['tcp']:
-            self.diagnose_transport_load('tcp', pgroups, load, net_wait)
+            self.diagnose_transport_load('tcp', pgroups, load, None)
 
         if 'hep' in transports and pgroups['hep']:
-            self.diagnose_transport_load('hep', pgroups, load, net_wait)
+            with open('/proc/net/udp') as f:
+                udp_wait = [line.split() for line in f.readlines()[1:]]
+            self.diagnose_transport_load('hep', pgroups, load, udp_wait)
 
         print()
         print("Info: the load percentages represent the amount of time spent by an")
@@ -666,13 +663,17 @@ class diagnose(Module):
                 print("{} UDP Interface #{} ({})".format(
                         'HEP' if transport == 'hep' else 'SIP',
                         i + 1, iface))
+                if iface.startswith("hep_"):
+                    iface = iface[4:]
+
                 try:
+                    # 127.0.0.1:5060 -> 0100007F, 13C4
+                    ip = "{:02X}{:02X}{:02X}{:02X}".format(*reversed(list(
+                                map(int, iface[4:].split(':')[0].split('.')))))
+                    port = hex(int(iface[4:].split(':')[1]))[2:].upper()
                     for line in net_wait:
-                        line = line.split()
-                        if iface.startswith("hep_"):
-                            iface = iface[4:]
-                        if iface[4:] == line[3]:
-                            recvq = int(line[1])
+                        if line[1] == "{}:{}".format(ip, port):
+                            recvq = int("0x" + line[4].split(':')[1], 0)
                             break
                 except:
                     pass
@@ -884,7 +885,7 @@ class diagnose(Module):
                     total = used + int(stats['pkmem:{}-free_size'.format(proc)])
                     max_used = int(stats['pkmem:{}-max_used_size'.format(proc)])
                 except:
-                    used = total = max_used = 0
+                    continue
 
                 if total == 0:
                     continue
