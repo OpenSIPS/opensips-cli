@@ -72,12 +72,23 @@ class database(Module):
         if self.db_path is not None:
             return os.path.join(self.db_path, db_schema)
 
+        if os.path.isfile(os.path.join('/usr/share/opensips',
+                                db_schema, 'standard-create.sql')):
+            self.db_path = '/usr/share/opensips'
+            return os.path.join(self.db_path, db_schema)
+
         db_path = cfg.read_param("database_path",
                 "Please provide the path to the OpenSIPS DB scripts")
         if db_path is None:
             print()
             logger.error("don't know how to find the path to the OpenSIPS DB scripts")
             return None
+
+        if db_path.endswith('/'):
+            db_path = db_path[:-1]
+        if os.path.basename(db_path) == db_schema:
+            db_path = os.path.dirname(db_path)
+
         if not os.path.exists(db_path):
             logger.error("path '{}' to OpenSIPS DB scripts does not exist!".
                     format(db_path))
