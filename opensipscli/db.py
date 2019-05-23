@@ -18,6 +18,7 @@
 ##
 
 from opensipscli.logger import logger
+import re
 
 try:
     import sqlalchemy
@@ -149,7 +150,11 @@ class osdb(object):
 
         with open(sql_file, 'r') as f:
             try:
-                self.__conn.execute(f.read())
+                # the DELIMITER thingies are only useful to mysql shell client
+                sql = f.read()
+                sql = re.sub(r'DELIMITER .*\n', '', sql)
+                sql = re.sub(r'\$\$', '', sql)
+                self.__conn.execute(sql)
             except sqlalchemy.exc.IntegrityError as ie:
                 raise osdbError("cannot deploy {} file: {}".
                         format(sql_file, ie)) from None
