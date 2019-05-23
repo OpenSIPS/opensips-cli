@@ -281,7 +281,7 @@ class database(Module):
 
     def do_migrate(self, params):
         if len(params) < 2:
-            logger.error("Usage: database migrate <old-database> <new-database>")
+            print("Usage: database migrate <old-database> <new-database>")
             return 0
 
         old_db = params[0]
