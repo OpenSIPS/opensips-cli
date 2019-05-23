@@ -49,6 +49,13 @@ STANDARD_DB_MODULES = [
     "usrloc"
 ]
 
+SUPPORTED_BACKENDS = [
+    "mysql",
+    "postgres",
+    "sqlite",
+    "oracle",
+]
+
 class database(Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -118,11 +125,14 @@ class database(Module):
         try:
             return osdb(db_url, db_name)
         except osdbArgumentError:
-            logger.error("Bad URL, it should resemble: backend://user:pass@hostname")
+            logger.error("Bad URL, it should resemble: {}".format(
+                "backend://user:pass@hostname" if not \
+                    db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
         except osdbConnectError:
             logger.error("Failed to connect to database!")
         except osdbNoSuchModuleError:
-            logger.error("This database backend is not supported!")
+            logger.error("This database backend is not supported!  " \
+                        "Supported: {}".format(', '.join(SUPPORTED_BACKENDS)))
 
     def do_drop(self, params=None):
 
