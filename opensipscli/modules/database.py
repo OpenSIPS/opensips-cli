@@ -20,7 +20,9 @@
 from opensipscli.module import Module
 from opensipscli.logger import logger
 from opensipscli.config import cfg
-from opensipscli.db import osdb, osdbError
+from opensipscli.db import (
+    osdb, osdbError, osdbConnectError, osdbArgumentError, osdbNoSuchModuleError
+)
 
 import os
 
@@ -48,6 +50,9 @@ STANDARD_DB_MODULES = [
 ]
 
 class database(Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.db_path = None
 
     def __exclude__(self):
         if cfg.exists("database_url"):
@@ -57,6 +62,9 @@ class database(Module):
             return not osdb.has_sqlalchemy()
 
     def get_schema_path(self, db_schema):
+        if self.db_path is not None:
+            return os.path.join(self.db_path, db_schema)
+
         db_path = cfg.read_param("database_path",
                 "Please provide the path to the OpenSIPS DB scripts")
         if db_path is None:
@@ -71,11 +79,14 @@ class database(Module):
             logger.error("path '{}' to OpenSIPS DB scripts is not a directory!".
                     format(db_path))
             return None
+
         schema_path = os.path.join(db_path, db_schema)
         if not os.path.isdir(schema_path):
             logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
                     format(schema_path))
             return None
+
+        self.db_path = db_path
         return schema_path
 
     def do_drop(self, params=None):

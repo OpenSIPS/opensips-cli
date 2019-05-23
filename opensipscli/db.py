@@ -30,6 +30,13 @@ except ImportError:
 class osdbError(Exception):
     pass
 
+class osdbConnectError(osdbError):
+    pass
+class osdbArgumentError(osdbError):
+    pass
+class osdbNoSuchModuleError(osdbError):
+    pass
+
 class osdb(object):
 
     def get_dialect(url):
@@ -50,18 +57,22 @@ class osdb(object):
         self.db_url = db_url
         self.db_name = db_name
         self.dialect = osdb.get_dialect(db_url)
-        self.conn = None
+        self.__engine = None
+        self.__conn = None
 
         # TODO: do this only for SQLAlchemy
         try:
-            engine = sqlalchemy.create_engine(db_url)
-            self.conn = engine.connect()
+            self.__engine = sqlalchemy.create_engine(db_url)
+            self.__conn = self.__engine.connect()
         except sqlalchemy.exc.OperationalError as se:
             logger.error("cannot connect to DB server: {}!".format(se))
-            raise osdbError("unable to connect to the database") from None
+            raise osdbConnectError("unable to connect to the database") from None
         except sqlalchemy.exc.NoSuchModuleError as me:
-            raise osdbError("cannot handle {} dialect".
+            raise osdbNoSuchModuleError("cannot handle {} dialect".
                     format(self.dialect)) from None
+        except sqlalchemy.exc.ArgumentError as ae:
+            raise osdbArgumentError("bad DB URL: {}".
+                    format(self.db_url)) from None
 
     def get_where(self, filter_keys):
 
@@ -80,30 +91,31 @@ class osdb(object):
             where_str = ""
         return where_str
 
-    def exists(self):
+    def exists(self, db=None):
+        check_db = db if db is not None else self.db_name
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             return False
-        database_url = "{}/{}".format(self.db_url, self.db_name)
+        database_url = "{}/{}".format(self.db_url, check_db)
         try:
             if sqlalchemy_utils.database_exists(database_url):
                 return True
         except sqlalchemy.exc.NoSuchModuleError as me:
             logger.error("cannot check if database {} exists: {}".
-                    format(self.db_name, me))
+                    format(check_db, me))
             raise osdbError("cannot handle {} dialect".
                     format(self.dialect)) from None
         return False
 
     def destroy(self):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             return
-        self.conn.close()
+        self.__conn.close()
 
     def drop(self):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
         database_url = "{}/{}".format(self.db_url, self.db_name)
         try:
@@ -115,32 +127,36 @@ class osdb(object):
             raise osdbError("cannot handle {} dialect".
                     format(self.dialect)) from None
 
-    def create(self):
+    def create(self, db_name=None):
+        if db_name is None:
+            db_name = self.db_name
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
         # all good - it's time to create the database
-        self.conn.execute("CREATE DATABASE {}".format(self.db_name))
+        self.__conn.execute("CREATE DATABASE {}".format(db_name))
 
-    def use(self):
+    def use(self, db_name=None):
+        if db_name is not None:
+            self.db_name = db_name
         # TODO: do this only for SQLAlchemy
-        self.conn.execute("USE {}".format(self.db_name))
+        self.__conn.execute("USE {}".format(self.db_name))
 
-    def create_module(self, import_file):
+    def exec_sql_file(self, sql_file):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
 
-        with open(import_file, 'r') as f:
+        with open(sql_file, 'r') as f:
             try:
-                self.conn.execute(f.read())
+                self.__conn.execute(f.read())
             except sqlalchemy.exc.IntegrityError as ie:
                 raise osdbError("cannot deploy {} file: {}".
                         format(import_file, ie)) from None
 
     def find(self, table, fields, filter_keys):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
         if not fields:
             fields = ['*']
@@ -153,7 +169,7 @@ class osdb(object):
                 table,
                 where_str)
         try:
-            result = self.conn.execute(statement)
+            result = self.__conn.execute(statement)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -168,7 +184,7 @@ class osdb(object):
 
     def insert(self, table, keys):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
 
         values = ""
@@ -182,7 +198,7 @@ class osdb(object):
         statement = "INSERT INTO {} ({}) VALUES ({})".format(
                 table, ", ".join(keys.keys()), values[2:])
         try:
-            result = self.conn.execute(statement)
+            result = self.__conn.execute(statement)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -191,13 +207,13 @@ class osdb(object):
 
     def delete(self, table, filter_keys=None):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
 
         where_str = self.get_where(filter_keys)
         statement = "DELETE FROM {}{}".format(table, where_str)
         try:
-            result = self.conn.execute(statement)
+            result = self.__conn.execute(statement)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -206,7 +222,7 @@ class osdb(object):
 
     def update(self, table, update_keys, filter_keys=None):
         # TODO: do this only for SQLAlchemy
-        if not self.conn:
+        if not self.__conn:
             raise osdbError("connection not available")
 
         update_str = ""
@@ -221,7 +237,7 @@ class osdb(object):
         statement = "UPDATE {} SET {}{}".format(table,
                 update_str[2:], where_str)
         try:
-            result = self.conn.execute(statement)
+            result = self.__conn.execute(statement)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
