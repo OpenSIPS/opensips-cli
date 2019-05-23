@@ -64,10 +64,8 @@ class database(Module):
     def get_migrate_scripts_path(self, db_schema):
         if self.db_path is not None:
             return [
-                os.path.join(self.db_path, 'db-migrate',
-                        'table-migrate.{}'.format(db_schema)),
-                os.path.join(self.db_path, 'db-migrate',
-                        'db-migrate.{}'.format(db_schema)),
+                os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
+                os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
                 ]
 
     def get_schema_path(self, db_schema):
@@ -231,7 +229,7 @@ class database(Module):
             tables = [ f.replace('-create.sql', '') \
                         for f in os.listdir(schema_path) \
                         if os.path.isfile(os.path.join(schema_path, f)) and \
-                            f != 'standard-create.sql' ]
+                            f.endswith('-create.sql') ]
         else:
             print("Creating the currently configured set of tables ...")
             if cfg.exists("database_modules"):
