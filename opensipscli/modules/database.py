@@ -96,6 +96,16 @@ class database(Module):
         self.db_path = db_path
         return schema_path
 
+    def getdb(self, db_url, db_name):
+        try:
+            return osdb(db_url, db_name)
+        except osdbArgumentError:
+            logger.error("Bad URL, it should resemble: backend://user:pass@hostname")
+        except osdbConnectError:
+            logger.error("Failed to connect to database!")
+        except osdbNoSuchModuleError:
+            logger.error("This database backend is not supported!")
+
     def do_drop(self, params=None):
 
         db_url = cfg.read_param("database_url",
@@ -112,7 +122,9 @@ class database(Module):
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
 
-        db = osdb(db_url, db_name)
+        db = self.getdb(db_url, db_name)
+        if db is None:
+            return -1
 
         # check to see if the database has already been created
         if db.exists():
@@ -148,7 +160,9 @@ class database(Module):
             db_name = params[1]
 
 
-        db = osdb(db_url, db_name)
+        db = self.getdb(db_url, db_name)
+        if db is None:
+            return -1
 
         if not db.exists():
             logger.warning("database '{}' does not exist!".format(db_name))
@@ -194,7 +208,10 @@ class database(Module):
                     "Please provide the database to create",
                     DEFAULT_DB_NAME)
 
-        db = osdb(db_url, db_name)
+        db = self.getdb(db_url, db_name)
+        if db is None:
+            return -1
+
         self._do_create(db)
         db.destroy()
 
@@ -277,17 +294,9 @@ class database(Module):
             logger.error("no URL specified, aborting!")
             return -1
 
-        try:
-            db = osdb(db_url, old_db)
-        except osdbArgumentError:
-            logger.error("Bad URL, it should resemble: backend://user:pass@hostname")
-            return
-        except osdbConnectError:
-            logger.error("Failed to connect to database!")
-            return
-        except osdbNoSuchModuleError:
-            logger.error("This database is not supported!")
-            return
+        db = self.getdb(db_url, old_db)
+        if db is None:
+            return -1
 
         if not db.exists(old_db):
             logger.error("the source database ({}) does not exist!".format(old_db))
