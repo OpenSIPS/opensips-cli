@@ -152,7 +152,21 @@ class osdb(object):
                 self.__conn.execute(f.read())
             except sqlalchemy.exc.IntegrityError as ie:
                 raise osdbError("cannot deploy {} file: {}".
-                        format(import_file, ie)) from None
+                        format(sql_file, ie)) from None
+
+    def create_module(self, import_file):
+        self.exec_sql_file(import_file)
+
+    def migrate(self, migrate_scripts, old_db, new_db):
+        self.use(old_db)
+
+        for ms in migrate_scripts:
+            logger.debug("Importing {}...".format(ms))
+            self.exec_sql_file(ms)
+
+        self.__conn.execute(sqlalchemy.sql.text(
+                "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
+                    old_db, old_db, new_db)).execution_options(autocommit=True))
 
     def find(self, table, fields, filter_keys):
         # TODO: do this only for SQLAlchemy

@@ -61,6 +61,15 @@ class database(Module):
         else:
             return not osdb.has_sqlalchemy()
 
+    def get_migrate_scripts_path(self, db_schema):
+        if self.db_path is not None:
+            return [
+                os.path.join(self.db_path, 'db-migrate',
+                        'table-migrate.{}'.format(db_schema)),
+                os.path.join(self.db_path, 'db-migrate',
+                        'db-migrate.{}'.format(db_schema)),
+                ]
+
     def get_schema_path(self, db_schema):
         if self.db_path is not None:
             return os.path.join(self.db_path, db_schema)
@@ -188,12 +197,21 @@ class database(Module):
                     DEFAULT_DB_NAME)
 
         db = osdb(db_url, db_name)
+        self._do_create(db)
+        db.destroy()
+
+        return 0
+
+    def _do_create(self, db, db_name=None, do_all_tables=False):
+        if db_name is None:
+            db_name = db.db_name
 
         # check to see if the database has already been created
-        if db.exists():
-            logger.warn("database '{}' already exists!".format(db_name))
+        if db.exists(db_name):
+            logger.error("database '{}' already exists!".format(db_name))
             return -2
-        db_schema = db_url.split(":")[0]
+
+        db_schema = db.db_url.split(":")[0]
         schema_path = self.get_schema_path(db_schema)
         if schema_path is None:
             return -1
@@ -206,10 +224,20 @@ class database(Module):
         tables_files = [ standard_file_path ]
 
         # all good now - check to see what tables we shall deploy
-        if cfg.exists("database_modules"):
-            tables = cfg.get("database_modules").split(" ")
+        if cfg.read_param(None,
+                "Create [a]ll tables or just the [c]urrently configured ones?",
+                default="a").lower() == "a":
+            print("Creating all tables ...")
+            tables = [ f.replace('-create.sql', '') \
+                        for f in os.listdir(schema_path) \
+                        if os.path.isfile(os.path.join(schema_path, f)) and \
+                            f != 'standard-create.sql' ]
         else:
-            tables = STANDARD_DB_MODULES
+            print("Creating the currently configured set of tables ...")
+            if cfg.exists("database_modules"):
+                tables = cfg.get("database_modules").split(" ")
+            else:
+                tables = STANDARD_DB_MODULES
 
         logger.debug("deploying tables {}".format(" ".join(tables)))
         for table in tables:
@@ -224,15 +252,64 @@ class database(Module):
             else:
                 tables_files.append(table_file_path)
 
-        db.create()
-        db.use()
+        db.create(db_name)
+        db.use(db_name)
 
         for table_file in tables_files:
+            print("Running {}...".format(os.path.basename(table_file)))
             try:
                 db.create_module(table_file)
             except osdbError as ex:
                 logger.error("cannot import: {}".format(ex))
 
+        print("The '{}' database has been successfully created!".format(db_name))
+
+    def do_migrate(self, params):
+        if len(params) < 2:
+            logger.error("Usage: database migrate <old-database> <new-database>")
+            return 0
+
+        old_db = params[0]
+        new_db = params[1]
+
+        db_url = cfg.read_param("database_url",
+                "Please provide the URL of the database")
+        if db_url is None:
+            print()
+            logger.error("no URL specified, aborting!")
+            return -1
+
+        try:
+            db = osdb(db_url, old_db)
+        except osdbArgumentError:
+            logger.error("Bad URL, it should resemble: backend://user:pass@hostname")
+            return
+        except osdbConnectError:
+            logger.error("Failed to connect to database!")
+            return
+        except osdbNoSuchModuleError:
+            logger.error("This database is not supported!")
+            return
+
+        if not db.exists(old_db):
+            logger.error("the source database ({}) does not exist!".format(old_db))
+            return -2
+
+        print("Creating database {}...".format(new_db))
+        self._do_create(db, new_db)
+
+        db_schema = db.db_url.split(":")[0]
+        migrate_scripts = self.get_migrate_scripts_path(db_schema)
+        if migrate_scripts is None:
+            return -1
+
+        logger.debug("Got path: {}".format(migrate_scripts))
+
+        print("Migrating all matching OpenSIPS tables...")
+        db.migrate(migrate_scripts, old_db, new_db)
+
+        print("Successfully copied all OpenSIPS table data into the '{}' database!".format(
+                    new_db))
+
         db.destroy()
-        logger.info("The database has been successfully created.")
         return 0
