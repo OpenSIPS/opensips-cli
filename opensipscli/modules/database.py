@@ -63,10 +63,17 @@ class database(Module):
 
     def get_migrate_scripts_path(self, db_schema):
         if self.db_path is not None:
-            return [
+            scripts = [
                 os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
                 os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
                 ]
+
+            if any(not os.path.isfile(i) for i in scripts):
+                logger.error("The SQL migration scripts are missing!  " \
+                            "Please pull the latest OpenSIPS packages!")
+                return None
+
+            return scripts
 
     def get_schema_path(self, db_schema):
         if self.db_path is not None:
