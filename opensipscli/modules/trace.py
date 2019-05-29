@@ -19,7 +19,7 @@
 
 from datetime import datetime
 from time import time
-import os
+import random
 import socket
 from opensipscli import comm
 from opensipscli.config import cfg
@@ -261,7 +261,7 @@ class trace(Module):
             trace_port = s.getsockname()[1]
         s.listen(1)
         conn = None
-        trace_name = "opensips-cli.{}".format(os.getpid())
+        trace_name = "opensips-cli.{}".format(random.randint(0, 65536))
         trace_socket = "hep:{}:{};transport=tcp;version=3".format(
                 trace_ip, trace_port)
         args = {
