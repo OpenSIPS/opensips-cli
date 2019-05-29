@@ -289,6 +289,6 @@ class trace(Module):
                 if remaining is None:
                     break
         except KeyboardInterrupt:
-            comm.execute('trace_stop', {'id' : trace_name })
+            comm.execute('trace_stop', {'id' : trace_name }, True)
             if conn is not None:
                 conn.close()
