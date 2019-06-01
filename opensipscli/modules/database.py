@@ -24,7 +24,15 @@ from opensipscli.db import osdb, osdbError
 
 import os
 
+DEFAULT_DB_TEMPLATE = "template1"
 DEFAULT_DB_NAME = "opensips"
+DEFAULT_ROLE_NAME = "opensips"
+DEFAULT_ROLE_OPTIONS = [
+    "NOCREATEDB",
+    "NOCREATEROLE",
+    "LOGIN",
+    "REPLICATION"
+]
 STANDARD_DB_MODULES = [
     "acc",
     "alias_db",
