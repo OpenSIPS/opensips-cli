@@ -4,7 +4,16 @@ Module used to manipulate the database used by OpenSIPS.
 
 ## Commands
 
-This module exports the following commands:
+This module provides commands, that will handle common database tasks in an
+engine agnostic way. Thus, you can use them for any supported database backend.
+
+Given the nature of database backends, they do have 'dialect' specific concepts.
+Thus, the commands need to be grouped in 'non dialect specific' and 'dialect
+specific' commands. Dialect specific commands only take effect, if OpenSIPS CLI
+will detect the underlying backend.
+
+### Non dialect specific commands
+
 * `create` - creates a new database. Can receive an optional parameter,
 specifying the name of the database to be created. This command also deploys
 the standard OpenSIPS table, as well as other standard tables
@@ -13,6 +22,17 @@ which database to delete.
 * `add` - adds a new module's tables in an existing database. Receives as
 parameter the name of the module, as specified in the OpenSIPS scripts
 hierarchy.
+
+### Dialect specific commands
+
+* `create_role` - creates a role. Can receive an optional parameter,
+specifying the name of the role to be created.
+* `drop_role` - drops a role. Can receive an optional parameter,
+specifying the name of the role to be created.
+* `grant_db_options` - grant options for a given role on the database.
+Can receive an optional list, specifying the options that should be assigned
+to the given role (defaults to 'ALL PRIVILEGES')
+* `get_role` - show list of options assigned to a given role.
 
 ## Configuration
 
@@ -33,6 +53,15 @@ avpops clusterer dialog dialplan dispatcher domain drouting group
 load_balancer msilo permissions rtpproxy rtpengine speeddial tls_mgm usrloc`
 * `database_force_drop` - indicates whether the `drop` command should drop the
 database without prompting the user
+* `template_name` - the name of the database template, that is used to handle
+role specific commands (defaults to 'template1').
+* `role_name` - the name of the role. This role will be assigned to the OpenSIPS
+database, inheriting the rights and general database options.
+* `role_options` - the options that should be assigned to the given `role_name`.
+Per default following options will be assinged ("NOCREATEDB", "NOCREATEROLE",
+"LOGIN", "REPLICATION")
+* `role_force_drop` - indicates whether the `drop_role` command should drop the
+given role without prompting the user
 
 ## Examples
 
@@ -43,11 +72,16 @@ Consider the following configuration file:
 database_url=mysql://root@localhost
 database_name=opensips
 database_modules=dialog usrloc
+template_name=template1
+role_name=opensips
 ```
 
 The following command will create the `opensips` table, containing only the
 `version`, `dialog` and `location` tables (according to the `database_modules`
-parameter):
+parameter). In case you are using a backend that supports the 'role' concept
+(eg. PostgreSQL), the role `opensips` will be created in line. As inherited
+from the role options, `opensips` will hold all rights to handle database
+tasks, including the right to login:
 
 ```
 opensips-cli -x database create
@@ -58,6 +92,7 @@ If we want to add a new module, let's say `rtpproxy`, we have to run:
 ```
 opensips-cli -x database add rtpproxy
 ```
+
 The command above will create the `rtpproxy_sockets` table.
 
 A drop command will prompt the user whether he really wants to drop the
@@ -71,6 +106,21 @@ Do you really want to drop the 'opensips_cli' database [Y/n] (Default is n): n
 But setting the `database_force_drop` parameter will drop it without asking:
 ```
 opensips-cli -o database_force_drop=true -x database drop
+```
+
+In case you are using a backend that supports the 'role' concept
+(eg. PostgreSQL), the role `opensips` isn't needed any longer. You will be
+asked, if it should be dropped in line.
+
+```
+Do you really want to drop the 'opensips' role [Y/n] (Default is n): n
+```
+
+If you set `role_force_drop` parameter in the config file, the role will be drop
+it without asking:
+
+```
+opensips-cli -o database_force_drop=true -o role_force_drop=true -x database drop
 ```
 
 ## Dependencies
