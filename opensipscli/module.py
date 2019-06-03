@@ -17,27 +17,37 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# Abstract class that has to be implemented by every Module available
 class Module:
+    """
+    An abstract class, that has to be implemented by every Module that should be handled
+    """
 
-    # indicates whether the module should be excluded
     def __exclude__(self):
+        """
+        indicates whether the module should be excluded
+        """
         return False
 
-    # used to invoke a command from the module
     def __invoke__(self, cmd, params=None):
+        """
+        used to invoke a command from the module (starting with prefix 'do_')
+        """
         f = getattr(self, 'do_' + cmd)
         return f(params)
 
-    # returns all the available methods of the module
-    # if the method returns None, the do_`module_name`
-    # method is called for each command
     def __get_methods__(self):
-        return ([x[3:] for x in dir(self)
+         """
+         returns all the available methods of the module
+         if the method returns None, the do_`module_name`
+         method is called for each command
+         """
+         return ([x[3:] for x in dir(self)
                  if x.startswith('do_') and callable(getattr(self, x))])
 
-    # returns a list with all the auto-completion values
     def __complete__(self, command, text, line, begidx, endidx):
+        """
+        returns a list with all the auto-completion values
+        """
         if not command:
             return ['']
         try:

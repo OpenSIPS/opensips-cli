@@ -31,11 +31,16 @@ from opensipscli.logger import logger
 from opensipscli.modules import *
 
 class OpenSIPSCLIShell(cmd.Cmd, object):
-
+    """
+    OpenSIPS-Cli shell
+    """
     modules = {}
     registered_atexit = False
 
     def __init__(self, options):
+        """
+        contructor for OpenSIPS-Cli
+        """
 
         self.debug = options.debug
         self.execute = options.execute
@@ -79,6 +84,9 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         self.update_instance(cfg.current_instance)
 
     def update_logger(self):
+        """
+        alter logging level
+        """
 
         # first of all, let's handle logging
         if self.debug:
@@ -88,10 +96,16 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         logger.setLevel(level)
 
     def clear_instance(self):
+        """
+        update history
+        """
         # make sure we dump everything before swapping files
         self.history_write()
 
     def update_instance(self, instance):
+        """
+        constructor of an OpenSIPS-Cli instance
+        """
 
         # first of all, let's handle logging
         self.current_instance = instance
@@ -145,11 +159,17 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             self.modules[name] = (imod, mod.__get_methods__(imod))
 
     def history_write(self):
+        """
+        save history file
+        """
         history_file = cfg.get('history_file')
         logger.debug("saving history in {}".format(history_file))
         readline.write_history_file(history_file)
 
     def preloop(self):
+        """
+        preload a history file
+        """
         history_file = cfg.get('history_file')
         if readline and os.path.exists(history_file):
             readline.read_history_file(history_file)
@@ -159,7 +179,9 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             atexit.register(self.history_write)
 
     def postcmd(self, stop, line):
-
+        """
+        post command after switching instance
+        """
         if self.current_instance != cfg.current_instance:
             self.clear_instance()
             self.update_instance(cfg.current_instance)
@@ -168,8 +190,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
         return stop
 
-    # Overwritten funtion in order not to print misc commands
     def print_topics(self, header, cmds, cmdlen, maxcol):
+        """
+        print topics, omit misc commands
+        """
         if header is not None:
             if cmds:
                 self.stdout.write('%s\n' % str(header))
@@ -178,8 +202,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                 self.columnize(cmds, maxcol-1)
                 self.stdout.write('\n')
 
-    # Overwritten function in order to catch SIGINT
     def cmdloop(self, intro=None):
+        """
+        command loop, catching SIGINT
+        """
         if self.execute:
             if len(self.command) < 1:
                 logger.error("no modules to run specified!")
@@ -212,12 +238,18 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             super().emptyline()
 
     def complete_modules(self, text):
+        """
+        complete modules selection based on given text 
+        """
         l = [a for a in self.modules.keys() if a.startswith(text)]
         if len(l) == 1:
             l[0] = l[0] + " "
         return l
 
     def complete_functions(self, module, text, line, begidx, endidx):
+        """
+        complete function selection based on given text 
+        """
 
         # builtin commands
         params = line.split()
@@ -240,6 +272,9 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     # Overwritten function for our customized auto-complete
     def complete(self, text, state):
+        """
+        auto-complete selection based on given text and state parameters
+        """
         if state == 0:
             origline = readline.get_line_buffer()
             line = origline.lstrip()
@@ -265,12 +300,15 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     # Execute commands from Modules
     def run_command(self, module, cmd, params):
+        """
+        run a module command with given parameters
+        """
         try:
             mod = self.modules[module]
         except (AttributeError, KeyError):
             logger.error("no module '{}' loaded".format(module))
             return -1
-        # if the module dones not return any methods (returned None)
+        # if the module does not return any methods (returned None)
         # we simply call the module's name method
         if not mod[1]:
             if params is not None:
@@ -286,7 +324,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             logger.error("no command '{}' in module '{}'".
                     format(cmd, module))
             return -1
-        logger.debug("running command '{}' '{}'".format(cmd, params))
+        logger.debug("running command '%s' with %i arguments: %s'", cmd, len(params), params)
         return mod[0].__invoke__(cmd, params)
 
     def default(self, line):
@@ -300,15 +338,19 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             params = aux[2:]
         self.run_command(module, cmd, params)
 
-    # Print history
     def do_history(self, line):
+        """
+        print entries in history file
+        """
         if not line:
             with open(cfg.get('history_file')) as hf:
                 for num, line in enumerate(hf, 1):
                     print(num, line, end='')
 
-    # Used to set a dynamic setting
     def do_set(self, line):
+        """
+        handle dynamic settings (key-value pairs)
+        """
         parsed = line.split('=', 1)
         if len(parsed) < 2:
             logger.error("setting value format is 'key=value'!")
