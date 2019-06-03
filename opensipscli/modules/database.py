@@ -259,7 +259,9 @@ class database(Module):
 		if (db.exists_role()) is False:
 			self.do_create_role(params)
 		db.grant_db_options()
-		db.use()
+
+        # connect to the database
+		db.connect()
 
 		for table_file in tables_files:
 			try:
