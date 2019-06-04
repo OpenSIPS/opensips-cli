@@ -40,20 +40,6 @@ class osdbNoSuchModuleError(osdbError):
 
 class osdb(object):
 
-    def get_dialect(url):
-        return url.split('://')[0]
-
-    def has_sqlalchemy():
-        return sqlalchemy_available
-
-    def has_dialect(dialect):
-        # TODO: do this only for SQLAlchemy
-        try:
-            sqlalchemy.create_engine('{}://'.format(dialect))
-        except sqlalchemy.exc.NoSuchModuleError:
-            return False
-        return True
-
     def __init__(self, db_url, db_name):
         self.db_url = db_url
         self.db_name = db_name
@@ -75,38 +61,17 @@ class osdb(object):
             raise osdbArgumentError("bad DB URL: {}".
                     format(self.db_url)) from None
 
-    def get_where(self, filter_keys):
-
-        if filter_keys:
-            where_str = ""
-            for k, v in filter_keys.items():
-                where_str += " AND {} = ".format(k)
-                if type(v) == int:
-                    where_str += v
-                else:
-                    where_str += "'{}'".format(
-                            v.translate(str.maketrans({'\'': '\\\''})))
-            if where_str != "":
-                where_str = " WHERE " + where_str[5:]
-        else:
-            where_str = ""
-        return where_str
-
-    def exists(self, db=None):
-        check_db = db if db is not None else self.db_name
+    def create(self, db_name=None):
+        if db_name is None:
+            db_name = self.db_name
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
-            return False
-        database_url = "{}/{}".format(self.db_url, check_db)
-        try:
-            if sqlalchemy_utils.database_exists(database_url):
-                return True
-        except sqlalchemy.exc.NoSuchModuleError as me:
-            logger.error("cannot check if database {} exists: {}".
-                    format(check_db, me))
-            raise osdbError("cannot handle {} dialect".
-                    format(self.dialect)) from None
-        return False
+            raise osdbError("connection not available")
+        # all good - it's time to create the database
+        self.__conn.execute("CREATE DATABASE {}".format(db_name))
+
+    def create_module(self, import_file):
+        self.exec_sql_file(import_file)
 
     def destroy(self):
         # TODO: do this only for SQLAlchemy
@@ -128,20 +93,11 @@ class osdb(object):
             raise osdbError("cannot handle {} dialect".
                     format(self.dialect)) from None
 
-    def create(self, db_name=None):
-        if db_name is None:
-            db_name = self.db_name
-        # TODO: do this only for SQLAlchemy
-        if not self.__conn:
-            raise osdbError("connection not available")
-        # all good - it's time to create the database
-        self.__conn.execute("CREATE DATABASE {}".format(db_name))
-
-    def use(self, db_name=None):
-        if db_name is not None:
-            self.db_name = db_name
-        # TODO: do this only for SQLAlchemy
-        self.__conn.execute("USE {}".format(self.db_name))
+    def entry_exists(self, table, constraints):
+        ret = self.find(table, "count(*)", constraints)
+        if ret and ret.first()[0] != 0:
+            return True
+        return False
 
     def exec_sql_file(self, sql_file):
         # TODO: do this only for SQLAlchemy
@@ -159,19 +115,21 @@ class osdb(object):
                 raise osdbError("cannot deploy {} file: {}".
                         format(sql_file, ie)) from None
 
-    def create_module(self, import_file):
-        self.exec_sql_file(import_file)
-
-    def migrate(self, migrate_scripts, old_db, new_db):
-        self.use(old_db)
-
-        for ms in migrate_scripts:
-            logger.debug("Importing {}...".format(ms))
-            self.exec_sql_file(ms)
-
-        self.__conn.execute(sqlalchemy.sql.text(
-                "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
-                    old_db, old_db, new_db)).execution_options(autocommit=True))
+    def exists(self, db=None):
+        check_db = db if db is not None else self.db_name
+        # TODO: do this only for SQLAlchemy
+        if not self.__conn:
+            return False
+        database_url = "{}/{}".format(self.db_url, check_db)
+        try:
+            if sqlalchemy_utils.database_exists(database_url):
+                return True
+        except sqlalchemy.exc.NoSuchModuleError as me:
+            logger.error("cannot check if database {} exists: {}".
+                    format(check_db, me))
+            raise osdbError("cannot handle {} dialect".
+                    format(self.dialect)) from None
+        return False
 
     def find(self, table, fields, filter_keys):
         # TODO: do this only for SQLAlchemy
@@ -195,11 +153,47 @@ class osdb(object):
             return None
         return result
 
-    def entry_exists(self, table, constraints):
-        ret = self.find(table, "count(*)", constraints)
-        if ret and ret.first()[0] != 0:
-            return True
-        return False
+    def get_dialect(url):
+        return url.split('://')[0]
+
+    def get_where(self, filter_keys):
+
+        if filter_keys:
+            where_str = ""
+            for k, v in filter_keys.items():
+                where_str += " AND {} = ".format(k)
+                if type(v) == int:
+                    where_str += v
+                else:
+                    where_str += "'{}'".format(
+                            v.translate(str.maketrans({'\'': '\\\''})))
+            if where_str != "":
+                where_str = " WHERE " + where_str[5:]
+        else:
+            where_str = ""
+        return where_str
+
+    def migrate(self, migrate_scripts, old_db, new_db):
+        self.use(old_db)
+
+        for ms in migrate_scripts:
+            logger.debug("Importing {}...".format(ms))
+            self.exec_sql_file(ms)
+
+        self.__conn.execute(sqlalchemy.sql.text(
+                "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
+                    old_db, old_db, new_db)).execution_options(autocommit=True))
+
+    def has_sqlalchemy():
+        return sqlalchemy_available
+
+    def has_dialect(dialect):
+        # TODO: do this only for SQLAlchemy
+        try:
+            sqlalchemy.create_engine('{}://'.format(dialect))
+        except sqlalchemy.exc.NoSuchModuleError:
+            return False
+        return True
 
     def insert(self, table, keys):
         # TODO: do this only for SQLAlchemy
@@ -262,3 +256,10 @@ class osdb(object):
             logger.error(ex)
             return False
         return True
+
+    def use(self, db_name=None):
+        if db_name is not None:
+            self.db_name = db_name
+        # TODO: do this only for SQLAlchemy
+        self.__conn.execute("USE {}".format(self.db_name))
+
