@@ -124,7 +124,7 @@ class osdb(object):
                 "backend://user:pass@hostname" if not \
                     db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
 
-    def alter_role(self, role_name, role_options):
+    def alter_role(self, role_name, role_options=None, role_password=None):
         """
         alter attributes of a role object
         """
@@ -137,18 +137,20 @@ class osdb(object):
             raise osdbError("connection not available")
             return False
 
-        logger.debug("Role {} will be granted with options '{}' on database {}".
-                format(role_name, role_options, self.db_name))
-
-        sqlcmd = "ALTER ROLE {} WITH {} ".format(role_name, role_options)
+        if not role_options is None:
+            sqlcmd = "ALTER ROLE {} WITH {}".format(role_name, role_options)
+            msg = "Alter role '{}' with options '{}'". \
+                format(role_name, role_options, self.db_name)
+        if not role_password is None:
+            sqlcmd  += " PASSWORD '{}'".format(role_password)
+            msg += " and password '********'"
+        msg += " on database '{}'".format(self.db_name)
         try:
             result = self.__conn.execute(sqlcmd)
             if result:
-                logger.debug("granted options '{}' to role '{}'".
-                    format(role_options, role_name))
+                logger.info( "{} was successfull".format(msg))
         except:
-            logger.error("granting options '{}' to role '{}' failed".
-                    format(role_options, role_name))
+            logger.error("%s failed", msg)
             return False
         return
 
