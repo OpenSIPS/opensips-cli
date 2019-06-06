@@ -26,6 +26,7 @@ from opensipscli.db import (
 )
 
 import os
+from getpass import getpass
 
 DEFAULT_DB_TEMPLATE = "template1"
 DEFAULT_DB_NAME = "opensips"
@@ -258,11 +259,10 @@ class database(Module):
 
         role_name = None
         role_options = None
+        role_password = None
 
         if len(params) > 0:
             role_name = ''.join(params[0])
-        if len(params) > 1:
-            role_options = params[1]
 
         if role_name is None:
             role_name = cfg.read_param("role_name",
@@ -270,16 +270,25 @@ class database(Module):
                 DEFAULT_ROLE_NAME)
             logger.debug("role_name: '%s'", role_name)
 
-        if role_options is None:
-            role_list = cfg.read_param("role_options",
-                "Please adapt the role options to alter",
-                DEFAULT_ROLE_OPTIONS)
-            if len(role_list) > 0:
-                role_options = ' '.join(role_list)
-            logger.debug("role_options: '%s'", role_options)
-
         if db.exists_role(role_name) is True:
-            if db.alter_role(role_name, role_options) is False:
+            if len(params) > 1:
+                role_options = params[1]
+            if len(params) > 2:
+                role_password = params[2]
+
+            if role_options is None:
+                role_list = cfg.read_param("role_options",
+                    "Please adapt the role options to alter",
+                    DEFAULT_ROLE_OPTIONS)
+                if len(role_list) > 0:
+                    role_options = ' '.join(role_list)
+                logger.debug("role_options: '%s'", role_options)
+
+            if role_password is None:
+                role_password = getpass("New password: ")
+                logger.debug("role_password: '%s'", role_password)
+
+            if db.alter_role(role_name, role_options, role_password) is False:
                 logger.error("alter role '%s' didn't succeed", role_name)
                 db.destroy()
         else:
@@ -473,7 +482,6 @@ class database(Module):
 
         if db.exists_role(role_name) is False:
             result =  db.create_role(role_name, role_options, role_password)
-            #logger.error("creating role '%s' didn't succeed", role_name)
             if result:
                 db.destroy()
         else:
