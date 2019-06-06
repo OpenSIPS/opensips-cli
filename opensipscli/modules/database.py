@@ -68,72 +68,6 @@ class database(Module):
         else:
             return not osdb.has_sqlalchemy()
 
-    def get_migrate_scripts_path(self, db_schema):
-        if self.db_path is not None:
-            scripts = [
-                os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
-                os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
-                ]
-
-            if any(not os.path.isfile(i) for i in scripts):
-                logger.error("The SQL migration scripts are missing!  " \
-                            "Please pull the latest OpenSIPS packages!")
-                return None
-
-            return scripts
-
-    def get_schema_path(self, db_schema):
-        if self.db_path is not None:
-            return os.path.join(self.db_path, db_schema)
-
-        if os.path.isfile(os.path.join('/usr/share/opensips',
-                                db_schema, 'standard-create.sql')):
-            self.db_path = '/usr/share/opensips'
-            return os.path.join(self.db_path, db_schema)
-
-        db_path = cfg.read_param("database_path",
-                "Please provide the path to the OpenSIPS DB scripts")
-        if db_path is None:
-            print()
-            logger.error("don't know how to find the path to the OpenSIPS DB scripts")
-            return None
-
-        if db_path.endswith('/'):
-            db_path = db_path[:-1]
-        if os.path.basename(db_path) == db_schema:
-            db_path = os.path.dirname(db_path)
-
-        if not os.path.exists(db_path):
-            logger.error("path '{}' to OpenSIPS DB scripts does not exist!".
-                    format(db_path))
-            return None
-        if not os.path.isdir(db_path):
-            logger.error("path '{}' to OpenSIPS DB scripts is not a directory!".
-                    format(db_path))
-            return None
-
-        schema_path = os.path.join(db_path, db_schema)
-        if not os.path.isdir(schema_path):
-            logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
-                    format(schema_path))
-            return None
-
-        self.db_path = db_path
-        return schema_path
-
-    def getdb(self, db_url, db_name):
-        try:
-            return osdb(db_url, db_name)
-        except osdbArgumentError:
-            logger.error("Bad URL, it should resemble: {}".format(
-                "backend://user:pass@hostname" if not \
-                    db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
-        except osdbConnectError:
-            logger.error("Failed to connect to database!")
-        except osdbNoSuchModuleError:
-            logger.error("This database backend is not supported!  " \
-                        "Supported: {}".format(', '.join(SUPPORTED_BACKENDS)))
-
     def do_drop(self, params=None):
 
         db_url = cfg.read_param("database_url",
@@ -150,7 +84,7 @@ class database(Module):
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
 
-        db = self.getdb(db_url, db_name)
+        db = self.get_db(db_url, db_name)
         if db is None:
             return -1
 
@@ -188,7 +122,7 @@ class database(Module):
             db_name = params[1]
 
 
-        db = self.getdb(db_url, db_name)
+        db = self.get_db(db_url, db_name)
         if db is None:
             return -1
 
@@ -236,16 +170,16 @@ class database(Module):
                     "Please provide the database to create",
                     DEFAULT_DB_NAME)
 
-        db = self.getdb(db_url, db_name)
+        db = self.get_db(db_url, db_name)
         if db is None:
             return -1
 
-        self._do_create(db)
+        self.do_create_tables(db)
         db.destroy()
 
         return 0
 
-    def _do_create(self, db, db_name=None, do_all_tables=False):
+    def do_create_tables(self, db, db_name=None, do_all_tables=False):
         if db_name is None:
             db_name = db.db_name
 
@@ -307,6 +241,19 @@ class database(Module):
 
         print("The '{}' database has been successfully created!".format(db_name))
 
+    def get_db(self, db_url, db_name):
+        try:
+            return osdb(db_url, db_name)
+        except osdbArgumentError:
+            logger.error("Bad URL, it should resemble: {}".format(
+                "backend://user:pass@hostname" if not \
+                    db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
+        except osdbConnectError:
+            logger.error("Failed to connect to database!")
+        except osdbNoSuchModuleError:
+            logger.error("This database backend is not supported!  " \
+                        "Supported: {}".format(', '.join(SUPPORTED_BACKENDS)))
+
     def do_migrate(self, params):
         if len(params) < 2:
             print("Usage: database migrate <old-database> <new-database>")
@@ -322,7 +269,7 @@ class database(Module):
             logger.error("no URL specified, aborting!")
             return -1
 
-        db = self.getdb(db_url, old_db)
+        db = self.get_db(db_url, old_db)
         if db is None:
             return -1
 
@@ -331,7 +278,7 @@ class database(Module):
             return -2
 
         print("Creating database {}...".format(new_db))
-        self._do_create(db, new_db)
+        self.do_create_tables(db, new_db)
 
         db_schema = db.db_url.split(":")[0]
         migrate_scripts = self.get_migrate_scripts_path(db_schema)
@@ -348,3 +295,56 @@ class database(Module):
 
         db.destroy()
         return 0
+
+    def get_migrate_scripts_path(self, db_schema):
+        if self.db_path is not None:
+            scripts = [
+                os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
+                os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
+                ]
+
+            if any(not os.path.isfile(i) for i in scripts):
+                logger.error("The SQL migration scripts are missing!  " \
+                            "Please pull the latest OpenSIPS packages!")
+                return None
+
+            return scripts
+
+    def get_schema_path(self, db_schema):
+        if self.db_path is not None:
+            return os.path.join(self.db_path, db_schema)
+
+        if os.path.isfile(os.path.join('/usr/share/opensips',
+                                db_schema, 'standard-create.sql')):
+            self.db_path = '/usr/share/opensips'
+            return os.path.join(self.db_path, db_schema)
+
+        db_path = cfg.read_param("database_path",
+                "Please provide the path to the OpenSIPS DB scripts")
+        if db_path is None:
+            print()
+            logger.error("don't know how to find the path to the OpenSIPS DB scripts")
+            return None
+
+        if db_path.endswith('/'):
+            db_path = db_path[:-1]
+        if os.path.basename(db_path) == db_schema:
+            db_path = os.path.dirname(db_path)
+
+        if not os.path.exists(db_path):
+            logger.error("path '{}' to OpenSIPS DB scripts does not exist!".
+                    format(db_path))
+            return None
+        if not os.path.isdir(db_path):
+            logger.error("path '{}' to OpenSIPS DB scripts is not a directory!".
+                    format(db_path))
+            return None
+
+        schema_path = os.path.join(db_path, db_schema)
+        if not os.path.isdir(schema_path):
+            logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
+                    format(schema_path))
+            return None
+
+        self.db_path = db_path
+        return schema_path
