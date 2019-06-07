@@ -22,13 +22,18 @@ Installs OpenSIPS Command Line Interface
 """
 
 import os
+
 try:
     from setuptools import setup, Command
 except ImportError:
     from distutils.core import setup, Command
+
 from opensipscli import defaults
 
-with open("README.md", "r") as fh:
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as fh:
     long_description = fh.read()
 
 class CleanCommand(Command):
@@ -49,12 +54,18 @@ setup(
     maintainer_email = "razvan@opensips.org",
     description = "OpenSIPS Command Line Interface",
     long_description = long_description,
+    long_description_content_type='text/markdown',
     url = "https://github.com/OpenSIPS/opensips-cli",
     download_url = "https://github.com/OpenSIPS/opensips-cli/archive/master.zip",
     packages = [
         "opensipscli",
         "opensipscli.modules",
         "opensipscli.communication"
+    ],
+    install_requires=[
+        'mysqlclient',
+        'sqlalchemy',
+        'sqlalchemy-utils'
     ],
     classifiers = [
         "Programming Language :: Python :: 3",
