@@ -13,6 +13,8 @@ which database to delete.
 * `add` - adds a new module's tables in an existing database. Receives as
 parameter the name of the module, as specified in the OpenSIPS scripts
 hierarchy.
+* `migrate` - copy and convert an OpenSIPS 2.4 database into its OpenSIPS
+3.0 equivalent
 
 ## Configuration
 
