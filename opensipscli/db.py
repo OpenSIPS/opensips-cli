@@ -115,14 +115,13 @@ class osdb(object):
             self.__session = self.Session()
         except sqlalchemy.exc.OperationalError as se:
             logger.error("cannot connect to DB server: {}!".format(se))
-            raise osdbError("unable to connect to the database") from None
+            raise osdbError("unable to connect to the database")
         except sqlalchemy.exc.NoSuchModuleError:
             raise osdbError("cannot handle {} dialect".
-                    format(self.dialect)) from None
+                    format(self.dialect))
         except sqlalchemy.exc.ArgumentError:
-            logger.error("Bad URL, it should resemble: {}".format(
-                "backend://user:pass@hostname" if not \
-                    db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
+            raise osdbArgumentError("bad DB URL: {}".format(
+                self.db_url))
 
     def alter_role(self, role_name, role_options=None, role_password=None):
         """

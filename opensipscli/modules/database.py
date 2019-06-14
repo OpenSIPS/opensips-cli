@@ -323,8 +323,6 @@ class database(Module):
 
         if self._do_create_db([db_name], db_url) < 0:
             return -1
-
-        # create the tables inside the database
         if self.create_tables(db_name, db_url=db_url) < 0:
             return -1
 
@@ -591,11 +589,8 @@ class database(Module):
         """
         drop a given database object (connection via URL)
         """
-        db_url = cfg.read_param("database_url",
-                "Please provide the URL to connect to the database")
+        db_url = self.ask_db_url()
         if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
             return -1
 
         if params and len(params) > 0:
@@ -605,17 +600,18 @@ class database(Module):
                     "Please provide the database to drop",
                     DEFAULT_DB_NAME)
 
-        if params and len(params) > 1:
-            role_name = params[1]
-        else:
-            role_name = cfg.read_param("role_name",
-                "Please provide the associated role name to access the database",
-                DEFAULT_ROLE_NAME)
-
         # create an object store database instance
         db = self.get_db(db_url, db_name)
         if db is None:
             return -1
+
+        if db.dialect == "postgres":
+            if params and len(params) > 1:
+                role_name = params[1]
+            else:
+                role_name = cfg.read_param("role_name",
+                    "Please provide the associated role name " +
+                        "to access the database", DEFAULT_ROLE_NAME)
 
         # check to see if the database has already been created
         if db.exists():
