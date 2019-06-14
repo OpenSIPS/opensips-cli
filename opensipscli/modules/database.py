@@ -159,6 +159,16 @@ class database(Module):
 				'create', 'create_db', 'create_module', 'create_role',
                 'drop', 'drop_role', 'get_role', 'migrate']
 
+    def ask_db_url(self):
+        db_url = cfg.read_param("template_url",
+             "Please provide the URL of the SQL database")
+        if db_url is None:
+            print()
+            logger.error("no URL specified: aborting!")
+            return -1
+
+        return db_url
+
     #def __invoke__(self, cmd, params=None):
     #    """
     #    methods handles to preset defaults
@@ -307,26 +317,33 @@ class database(Module):
                 DEFAULT_DB_NAME)
         logger.debug("db_name: '%s'", db_name)
 
-        params = [ db_name ]
-        if not self.do_create_db(params):
-            logger.error("creation of database '%s' failed", db_name)
+        db_url = self.ask_db_url()
+        if db_url is None:
+            return -1
+
+        if self._do_create_db([db_name], db_url) < 0:
+            return -1
 
         # create the tables inside the database
-        if not self.do_create_tables(db_name):
-            logger.error("creation of tables in '%s' failed", db_name)
+        if self.create_tables(db_name, db_url=db_url) < 0:
+            return -1
 
-        return True
+        return 0
 
     def do_create_db(self, params=None):
+        return self._do_create_db(params)
+
+    def _do_create_db(self, params=None, db_url=None):
         """
         create database and roles assignment
         """
-        db_url = cfg.read_param("template_url",
-             "Please provide the URL to connect to as template")
         if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
+            db_url = cfg.read_param("template_url",
+                 "Please provide the URL to connect to as template")
+            if db_url is None:
+                print()
+                logger.error("no URL specified: aborting!")
+                return -1
 
         if len(params) >= 1:
             db_name = ''.join(params[0])
@@ -374,7 +391,88 @@ class database(Module):
             # assign the access rights
             db.grant_db_options(role_name)
 
-        return True
+        return 0
+
+    def create_tables(self, db_name=None, do_all_tables=False, db_url=None):
+        """
+        create database tables
+        """
+        if db_url is None:
+            db_url = cfg.read_param("database_url",
+                 "Please provide the URL connecting to the database")
+            if db_url is None:
+                logger.error("no URL specified: aborting!")
+                return -1
+
+        # 2) prepare new object store database instance
+		#    use it to connect to the created database
+        db = self.get_db(db_url, db_name)
+        if db is None:
+            return -1
+
+        # connect to the database
+        db.connect(db_name)
+
+        # check to see if the database has already been created
+        #if db.exists(db_name):
+        #    logger.error("database '{}' already exists!".format(db_name))
+        #    return -2
+
+        db_schema = db.db_url.split(":")[0]
+        schema_path = self.get_schema_path(db_schema)
+        if schema_path is None:
+            return -1
+
+        standard_file_path = os.path.join(schema_path, "standard-create.sql")
+        if not os.path.isfile(standard_file_path):
+            logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
+                    format(standard_file_path))
+            return -1
+        tables_files = [ standard_file_path ]
+
+        # check to see what tables we shall deploy
+        if cfg.read_param(None,
+                "Create [a]ll tables or just the [c]urrently configured ones?",
+                default="a").lower() == "a":
+            print("Creating all tables ...")
+            tables = [ f.replace('-create.sql', '') \
+                        for f in os.listdir(schema_path) \
+                        if os.path.isfile(os.path.join(schema_path, f)) and \
+                            f.endswith('-create.sql') ]
+        else:
+            print("Creating the currently configured set of tables ...")
+            if cfg.exists("database_modules"):
+                tables = cfg.get("database_modules").split(" ")
+            else:
+                tables = STANDARD_DB_MODULES
+
+        # check for corresponding SQL schemas files in system path
+        logger.debug("deploying tables {}".format(" ".join(tables)))
+        for table in tables:
+            if table == "standard":
+                # already checked for it
+                continue
+            table_file_path = os.path.join(schema_path,
+                    "{}-create.sql".format(table))
+            if not os.path.isfile(table_file_path):
+                logger.warn("cannot find file to create {}: {}".
+                        format(table, table_file_path))
+            else:
+                tables_files.append(table_file_path)
+
+        # create tables from SQL schemas
+        for table_file in tables_files:
+            print("Running {}...".format(os.path.basename(table_file)))
+            try:
+                db.create_module(table_file)
+            except osdbError as ex:
+                logger.error("cannot import: {}".format(ex))
+        logger.info("database tables have been successfully created.")
+
+        # terminate active database connection
+        db.destroy()
+
+        return 0
 
     def do_create_module(self, module_name):
         """
@@ -487,86 +585,6 @@ class database(Module):
         else:
             logger.warning("role '{}' already exists. Please use 'alter_role'".format(role_name))
             return False
-        return True
-
-    def do_create_tables(self, db_name=None, do_all_tables=False):
-        """
-        create database tables
-        """
-        db_url = cfg.read_param("database_url",
-             "Please provide the URL connecting to the database")
-        if db_url is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        # 2) prepare new object store database instance
-		#    use it to connect to the created database
-        db = self.get_db(db_url, db_name)
-        if db is None:
-            return -1
-
-        # connect to the database
-        db.connect(db_name)
-
-        # check to see if the database has already been created
-        #if db.exists(db_name):
-        #    logger.error("database '{}' already exists!".format(db_name))
-        #    return -2
-
-        db_schema = db.db_url.split(":")[0]
-        schema_path = self.get_schema_path(db_schema)
-        if schema_path is None:
-            return -1
-
-        standard_file_path = os.path.join(schema_path, "standard-create.sql")
-        if not os.path.isfile(standard_file_path):
-            logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
-                    format(standard_file_path))
-            return -1
-        tables_files = [ standard_file_path ]
-
-        # check to see what tables we shall deploy
-        if cfg.read_param(None,
-                "Create [a]ll tables or just the [c]urrently configured ones?",
-                default="a").lower() == "a":
-            print("Creating all tables ...")
-            tables = [ f.replace('-create.sql', '') \
-                        for f in os.listdir(schema_path) \
-                        if os.path.isfile(os.path.join(schema_path, f)) and \
-                            f.endswith('-create.sql') ]
-        else:
-            print("Creating the currently configured set of tables ...")
-            if cfg.exists("database_modules"):
-                tables = cfg.get("database_modules").split(" ")
-            else:
-                tables = STANDARD_DB_MODULES
-
-        # check for corresponding SQL schemas files in system path
-        logger.debug("deploying tables {}".format(" ".join(tables)))
-        for table in tables:
-            if table == "standard":
-                # already checked for it
-                continue
-            table_file_path = os.path.join(schema_path,
-                    "{}-create.sql".format(table))
-            if not os.path.isfile(table_file_path):
-                logger.warn("cannot find file to create {}: {}".
-                        format(table, table_file_path))
-            else:
-                tables_files.append(table_file_path)
-
-        # create tables from SQL schemas
-        for table_file in tables_files:
-            print("Running {}...".format(os.path.basename(table_file)))
-            try:
-                db.create_module(table_file)
-            except osdbError as ex:
-                logger.error("cannot import: {}".format(ex))
-        logger.info("database tables have been successfully created.")
-
-        # terminate active database connection
-        db.destroy()
-
         return True
 
     def do_drop(self, params=None):
