@@ -737,11 +737,8 @@ class database(Module):
         old_db = params[0]
         new_db = params[1]
 
-        db_url = cfg.read_param("database_url",
-               "Please provide the URL to connect to the database")
+        db_url = self.ask_db_url()
         if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
             return -1
 
         # create an object store database instance
@@ -753,11 +750,10 @@ class database(Module):
              logger.error("the source database ({}) does not exist!".format(old_db))
              return -2
 
-        print("Creating database 'new_db ...")
-        params = [ new_db ]
-        result = self.do_create_db(params)
-        if not result:
-            logger.debug("creation of destination database '%s' returned %s", new_db, result)
+        print("Creating database {}...".format(new_db))
+        if self._do_create_db([new_db], db_url=db_url) < 0:
+            return -1
+        if self.create_tables(new_db, db_url=db_url) < 0:
             return -1
 
         # get schema path for active database dialect
@@ -778,7 +774,8 @@ class database(Module):
         print("Migrating all matching OpenSIPS tables...")
         db.migrate(migrate_scripts, old_db, new_db)
 
-        print("Successfully copied all OpenSIPS table data into database '%s'", new_db)
+        print("Successfully copied all OpenSIPS table data " +
+                "into database '{}'".format(new_db))
 
         db.destroy()
         return True
