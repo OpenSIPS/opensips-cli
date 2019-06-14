@@ -525,7 +525,7 @@ class osdb(object):
             return False
         return result
 
-    def migrate(self, migrate_scripts, old_db, new_db):
+    def migrate(self, migrate_scripts, old_db, new_db, tables=[]):
         """
         migrate from source to destination database using SQL schema files
         """
@@ -535,9 +535,29 @@ class osdb(object):
             logger.debug("Importing {}...".format(ms))
             self.exec_sql_file(ms)
 
-        self.__conn.execute(sqlalchemy.sql.text(
-                "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
-                    old_db, old_db, new_db)).execution_options(autocommit=True))
+        if tables:
+            for tb in tables:
+                print("Migrating {} data... ".format(tb), end='')
+                try:
+                    self.__conn.execute(sqlalchemy.sql.text(
+                        "CALL {}.OSIPS_TB_COPY_2_4_TO_3_0('{}', '{}', '{}')".format(
+                            old_db, old_db, new_db, tb)).execution_options(
+                                autocommit=True))
+                    print("OK")
+                except Exception as e:
+                    print("FAILED!")
+                    logger.exception(e)
+                    logger.error("Failed to migrate '{}' table data, ".format(tb) +
+                                    "see above errors!")
+        else:
+            try:
+                self.__conn.execute(sqlalchemy.sql.text(
+                    "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
+                        old_db, old_db, new_db)).execution_options(
+                            autocommit=True))
+            except Exception as e:
+                logger.exception(e)
+                logger.error("Failed to migrate database!")
 
     def row2dict(self, row):
         """

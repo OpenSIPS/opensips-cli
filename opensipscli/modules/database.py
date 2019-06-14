@@ -88,6 +88,63 @@ SUPPORTED_BACKENDS = [
     "oracle",
 ]
 
+MIGRATE_TABLES_24_TO_30 = [
+    'registrant', # changed in 3.0
+    'tls_mgm',    # changed in 3.0
+    'acc',
+    'address',
+    'cachedb',
+    'carrierfailureroute',
+    'carrierroute',
+    'cc_agents',
+    'cc_calls',
+    'cc_cdrs',
+    'cc_flows',
+    'closeddial',
+    'clusterer',
+    'cpl',
+    'dbaliases',
+    'dialplan',
+    'dispatcher',
+    'domain',
+    'domainpolicy',
+    'dr_carriers',
+    'dr_gateways',
+    'dr_groups',
+    'dr_partitions',
+    'dr_rules',
+    'emergency_report',
+    'emergency_routing',
+    'emergency_service_provider',
+    'fraud_detection',
+    'freeswitch',
+    'globalblacklist',
+    'grp',
+    'imc_members',
+    'imc_rooms',
+    'load_balancer',
+    'location',
+    'missed_calls',
+    'presentity',
+    'pua',
+    're_grp',
+    'rls_presentity',
+    'rls_watchers',
+    'route_tree',
+    'rtpengine',
+    'rtpproxy_sockets',
+    'silo',
+    'sip_trace',
+    'smpp',
+    'speed_dial',
+    'subscriber',
+    'uri',
+    'userblacklist',
+    'usr_preferences',
+    'xcap',
+    ]
+
+
 class database(Module):
     """
     Class: database modules
@@ -768,10 +825,10 @@ class database(Module):
             logger.debug("migration scripts for db_schema: '%s'", migrate_scripts)
 
         print("Migrating all matching OpenSIPS tables...")
-        db.migrate(migrate_scripts, old_db, new_db)
+        db.migrate(migrate_scripts, old_db, new_db, MIGRATE_TABLES_24_TO_30)
 
-        print("Successfully copied all OpenSIPS table data " +
-                "into database '{}'".format(new_db))
+        print("Finished copying OpenSIPS table data " +
+                "into database '{}'!".format(new_db))
 
         db.destroy()
         return True
