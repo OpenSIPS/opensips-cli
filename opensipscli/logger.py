@@ -61,7 +61,7 @@ class ColoredFormatter(logging.Formatter):
 
     LEVELS_COLORS = {
         'WARNING': ColoredLogger.YELLOW,
-        'INFO': ColoredLogger.WHITE,
+        'INFO': ColoredLogger.MAGENTA,
         'DEBUG': ColoredLogger.BLUE,
         'CRITICAL': ColoredLogger.YELLOW,
         'ERROR': ColoredLogger.RED
