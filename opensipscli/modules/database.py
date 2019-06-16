@@ -212,9 +212,18 @@ class database(Module):
         """
         methods available for autocompletion
         """
-        return ['', 'add', 'alter_role',
-				'create', 'create_db', 'create_module', 'create_role',
-                'drop', 'drop_role', 'get_role', 'migrate']
+        return [
+            'create',
+            'drop',
+            'add',
+            'migrate',
+            'create_role',
+            'alter_role',
+            'drop_role',
+            'get_role',
+            'create_db',
+            'create_module',
+            ]
 
     def ask_db_url(self):
         db_url = cfg.read_param("template_url",
@@ -225,22 +234,6 @@ class database(Module):
             return -1
 
         return db_url
-
-    #def __invoke__(self, cmd, params=None):
-    #    """
-    #    methods handles to preset defaults
-    #    """
-    #    if cmd is None:
-    #        return self.diagnosis_summary()
-    #    if cmd == 'create_role':
-    #        #if not params:
-    #            #params = ['role_name', 'role_options']
-    #            #params = ['opensips', 'NOCREATEDB NOCREATEROLE LOGIN REPLICATION']
-    #        return self.do_create_role(params)
-    #    if cmd == 'drop_role':
-    #        return self.do_drop_role(params)
-    #    if cmd == 'get_role':
-    #        return self.do_get_role()
 
     def do_add(self, params):
         """

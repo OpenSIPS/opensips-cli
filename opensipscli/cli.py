@@ -327,7 +327,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             logger.error("no command '{}' in module '{}'".
                     format(cmd, module))
             return -1
-        logger.debug("running command '%s' with %i arguments: %s'", cmd, len(params), params)
+        logger.debug("running command '{}' '{}'".format(cmd, params))
         return mod[0].__invoke__(cmd, params)
 
     def default(self, line):
