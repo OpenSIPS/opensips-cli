@@ -63,7 +63,7 @@ setup(
         "opensipscli.communication"
     ],
     install_requires=[
-        'mysqlclient',
+        'mysqlclient<1.4.0rc1',
         'sqlalchemy==1.3.3',
         'sqlalchemy-utils'
     ],
