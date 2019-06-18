@@ -846,6 +846,9 @@ class database(Module):
         """
         helper function: migrate database schema
         """
+        if '+' in db_schema:
+            db_schema = db_schema[0:db_schema.index('+')]
+
         if self.db_path is not None:
             scripts = [
                 os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
@@ -863,6 +866,9 @@ class database(Module):
         """
         helper function: get the path defining the root path holding sql schema template
         """
+        if '+' in db_schema:
+            db_schema = db_schema[0:db_schema.index('+')]
+
         if self.db_path is not None:
             return os.path.join(self.db_path, db_schema)
 
