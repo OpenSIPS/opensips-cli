@@ -52,7 +52,7 @@ class user(Module):
             DEFAULT_DB_NAME)
 
         db = osdb(db_url, db_name)
-        db.use()
+        db.connect()
         return db
 
     def user_get_domain(self, name):
