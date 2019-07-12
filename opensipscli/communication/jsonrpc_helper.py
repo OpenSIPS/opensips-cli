@@ -21,6 +21,11 @@ import json
 from random import randint
 from collections import OrderedDict
 
+try:
+    from json.decoder import JSONDecodeError
+except ImportError: # JSONDecodeError is not available in  python3.4
+    JSONDecodeError = ValueError
+
 """
 This function contains helper functions to build and parse JSONRPC commands
 """
@@ -60,7 +65,7 @@ def get_reply(cmd):
             raise JSONRPCError(-32603, 'Internal error')
         else:
             return j['result']
-    except json.decoder.JSONDecodeError:
+    except JSONDecodeError:
         raise JSONRPCException
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
