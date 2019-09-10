@@ -5,4 +5,5 @@ __pycach*
 /.pybuild/
 /build/
 /dist/
+/MANIFEST
 *egg-info/
