@@ -37,9 +37,11 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as fh:
     long_description = fh.read()
 
 class CleanCommand(Command):
-    user_options = []
+    user_options = [
+	 ('all', None, '(Compatibility with original clean command)')
+    ]
     def initialize_options(self):
-        pass
+        self.all = False
     def finalize_options(self):
         pass
     def run(self):
