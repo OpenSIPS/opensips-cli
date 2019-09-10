@@ -9,7 +9,7 @@ Homepage: https://github.com/OpenSIPS/opensips-cli
 Package: opensips-cli
 Architecture: any
 Multi-Arch: foreign
-Depends: python, ${misc:Depends}, ${python3:Depends}
+Depends: python, ${misc:Depends}, ${python3:Depends}, default-libmysqlclient-dev
 Description: very fast and configurable SIP server
  OpenSIPS is a very fast and flexible SIP (RFC3261)
  server. Written entirely in C, OpenSIPS can handle thousands calls
