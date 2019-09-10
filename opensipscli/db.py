@@ -27,7 +27,7 @@ try:
     from sqlalchemy import Column, Date, Integer, String, Boolean
     from sqlalchemy.orm import sessionmaker, deferred
     sqlalchemy_available = True
-    print("SQLAlchemy version: ", sqlalchemy.__version__)
+    logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
 except ImportError:
     logger.info("sqlalchemy and sqlalchemy_utils are not available!")
     sqlalchemy_available = False
@@ -35,33 +35,34 @@ except ImportError:
 """
 SQLAlchemy: Classes for ORM handling
 """
-Base = declarative_base()
-
-class Roles(Base):
-    """
-    Postgres: Roles database
-    """
-    __tablename__ = 'pg_roles'
-
-    oid = Column(Integer, primary_key=True)
-    rolname = Column(String)
-    rolsuper = deferred(Column(Boolean), group='options')
-    rolinherit = deferred(Column(Boolean), group='options')
-    rolcreaterole = deferred(Column(Boolean), group='options')
-    rolcreatedb = deferred(Column(Boolean), group='options')
-    rolcanlogin = deferred(Column(Boolean), group='options')
-    rolreplication = deferred(Column(Boolean), group='options')
-    rolconnlimit = deferred(Column(Integer))
-    rolpassword = Column(String)
-    rolvaliduntil = deferred(Column(Date))
-    rolbypassrls = deferred(Column(Boolean))
-    rolconfig = deferred(Column(String))
-
-    def __repr__(self):
+if sqlalchemy_available:
+    Base = declarative_base()
+    
+    class Roles(Base):
         """
-        returns a string from an arbitrary object
+        Postgres: Roles database
         """
-        return self.shape
+        __tablename__ = 'pg_roles'
+    
+        oid = Column(Integer, primary_key=True)
+        rolname = Column(String)
+        rolsuper = deferred(Column(Boolean), group='options')
+        rolinherit = deferred(Column(Boolean), group='options')
+        rolcreaterole = deferred(Column(Boolean), group='options')
+        rolcreatedb = deferred(Column(Boolean), group='options')
+        rolcanlogin = deferred(Column(Boolean), group='options')
+        rolreplication = deferred(Column(Boolean), group='options')
+        rolconnlimit = deferred(Column(Integer))
+        rolpassword = Column(String)
+        rolvaliduntil = deferred(Column(Date))
+        rolbypassrls = deferred(Column(Boolean))
+        rolconfig = deferred(Column(String))
+    
+        def __repr__(self):
+            """
+            returns a string from an arbitrary object
+            """
+            return self.shape
 
 class osdbError(Exception):
     """
