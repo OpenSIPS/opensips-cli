@@ -102,6 +102,7 @@ instances/configuration within the config file
 * [User](docs/modules/user.md) - utility used to add and remove OpenSIPS users
 * [Trace](docs/modules/trace.md) - trace calls information from users
 * [Trap](docs/modules/trap.md) - use `gdb` to take snapshots of OpenSIPS workers
+* [TLS](docs/modules/tls.md) - utility to generate certificates for TLS
 
 ## Communication
 
