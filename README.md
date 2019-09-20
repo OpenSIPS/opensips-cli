@@ -117,7 +117,7 @@ Forget about `opensipsctl` and move on to a pleasant console environment!
 
 ```
 # required OS packages
-sudo apt-get install python3 python3-pip python3-dev gcc mysql-devel # Debian & Ubuntu
+sudo apt-get install python3 python3-pip python3-dev gcc default-libmysqlclient-dev # Debian & Ubuntu
 sudo yum install python36 python36-pip python36-devel gcc mysql-devel # Red Hat & CentOS
 
 # required Python3 packages
