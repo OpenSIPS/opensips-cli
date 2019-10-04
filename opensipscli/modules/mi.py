@@ -41,6 +41,7 @@ MI_ARRAY_PARAMS_COMMANDS = {
     "dlg_push_var": (2, "DID"),
     "get_statistics": (0, "statistics"),
     "trace_start": (0, "filter"),
+    "raise_event": (1, "params"),
 }
 
 class mi(Module):
