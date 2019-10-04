@@ -19,13 +19,19 @@
 
 from opensipscli.module import Module
 from opensipscli.logger import logger
-from OpenSSL import crypto, SSL
 from socket import gethostname
 from pprint import pprint
 from time import gmtime, mktime
 from os.path import exists, join, dirname
 from os import makedirs
 from opensipscli.config import cfg, OpenSIPSCLIConfig
+
+try:
+    from OpenSSL import crypto, SSL
+    openssl_available = True
+except ImportError:
+    logger.info("OpenSSL library not available!")
+    openssl_available = False
 
 class tls(Module):
     def do_rootCA(self, params):
@@ -162,3 +168,7 @@ class tls(Module):
             logger.info("user certificate created in " + c_f)
             logger.info("user private key created in " + k_f)
             logger.info("user calist(ca chain of trust) created in " + ca_f)
+
+
+    def __exclude__(self):
+        return not openssl_available
