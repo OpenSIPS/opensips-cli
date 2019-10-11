@@ -319,10 +319,15 @@ class osdb(object):
 
         with open(sql_file, 'r') as f:
             try:
-                # the DELIMITER thingies are only useful to mysql shell client
                 sql = f.read()
+
+                # the DELIMITER thingies are only useful to mysql shell client
                 sql = re.sub(r'DELIMITER .*\n', '', sql)
-                sql = re.sub(r'\$\$', '', sql)
+                sql = re.sub(r'\$\$', ';', sql)
+
+                # DROP/CREATE PROCEDURE statements seem to only work separately
+                sql = re.sub(r'DROP PROCEDURE .*\n', '', sql)
+
                 self.__conn.execute(sql)
             except sqlalchemy.exc.IntegrityError as ie:
                 raise osdbError("cannot deploy {} file: {}".
@@ -527,22 +532,36 @@ class osdb(object):
         return result
 
     def migrate(self, migrate_scripts, old_db, new_db, tables=[]):
+        if self.dialect != "mysql":
+            logger.error("Table data migration is only supported for MySQL!")
+            return
+
         """
         migrate from source to destination database using SQL schema files
         """
         self.connect(old_db)
 
+        try:
+            ret = self.find('mysql.proc', "count(*)",
+                        {'db': old_db, 'name': 'OSIPS_DB_MIGRATE_2_4_TO_3_0'})
+            if ret and ret.first()[0] != 0:
+                self.__conn.execute(sqlalchemy.sql.text(
+                    "DROP PROCEDURE IF EXISTS OSIPS_DB_MIGRATE_2_4_TO_3_0").
+                        execution_options(autocommit=True))
+
+            ret = self.find('mysql.proc', "count(*)",
+                        {'db': old_db, 'name': 'OSIPS_TB_COPY_2_4_TO_3_0'})
+            if ret and ret.first()[0] != 0:
+                self.__conn.execute(sqlalchemy.sql.text(
+                    "DROP PROCEDURE IF EXISTS OSIPS_TB_COPY_2_4_TO_3_0").
+                        execution_options(autocommit=True))
+        except Exception as e:
+            logger.exception(e)
+            logger.error("Failed to re-create migration stored procedures!")
+
         for ms in migrate_scripts:
             logger.debug("Importing {}...".format(ms))
-            try:
-                self.exec_sql_file(ms)
-            except sqlalchemy.exc.OperationalError as e:
-                try:
-                    # 1304: stored procedure already exists -> this is fine
-                    if e.args[0].split("(")[2].split(",")[0] != "1304":
-                        raise e
-                except:
-                    raise e
+            self.exec_sql_file(ms)
 
         if tables:
             for tb in tables:

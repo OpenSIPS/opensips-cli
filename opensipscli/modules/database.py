@@ -852,18 +852,8 @@ class database(Module):
         if self.db_path is not None:
             scripts = [
                 os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
+                os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
                 ]
-            """
-            it seems there are issues when importing multiple
-            colon-terminated SQL queries inside an .sql file from Python:
-                _mysql_exceptions.ProgrammingError) (2014, "Commands out of
-                sync; you can't run this command now")
-
-            To solve this, we just create the table migrate function and
-            call it N times from the driver
-
-            # os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
-            """
 
             if any(not os.path.isfile(i) for i in scripts):
                 logger.error("The SQL migration scripts are missing!  " \
