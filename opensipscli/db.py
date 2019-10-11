@@ -534,7 +534,15 @@ class osdb(object):
 
         for ms in migrate_scripts:
             logger.debug("Importing {}...".format(ms))
-            self.exec_sql_file(ms)
+            try:
+                self.exec_sql_file(ms)
+            except sqlalchemy.exc.OperationalError as e:
+                try:
+                    # 1304: stored procedure already exists -> this is fine
+                    if e.args[0].split("(")[2].split(",")[0] != "1304":
+                        raise e
+                except:
+                    raise e
 
         if tables:
             for tb in tables:
