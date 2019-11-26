@@ -65,10 +65,13 @@ setup(
         "opensipscli.communication"
     ],
     install_requires=[
-        'mysqlclient<1.4.0rc1',
-        'sqlalchemy==1.3.3',
+        'sqlalchemy>=1.3.3',
         'sqlalchemy-utils'
     ],
+    extras_require={
+        'mysql': ['mysqlclient<1.4.0rc1', ],
+        'pgsql': ['psycopg2', ]
+    },
     classifiers = [
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

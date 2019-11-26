@@ -117,16 +117,27 @@ Forget about `opensipsctl` and move on to a pleasant console environment!
 
 ```
 # required OS packages
-sudo apt-get install python3 python3-pip python3-dev gcc default-libmysqlclient-dev # Debian & Ubuntu
-sudo yum install python36 python36-pip python36-devel gcc mysql-devel # Red Hat & CentOS
+sudo apt-get install python3 python3-pip python3-dev gcc # Debian & Ubuntu
+sudo yum install python36 python36-pip python36-devel gcc # Red Hat & CentOS
+
+# required OS packages (MySQL)
+sudo apt-get install default-libmysqlclient-dev # Debian & Ubuntu
+sudo yum install mysql-devel # Red Hat & CentOS
+# required OS packages (PostgreSQL)
+sudo apt-get install libpq-dev # Debian & Ubuntu
+sudo yum install postgresql-devel # Red Hat & CentOS
 
 # required Python3 packages
-sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
+sudo pip3 install mysqlclient # MySQL
+sudo pip3 install psycopg2 # PostgreSQL
+sudo pip3 install sqlalchemy sqlalchemy-utils pyOpenSSL
 
 # download & install the CLI
 git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
 cd ~/src/opensips-cli
-sudo python3 setup.py install clean
+sudo pip3 install -e .[mysql] # MySQL
+sudo pip3 install -e .[pgsql] # PostgreSQL
+sudo python3 setup.py clean
 
 # enjoy!
 opensips-cli

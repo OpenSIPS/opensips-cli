@@ -83,7 +83,7 @@ EXTRA_DB_MODULES = [
 
 SUPPORTED_BACKENDS = [
     "mysql",
-    "postgres",
+    "postgresql",
     "sqlite",
     "oracle",
 ]
@@ -417,7 +417,7 @@ class database(Module):
             return -1
 
         # create the role and assing correct access rights
-        if db.dialect == "postgres":
+        if db.dialect == "postgresql":
             if len(params) == 2:
                 role_name = ''.join(params[1])
             else:
@@ -595,7 +595,7 @@ class database(Module):
         if db is None:
             return -1
 
-        if db.dialect == "postgres":
+        if db.dialect == "postgresql":
             logger.debug("params: '%s' (len: %s)", params, len(params))
             if len(params) >= 1:
                 role_name = ''.join(params[0])
@@ -655,7 +655,7 @@ class database(Module):
         if db is None:
             return -1
 
-        if db.dialect == "postgres":
+        if db.dialect == "postgresql":
             if params and len(params) > 1:
                 role_name = params[1]
             else:
@@ -674,7 +674,7 @@ class database(Module):
                 else:
                     logger.info("database '%s' not dropped!", db_name)
 
-                if db.dialect == "postgres":
+                if db.dialect == "postgresql":
                     if db.exists_role(role_name) is True:
                         if cfg.read_param("role_force_drop",
                             "Do you really want to drop the '{}' role".
@@ -868,6 +868,9 @@ class database(Module):
         """
         if '+' in db_schema:
             db_schema = db_schema[0:db_schema.index('+')]
+
+        if db_schema == 'postgresql':
+            db_schema = 'postgres'
 
         if self.db_path is not None:
             return os.path.join(self.db_path, db_schema)

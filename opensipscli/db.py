@@ -37,13 +37,13 @@ SQLAlchemy: Classes for ORM handling
 """
 if sqlalchemy_available:
     Base = declarative_base()
-    
+
     class Roles(Base):
         """
         Postgres: Roles database
         """
         __tablename__ = 'pg_roles'
-    
+
         oid = Column(Integer, primary_key=True)
         rolname = Column(String)
         rolsuper = deferred(Column(Boolean), group='options')
@@ -57,7 +57,7 @@ if sqlalchemy_available:
         rolvaliduntil = deferred(Column(Date))
         rolbypassrls = deferred(Column(Boolean))
         rolconfig = deferred(Column(String))
-    
+
         def __repr__(self):
             """
             returns a string from an arbitrary object
@@ -129,7 +129,7 @@ class osdb(object):
         alter attributes of a role object
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -161,8 +161,9 @@ class osdb(object):
         if db_name is not None:
             self.db_name = db_name
 		# TODO: do this only for SQLAlchemy
-        if self.dialect == "postgres":
-            database_url = "{}/{}".format(self.db_url, self.db_name)
+        if self.dialect == "postgresql":
+            _db_url = self.db_url[:self.db_url.rindex('/')]
+            database_url = "{}/{}".format(_db_url, self.db_name)
             if sqlalchemy_utils.database_exists(database_url) is True:
                 engine = sqlalchemy.create_engine(database_url, isolation_level='AUTOCOMMIT')
                 self.__conn = engine.connect()
@@ -184,7 +185,7 @@ class osdb(object):
         if not self.__conn:
             raise osdbError("connection not available")
         # all good - it's time to create the database
-        if self.dialect == "postgres":
+        if self.dialect == "postgresql":
             logger.debug("Create Database '%s' for dialect: '%s'",
                 self.db_name, self.dialect)
             self.__conn.connection.connection.set_isolation_level(0)
@@ -209,7 +210,7 @@ class osdb(object):
         create a role object (PostgreSQL secific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -280,7 +281,7 @@ class osdb(object):
         drop a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -359,7 +360,7 @@ class osdb(object):
         check for existence of a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -440,7 +441,7 @@ class osdb(object):
         get attibutes of a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -465,7 +466,7 @@ class osdb(object):
         assign attibutes to a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
