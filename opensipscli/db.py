@@ -109,7 +109,8 @@ class osdb(object):
                 self.__engine = sqlalchemy.create_engine(db_url, isolation_level='AUTOCOMMIT')
             else:
                 self.__engine = sqlalchemy.create_engine(db_url)
-            self.__conn = self.__engine.connect()
+            self.__conn = self.__engine.connect().\
+                    execution_options(autocommit=True)
             # connect the Session object to our engine
             self.Session.configure(bind=self.__engine)
             # instanciate the Session object
@@ -569,11 +570,8 @@ class osdb(object):
                 try:
                     self.__conn.execute(sqlalchemy.sql.text(
                         "CALL {}.OSIPS_TB_COPY_2_4_TO_3_0('{}', '{}', '{}')".format(
-                            old_db, old_db, new_db, tb)).execution_options(
-                                autocommit=True))
-                    print("OK")
+                            old_db, old_db, new_db, tb)))
                 except Exception as e:
-                    print("FAILED!")
                     logger.exception(e)
                     logger.error("Failed to migrate '{}' table data, ".format(tb) +
                                     "see above errors!")
@@ -581,8 +579,7 @@ class osdb(object):
             try:
                 self.__conn.execute(sqlalchemy.sql.text(
                     "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
-                        old_db, old_db, new_db)).execution_options(
-                            autocommit=True))
+                        old_db, old_db, new_db)))
             except Exception as e:
                 logger.exception(e)
                 logger.error("Failed to migrate database!")
