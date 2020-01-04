@@ -2,14 +2,14 @@ Source: opensips-cli
 Section: python
 Priority: optional
 Maintainer: Razvan Crainea <razvan@opensips.org>
-Build-Depends: debhelper (>= 9), python3-dev
+Build-Depends: debhelper (>= 9), python3-dev, default-libmysqlclient-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/OpenSIPS/opensips-cli
 
 Package: opensips-cli
 Architecture: any
 Multi-Arch: foreign
-Depends: python, ${misc:Depends}, ${python3:Depends}, default-libmysqlclient-dev
+Depends: python, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysql
 Description: very fast and configurable SIP server
  OpenSIPS is a very fast and flexible SIP (RFC3261)
  server. Written entirely in C, OpenSIPS can handle thousands calls
