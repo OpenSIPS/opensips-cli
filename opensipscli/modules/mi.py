@@ -44,6 +44,7 @@ MI_ARRAY_PARAMS_COMMANDS = {
     "reset_statistics": (0, "statistics"),
     "trace_start": (0, "filter"),
     "raise_event": (1, "params"),
+    "dfks_set_feature": (4, "values"),
 }
 
 class mi(Module):
