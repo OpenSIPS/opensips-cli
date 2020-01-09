@@ -119,7 +119,8 @@ class mi(Module):
                 return params
             # build params based on their index
             new_params = params[0:MI_ARRAY_PARAMS_COMMANDS[cmd][0]]
-            new_params.append(params[MI_ARRAY_PARAMS_COMMANDS[cmd][0]:])
+            if params[MI_ARRAY_PARAMS_COMMANDS[cmd][0]:]:
+                new_params.append(params[MI_ARRAY_PARAMS_COMMANDS[cmd][0]:])
         return new_params
 
     def __invoke__(self, cmd, params=None):
