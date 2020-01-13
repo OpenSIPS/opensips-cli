@@ -319,20 +319,31 @@ class osdb(object):
             raise osdbError("connection not available")
 
         with open(sql_file, 'r') as f:
-            try:
-                sql = f.read()
+            if sql_file.endswith("-migrate.sql"):
+                try:
+                    sql = f.read()
 
-                # the DELIMITER thingies are only useful to mysql shell client
-                sql = re.sub(r'DELIMITER .*\n', '', sql)
-                sql = re.sub(r'\$\$', ';', sql)
+                    # the DELIMITER thingies are only useful to mysql shell client
+                    sql = re.sub(r'DELIMITER .*\n', '', sql)
+                    sql = re.sub(r'\$\$', ';', sql)
 
-                # DROP/CREATE PROCEDURE statements seem to only work separately
-                sql = re.sub(r'DROP PROCEDURE .*\n', '', sql)
+                    # DROP/CREATE PROCEDURE statements seem to only work separately
+                    sql = re.sub(r'DROP PROCEDURE .*\n', '', sql)
 
-                self.__conn.execute(sql)
-            except sqlalchemy.exc.IntegrityError as ie:
-                raise osdbError("cannot deploy {} file: {}".
-                        format(sql_file, ie)) from None
+                    self.__conn.execute(sql)
+                except sqlalchemy.exc.IntegrityError as ie:
+                    raise osdbError("cannot deploy {} file: {}".
+                            format(sql_file, ie)) from None
+            else:
+                for sql in f.read().split(";"):
+                    sql = sql.strip()
+                    if not sql:
+                        continue
+                    try:
+                        self.__conn.execute(sql)
+                    except sqlalchemy.exc.IntegrityError as ie:
+                        raise osdbError("cannot deploy {} file: {}".
+                                format(sql_file, ie)) from None
 
     def exists(self, db=None):
         """
