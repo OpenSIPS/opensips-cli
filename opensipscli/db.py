@@ -577,7 +577,7 @@ class osdb(object):
 
         if tables:
             for tb in tables:
-                print("Migrating {} data... ".format(tb), end='')
+                logger.info("Migrating {} data... ".format(tb))
                 try:
                     self.__conn.execute(sqlalchemy.sql.text(
                         "CALL {}.OSIPS_TB_COPY_2_4_TO_3_0('{}', '{}', '{}')".format(
