@@ -1,0 +1,70 @@
+# vim:set ts=8 sw=8 et:
+# Maintainer: Ralf Zerres <ralf.zerres@networkx.de>
+
+pkgname=opensips-cli-git
+_pkgname=opensips-cli
+pkgver=0.r201.g7ee9239
+pkgrel=1
+_branch=master
+pkgdesc="The OpenSIPS commandline interface"
+url="https://www.opensips.org"
+provides=("opensips-cli")
+depends=('opensips' 'python' 'python-sqlalchemy-utils')
+optdepends=('python-psycopg2' 'python-mysqlclient')
+makedepends=('python')
+arch=('x86_64' 'armv7')
+license=('GPL')
+source=("$pkgname::git+https://github.com/OpenSIPS/$_pkgname.git#branch=$_branch")
+sha256sums=('SKIP')
+validpgpkeys=( # Ralf Zerres (Package Signing)
+	       '1EC4BE4FF2A6C9F4DDDF30F33C5F485DBD250D66'
+	     )
+backup=("etc/opensips/opensips-cli.cfg")
+
+pkgver() {
+	cd "${srcdir}/${pkgname}"
+	echo "0.r$(git rev-list --count $_branch).g$(git log -1 --format="%h")"
+}
+
+prepare() {
+	cd "$srcdir"/${pkgname}
+
+	if [ ! -f .makepkg-patched ]; then
+		msg2 "patching"
+		msg2 "patching [done]"
+		touch .makepkg-patched
+		#msg2 "no patches for branch '${_branch}' needed"
+	fi
+}
+
+build() {
+	cd "$srcdir"/${pkgname}
+
+	python setup.py build
+}
+
+package() {
+	cd "$srcdir"/${pkgname}
+
+	python setup.py install \
+		--root="$pkgdir/" \
+		--optimize=1 --skip-build
+
+	msg2 "install default config"
+	if [ -f etc/default.cfg ]; then
+		ETC_DIR="$pkgdir/etc/${pkgbase%%-*}"
+		mkdir -p "$ETC_DIR"
+		chmod 0755 "$ETC_DIR"
+		cp etc/default.cfg $ETC_DIR/${_pkgname}.cfg
+		chmod 0644 "$ETC_DIR/${_pkgname}.cfg"
+		# adapt to arch complient runtime path
+		sed -i 's%^\(fifo_file\): \(.*\)%\1: /run/opensips/opensips_fifo%' $ETC_DIR/${_pkgname}.cfg
+		echo "###" >> $ETC_DIR/${_pkgname}.cfg
+		echo "# postgresql defaults" >> $ETC_DIR/${_pkgname}.cfg
+		echo "###" >> $ETC_DIR/${_pkgname}.cfg
+		echo "#database_url=postgresql://opensips:OpensipsPW@localhost" >> $ETC_DIR/${_pkgname}.cfg
+		echo "#template_url=postgresql://opensips:OpensipsPW@localhost" >> $ETC_DIR/${_pkgname}.cfg
+		echo "#database_name=${pkgbase%%-*}" >> $ETC_DIR/${_pkgname}.cfg
+		echo "#database_modules=dialog usrloc" >> $ETC_DIR/${_pkgname}.cfg
+	fi
+}
