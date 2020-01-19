@@ -227,7 +227,7 @@ class database(Module):
 
     def ask_db_url(self):
         db_url = cfg.read_param("template_url",
-             "Please provide the URL of the SQL database")
+             "Please provide the database URL (conneting as template)")
         if db_url is None:
             print()
             logger.error("no URL specified: aborting!")
@@ -240,20 +240,20 @@ class database(Module):
         add a given table to the database (connection via URL)
         """
         if len(params) < 1:
-            logger.error("No module to add added")
+            logger.error("Module name missing: aborting!")
             return -1
         module = params[0]
 
         db_url = cfg.read_param("database_url",
-                "Please provide us the URL of the database")
+                "Please provide the database URL")
         if db_url is None:
             print()
-            logger.error("no URL specified: aborting!")
+            logger.error("no database URL specified: aborting!")
             return -1
 
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
-                    "Please provide the database to add the module to",
+                    "Please provide the database name the choosen module will be added to",
                     DEFAULT_DB_NAME)
         else:
             db_name = params[1]
