@@ -113,8 +113,9 @@ different transports. Supported transports at the moment are:
 
 ## Installation
 
-Please follow detail explanations in the <a href="docs/INSTALLATION.md">Installation</a> section.
-This will provide general advise, on how to install `opensipsctl` in you environment.
+Please follow details provided in the <a href="docs/INSTALLATION.md">Installation</a> section.
+This document includes general advise, on how to install `opensips-cli` as a replacement for
+depreciated shell script `opensipscli`.
 
 ## Contribute
 
@@ -131,5 +132,13 @@ OpenSIPS.
 
 ## License
 
-This project is licensed under the GPL License - see the [LICENSE](LICENSE)
-file for details.
+<!-- License source -->
+[Logo-CC_BY]: https://i.creativecommons.org/l/by/4.0/88x31.png "Creative Common Logo"
+[License-CC_BY]: https://creativecommons.org/licenses/by/4.0/legalcode "Creative Common License"
+
+This project is licensed under a [Creative Common License 4.0][License-CC_BY]
+
+![Creative Common Logo][Logo-CC_BY]
+
+© 2018         Dorin Andrei Geman;
+© 2018 - 2020  Liviu Chircu
