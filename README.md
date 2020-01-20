@@ -111,27 +111,10 @@ different transports. Supported transports at the moment are:
 * `FIFO` - communicate over the `mi_fifo` module
 * `HTTP` - use JSONRPC over HTTP through the `mi_http` module
 
-## Install
+## Installation
 
-Forget about `opensipsctl` and move on to a pleasant console environment!
-
-```
-# required OS packages
-sudo apt-get install python3 python3-pip python3-dev gcc default-libmysqlclient-dev # Debian & Ubuntu
-sudo yum install python36 python36-pip python36-devel gcc mysql-devel # Red Hat & CentOS
-
-# required Python3 packages
-sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
-
-# download & install the CLI
-git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
-cd ~/src/opensips-cli
-sudo python3 setup.py install clean
-
-# enjoy!
-opensips-cli
-(opensips-cli): quit
-```
+Please follow detail explanations in the <a href="docs/INSTALLATION.md">Installation</a> section.
+This will provide general advise, on how to install `opensipsctl` in you environment.
 
 ## Contribute
 
