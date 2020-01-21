@@ -54,15 +54,15 @@ Consider the following configuration file:
 
 ```
 [mysql]
-database_url=mysql://root@localhost
-database_name=opensips
-database_modules=dialog usrloc
+database_url: mysql://root@localhost
+database_name: opensips
+database_modules: dialog usrloc
 
 [postgres]
-database_url=postgres://postgres@localhost:5432
-template_url=postgres://postgres@localhost:5432
-database_name=opensips
-database_modules=dialog usrloc
+database_url: postgres://opensips@localhost:5432
+template_url: postgres://postgres@localhost:5432
+database_name: opensips
+database_modules: dialog usrloc
 ```
 
 The following command will create the `opensips` table, containing only the
