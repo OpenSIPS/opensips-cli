@@ -1,0 +1,58 @@
+#!/bin/sh
+post_install() {
+	echo ""
+	echo "Since version 3.0 of opensips, the database will be created"
+	echo "unsing 'opensips-cli'."
+	echo "1) we will check for supported database backends"
+
+	# check for supported database backend
+	ETC_DIR=/etc/opensips
+	db_backends="mariadb postgresql"
+	nr_backends=0
+	echo "database_name: opensips" >> $ETC_DIR/opensips-cli.cfg
+	echo "database_modules: dialog usrloc" >> $ETC_DIR/opensips-cli.cfg
+	for db_backend in $db_backends; do
+		pacman -Qi $db_backend 2>/dev/null 1>/dev/null
+		if [ $? == 0 ]; then
+			case $db_backend in
+			mariadb)
+				echo "mysql backend installed"
+				echo "database_url: mysql://localhost/opensips" \
+				     >> $ETC_DIR/opensips-cli.cfgi
+				nr_backends=$((nr_backends+1))
+			;;
+			postgresql)
+				echo "PostgreSQL backend installed"
+				echo "database_url: postgres://opensips@localhost" \
+					>> $ETC_DIR/opensips-cli.cfg
+				echo "template_url: postgres://postgres@localhost" \
+					>> $ETC_DIR/opensips-cli.cfg
+				nr_backends=$((nr_backends+1))
+			;;
+			*)
+				echo "unsupported backend"
+			esac
+		fi
+	done
+	if [ $nr_backends == 0 ]; then
+	    echo "no database backend installed, prepare default"
+	    echo -e "\n[mysql-default]" \
+		 >> $ETC_DIR/opensips-cli.cfg
+	    echo "database_url: mysql://localhost/opensips" \
+		 >> $ETC_DIR/opensips-cli.cfg
+	    echo -e "\n[postgres-default]" \
+		 >> $ETC_DIR/opensips-cli.cfg
+	    echo "database_url: postgres://opensips@localhost" \
+		 >> $ETC_DIR/opensips-cli.cfg
+	    echo "template_url: postgres://postgres@localhost" \
+		 >> $ETC_DIR/opensips-cli.cfg
+	    echo -e "2) Please install a supported database backend\n" \
+		 "  Then review the created default configuration"
+	    echo "  '/etc/opensips/opensips-cli.cfg'"
+	else
+	    echo "2) You need review the created default configuration"
+	    echo "   '/etc/opensips/opensips-cli.cfg'"
+	fi
+	echo "3) Run following command to create the opensips database instance"
+	echo "   'opensips-cli -x database create'"
+}
