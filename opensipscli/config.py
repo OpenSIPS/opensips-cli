@@ -104,11 +104,11 @@ class OpenSIPSCLIConfig:
                     return self.get(p);
         val = ""
         if yes_no:
-            prompt = prompt + " [Y/n]"
+            prompt = prompt + " [y/n]"
             if default is not None:
-                prompt = prompt + " (Default is {})".format("Y" if default else "n")
+                prompt = prompt + " (Default is '{}')".format("y" if default else "n")
         elif default is not None:
-            prompt = prompt + " (Default value is {})".format(default)
+            prompt = prompt + " (Default value is '{}')".format(default)
         prompt = prompt + ": "
         while val == "":
             try:
@@ -124,7 +124,7 @@ class OpenSIPSCLIConfig:
                 elif val.lower() in ['n', 'no']:
                     return False
                 else:
-                    prompt = "Please choose 'Y' or 'n': "
+                    prompt = "Please choose 'y' or 'n': "
             else:
                 return val
 
