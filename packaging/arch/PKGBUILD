@@ -1,0 +1,66 @@
+# vim:set ts=8 sw=8 et:
+# Maintainer: Ralf Zerres <ralf.zerres@networkx.de>
+
+pkgname=opensips-cli
+pkgver=0.1
+pkgrel=1
+pkgdesc="The OpenSIPS commandline interface"
+url="https://www.opensips.org"
+provides=("${pkgname}=${pkgver}")
+conflicts=("${pkgname}-git")
+depends=('opensips' 'python' 'python-sqlalchemy-utils')
+optdepends=('python-psycopg2' 'python-mysqlclient')
+#makedepends=('git')
+arch=('x86_64' 'armv7')
+license=('GPL')
+source=("$pkgname-$pkgver::https://github.com/OpenSIPS/$pkgname/archive/$pkgver.tar.gz")
+sha256sums=('0572747919d7b9f0be365ac7d96c0781eb2a016873f0c49145e0845b1c07e3a1')
+validpgpkeys=( # Ralf Zerres (Package Signing)
+	       '1EC4BE4FF2A6C9F4DDDF30F33C5F485DBD250D66'
+	     )
+backup=("etc/opensips/opensips-cli.cfg")
+install=opensips-cli.install
+
+prepare() {
+	cd "$srcdir"/${pkgname}-${pkgver}
+
+	#msg2 "Applying patches"
+	#if [ ! -f .makepkg-patched ]; then
+		#if [ ! -d ./.git ]; then
+		#	msg2 "  patching: create orphan git repository"
+		#	git init
+		#	git checkout --orphan ${pkgname}-${pkgver}
+		#fi
+		#git add Makefile.defs
+		#git commit -am "${pkgname}-${pkgver}: Makefile.defs"
+		#git am --signoff ../../patches-git-${pkgver}/0001-packaging-Arch-Linux-update-search-path-for-docbook.patch
+		#touch .makepkg-patched
+		#msg2 "  patching [done]"
+		#"msg2 "no patches needed"
+	#fi
+}
+
+build() {
+	cd "$srcdir"/${pkgname}-${pkgver}
+
+	python setup.py build
+}
+
+package() {
+	cd "$srcdir"/${pkgname}-${pkgver}
+
+	python setup.py install \
+		--root="$pkgdir/" \
+		--optimize=1 --skip-build
+
+	msg2 "install default config"
+	if [ -f etc/default.cfg ]; then
+		ETC_DIR="$pkgdir/etc/${pkgbase%%-*}"
+		mkdir -p "$ETC_DIR"
+		chmod 0755 "$ETC_DIR"
+		cp etc/default.cfg $ETC_DIR/${pkgname}.cfg
+		chmod 0644 "$ETC_DIR/${pkgname}.cfg"
+		# adapt to arch complient runtime path
+		sed -i 's%^\(fifo_file\): \(.*\)%\1: /run/opensips/opensips_fifo%' $ETC_DIR/${pkgname}.cfg
+	fi
+}
