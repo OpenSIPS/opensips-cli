@@ -1,38 +1,38 @@
 # Installation
 
-`opensips-cli` is the intended convenient command-line interface for administrating
-you `opensips` installations.
+`opensips-cli` is the intended convenient command-line interface for
+administrating `opensips 3.x` installations.
 
-Since `version 3.x` the former script tool `opensipsctl` is depreciated and not delivered
-any more. Looking forward to its successor `opensips-cli` it offers many advantages,
-and will improve handling for your regular task in a pleasant console environment.
+Since `version 3.x`, the former script tool `opensipsctl` has been removed.
+Its successor, `opensips-cli`, offers many advantages and will improve
+handling for regular tasks in a pleasant console environment.
 
-This is non-exclusive list of its eye catchers:
+A non-exclusive list with its eye-catching features:
 
 * modular design
-* python based (e.g use of inheritance)
 * JSON-RPC based Management Interface
 * auto completion
-* history functionality
+* forward/reverse history search
+* Python based (e.g use of inheritance)
 
 ## General
 
-To make use of `opensips-cli` you need to install the tool itself as well as
-its dependencies. The process will very on every supported Operating-System.
+To make use of `opensips-cli`, you need to install the tool itself as well as
+its dependencies. The process will vary on every supported operating system.
 
 In all cases, the installation process will create a default configuration.
 This will be stored in `/etc/opensips/opensips-cli.cfg` and serves as the
-systems default (reference: [Core](../etc/default.cfg), [Database](modules/database.md#Examples). No security sensible data (e.g. passwords) should be saved in
-this file.
-If needed, you can copy this default to your home-directory
-(e.g. ~home/opensips-cli.cfg), change the access rights (e.g. chmod 0600) and
-adopt the parameter as needed.
-`opensips-cli` will respect the presence of that file in favor of the system
-default.
+system default (reference: [Core](../etc/default.cfg),
+[Database](modules/database.md#Examples).
+No security sensible data (e.g. passwords) should be saved in this file.
+If needed, you may copy this default to your home-directory
+(e.g. ~home/opensips-cli.cfg), change the access rights (e.g. `chmod 0600`) and
+adopt the parameter as needed.  `opensips-cli` will respect the presence of
+that file in favor of the system default.
 
 ### Distribution packages
 
-There are several recompiled packages, ready for your distribution
+There are several recompiled packages, ready for your distribution.
 
 #### Debian / Ubuntu
 
@@ -75,7 +75,8 @@ yay opensip-cli
 ```
 ### Source code / Master Branch
 
-The latest development state can be download and install from the GitHub repository.
+The latest development state can be downloaded and installed from the GitHub
+repository.
 
 ```
 git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
@@ -108,7 +109,7 @@ database server to login as any PostgreSQL user.
 This is fine, since PostgreSQL users are handled internally and are not
 connected to system accounts. It is a common good habit, to leave the
 system user `postgres` locked! You never want to set its password.
-All fine tuning is taking place inside PostgreSQL Roles and Privileges
+All fine tuning is taking place inside the PostgreSQL Roles and Privileges
 subsystem.
 
 Access privileges will be assigned to roles via the
@@ -116,12 +117,12 @@ Access privileges will be assigned to roles via the
 methods. The GRANT command has two basic variants:
 
 * one that grants privileges on a database object
-* and one that grants membership in a role
+* one that grants membership in a role
 
 #### opensips-cli methods
 
 To install a new database with `opensips-cli`, the method `database create`
-is used . If the calling PostgeSQL user is associated to a role that includes
+is used . If the calling PostgreSQL user is associated to a role that includes
 the `CREATE` privilege, you are fine. The creation will use the `template_uri`,
 connect to the database template ("template1") and traverse the following
 steps:
@@ -131,10 +132,10 @@ steps:
 * assign a password to the new PostgreSQL user (default: "opensipspw")
 * create a new role (default: "opensips")
 * associated correct privileges to this role:
-  (default: "NOCRETEDB", "NOCREATEROLE", "LOGIN", "REPLICATION")
+  (default: "NOCREATEDB", "NOCREATEROLE", "LOGIN", "REPLICATION")
 * associate new role with new PostgreSQL user
 
-Once completed, `opensip` and `opensip-cli`
+Once completed, `opensips` and `opensips-cli`
 will connect to the database using the general `database_url`.
 
 starting opensips-cli in interactive mode will allow to auto-complete available methods:
@@ -149,7 +150,7 @@ alter_role     create_db      create_role    drop_role      migrate
 
 #### admin tasks
 
-If you take advantage of `opensip-cli` non-interactive installation procedure
+If you take advantage of `opensips-cli` non-interactive installation procedure
 that offers `zero configuration`, we encourage the admin to adopt the default
 password.
 

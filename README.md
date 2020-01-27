@@ -113,9 +113,10 @@ different transports. Supported transports at the moment are:
 
 ## Installation
 
-Please follow details provided in the <a href="docs/INSTALLATION.md">Installation</a> section.
-This document includes general advise, on how to install `opensips-cli` as a replacement for
-depreciated shell script `opensipscli`.
+Please follow the details provided in the
+<a href="docs/INSTALLATION.md">Installation</a> section, for a complete guide
+on how to install `opensips-cli` as a replacement for the deprecated
+`opensipsctl` shell script.
 
 ## Contribute
 
@@ -140,5 +141,4 @@ This project is licensed under a [Creative Common License 4.0][License-CC_BY]
 
 ![Creative Common Logo][Logo-CC_BY]
 
-© 2018         Dorin Andrei Geman;
-© 2018 - 2020  Liviu Chircu
+© 2018 - 2020  OpenSIPS Solutions
