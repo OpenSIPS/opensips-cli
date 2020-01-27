@@ -7,7 +7,7 @@ Standards-Version: 3.9.8
 Homepage: https://github.com/OpenSIPS/opensips-cli
 
 Package: opensips-cli
-Architecture: any
+Architecture: all
 Multi-Arch: foreign
 Depends: python, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysql
 Description: very fast and configurable SIP server
