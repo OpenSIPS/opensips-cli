@@ -2,7 +2,7 @@ Source: opensips-cli
 Section: python
 Priority: optional
 Maintainer: Razvan Crainea <razvan@opensips.org>
-Build-Depends: debhelper (>= 9), python3-dev, default-libmysqlclient-dev
+Build-Depends: debhelper (>= 9), python3-dev, default-libmysqlclient-dev | libmysqlclient-dev
 Standards-Version: 3.9.8
 Homepage: https://github.com/OpenSIPS/opensips-cli
 
