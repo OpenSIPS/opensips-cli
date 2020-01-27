@@ -138,7 +138,7 @@ OpenSIPS.
 [Logo-CC_BY]: https://i.creativecommons.org/l/by/4.0/88x31.png "Creative Common Logo"
 [License-CC_BY]: https://creativecommons.org/licenses/by/4.0/legalcode "Creative Common License"
 
-The `opensips-cli` source code is licensed under the [General Public License v3.0][License-GPLv3]
+The `opensips-cli` source code is licensed under the [GNU General Public License v3.0][License-GPLv3]
 
 All documentation files (i.e. `.md` extension) are licensed under the [Creative Common License 4.0][License-CC_BY]
 
