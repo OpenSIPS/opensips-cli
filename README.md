@@ -111,27 +111,12 @@ different transports. Supported transports at the moment are:
 * `FIFO` - communicate over the `mi_fifo` module
 * `HTTP` - use JSONRPC over HTTP through the `mi_http` module
 
-## Install
+## Installation
 
-Forget about `opensipsctl` and move on to a pleasant console environment!
-
-```
-# required OS packages
-sudo apt-get install python3 python3-pip python3-dev gcc default-libmysqlclient-dev # Debian & Ubuntu
-sudo yum install python36 python36-pip python36-devel gcc mysql-devel # Red Hat & CentOS
-
-# required Python3 packages
-sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
-
-# download & install the CLI
-git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
-cd ~/src/opensips-cli
-sudo python3 setup.py install clean
-
-# enjoy!
-opensips-cli
-(opensips-cli): quit
-```
+Please follow the details provided in the
+<a href="docs/INSTALLATION.md">Installation</a> section, for a complete guide
+on how to install `opensips-cli` as a replacement for the deprecated
+`opensipsctl` shell script.
 
 ## Contribute
 
@@ -148,5 +133,12 @@ OpenSIPS.
 
 ## License
 
-This project is licensed under the GPL License - see the [LICENSE](LICENSE)
-file for details.
+<!-- License source -->
+[Logo-CC_BY]: https://i.creativecommons.org/l/by/4.0/88x31.png "Creative Common Logo"
+[License-CC_BY]: https://creativecommons.org/licenses/by/4.0/legalcode "Creative Common License"
+
+This project is licensed under a [Creative Common License 4.0][License-CC_BY]
+
+![Creative Common Logo][Logo-CC_BY]
+
+© 2018 - 2020  OpenSIPS Solutions

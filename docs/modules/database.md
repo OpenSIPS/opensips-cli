@@ -18,23 +18,35 @@ hierarchy.
 
 ## Configuration
 
-The parameters from this tool can be either provisioned in the configuration
-file, either prompted for during runtime. If a parameter is specified in the
-configuration file, you will not be prompted for it!
+The parameters for this tool can be provisioned in two forms:
 
-These are the parameters that can be specified in the config file:
+*  via a declaration in the configuration file
+*  typed in when prompted at execution
+
+Specifying a parameter in the configuration file may simplify the user
+interaction with the console (less prompts).
+
+The following parameters are allowed in the config file:
+
 * `database_path` - the directory to the OpenSIPS DB scripts, usually the
 `scripts/` directory in the OpenSIPS source tree, or `/usr/share/opensips/`
-* `database_url` - an URL to the database, containing schema, username,
-password, host and port. Example: `mysql://user:password@host`
-* `database_name` - the name of the database to create, drop, or add modules
-to
-* `database_modules` - a space-separated list of the modules tables that need
-to be deployed by the `create` command. Defaults are: `acc alias_db auth_db
-avpops clusterer dialog dialplan dispatcher domain drouting group
-load_balancer msilo permissions rtpproxy rtpengine speeddial tls_mgm usrloc`
-* `database_force_drop` - indicates whether the `drop` command should drop the
-database without prompting the user
+* `database_url` - the connection string to the database.
+The URL combines schema, username, password, host and port.
+Example: `mysql://user:password@host`
+* `template_url` - the connection string to the database in template mode.
+The URL will connect to a given database and select a template to execute
+the given task. Only database products supporting a role concept will
+evaluate this config option (e.g. PostgreSQL).
+Example: `postgres://user:password@host:5432`
+* `database_name` - the name of the database. Modules may be
+created, dropped or added to this database.
+* `database_modules` - a space-separated list of the module names.
+If processed with the `create` command, the corresponding tables will be
+deployed.  Default modules: `acc alias_db auth_db avpops clusterer dialog
+dialplan dispatcher domain drouting group load_balancer msilo permissions
+rtpproxy rtpengine speeddial tls_mgm usrloc`
+* `database_force_drop` - indicates whether the `drop` command will drop the
+database without user interaction.
 
 ## Examples
 
@@ -42,9 +54,16 @@ Consider the following configuration file:
 
 ```
 [default]
-database_url=mysql://root@localhost
-database_name=opensips
-database_modules=dialog usrloc
+database_url: mysql://root@localhost
+database_name: opensips
+database_modules: dialog usrloc
+
+# optional DB override instance, invoked using `opensips-cli -i postgres ...`
+[postgres]
+database_url: postgres://opensips@localhost:5432
+template_url: postgres://postgres@localhost:5432
+database_name: opensips
+database_modules: dialog usrloc
 ```
 
 The following command will create the `opensips` table, containing only the
@@ -67,7 +86,7 @@ database or not:
 
 ```
 $ opensips-cli -x database drop
-Do you really want to drop the 'opensips_cli' database [Y/n] (Default is n): n
+Do you really want to drop the 'opensips' database [Y/n] (Default is n): n
 ```
 
 But setting the `database_force_drop` parameter will drop it without asking:
@@ -78,7 +97,7 @@ opensips-cli -o database_force_drop=true -x database drop
 ## Dependencies
 
 * [sqlalchemy and sqlalchemy_utils](https://www.sqlalchemy.org/) - used to
-abstractizeze the database manipulation, regardless the backend used
+abstract the SQL database regardless of the backend used
 
 ## Limitations
 
