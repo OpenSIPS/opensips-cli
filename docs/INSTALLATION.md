@@ -63,15 +63,15 @@ sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
 #### Arch-Linux
 
 The distribution is managed as a rolling relase. Packages are administered
-via the `pacman`front-end. Please install `opensip-cli` from the `AUR` using
+via the `pacman`front-end. Please install `opensips-cli` from the `AUR` using
 your favorite client:
 
 ```
 # git branch
-yay opensip-cli-git
+yay opensips-cli-git
 
 # release branch
-yay opensip-cli
+yay opensips-cli
 ```
 ### Source code / Master Branch
 
