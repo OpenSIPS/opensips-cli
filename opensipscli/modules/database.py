@@ -226,7 +226,7 @@ class database(Module):
             ]
 
     def ask_db_url(self):
-        db_url = cfg.read_param("template_url",
+        db_url = cfg.read_param("database_url",
              "Please provide the URL of the SQL database")
         if db_url is None:
             print()
