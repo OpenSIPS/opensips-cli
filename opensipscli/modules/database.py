@@ -479,20 +479,21 @@ class database(Module):
         tables_files = [ standard_file_path ]
 
         # check to see what tables we shall deploy
-        if cfg.read_param(None,
-                "Create [a]ll tables or just the [c]urrently configured ones?",
-                default="a").lower() == "a":
-            print("Creating all tables ...")
-            tables = [ f.replace('-create.sql', '') \
-                        for f in os.listdir(schema_path) \
-                        if os.path.isfile(os.path.join(schema_path, f)) and \
-                            f.endswith('-create.sql') ]
-        else:
-            print("Creating the currently configured set of tables ...")
-            if cfg.exists("database_modules"):
-                tables = cfg.get("database_modules").split(" ")
+        if cfg.exists("database_modules"):
+            # we know exactly what modules we want to instsall
+            tables_line = cfg.get("database_modules").strip().lower()
+            if tables_line == "all":
+                logger.debug("Creating all tables")
+                tables = [ f.replace('-create.sql', '') \
+                            for f in os.listdir(schema_path) \
+                            if os.path.isfile(os.path.join(schema_path, f)) and \
+                                f.endswith('-create.sql') ]
             else:
-                tables = STANDARD_DB_MODULES
+                logger.debug("Creating custom tables")
+                tables = tables_line.split(" ")
+        else:
+            logger.debug("Creating standard tables")
+            tables = STANDARD_DB_MODULES
 
         # check for corresponding SQL schemas files in system path
         logger.debug("deploying tables {}".format(" ".join(tables)))

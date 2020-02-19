@@ -40,11 +40,12 @@ evaluate this config option (e.g. PostgreSQL).
 Example: `postgres://user:password@host:5432`
 * `database_name` - the name of the database. Modules may be
 created, dropped or added to this database.
-* `database_modules` - a space-separated list of the module names.
-If processed with the `create` command, the corresponding tables will be
-deployed.  Default modules: `acc alias_db auth_db avpops clusterer dialog
+* `database_modules` - accepts the `ALL` keyword that indicates all the
+available modules should be installed, or a space-separated list of modules
+names. If processed with the `create` command, the corresponding tables will
+be deployed.  Default modules: `acc alias_db auth_db avpops clusterer dialog
 dialplan dispatcher domain drouting group load_balancer msilo permissions
-rtpproxy rtpengine speeddial tls_mgm usrloc`
+rtpproxy rtpengine speeddial tls_mgm usrloc`.
 * `database_force_drop` - indicates whether the `drop` command will drop the
 database without user interaction.
 
