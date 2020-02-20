@@ -18,6 +18,20 @@ hierarchy.
 
 ## Configuration
 
+## Database Schema Files
+
+The database schema files for each supported SQL backend can be installed via
+their corresponding OpenSIPS client module package.  For example (only install modules useful to you):
+
+```
+apt install opensips-mysql-module opensips-postgres-module opensips-sqlite-module opensips-berkeley-module
+yum install opensips-db_mysql opensips-db_postgresql opensips-db_sqlite opensips-db_berkeley
+```
+
+Once installed, the schema files will be auto-detected by `opensips-cli`.
+
+## Setting up the `database` module
+
 The parameters for this tool can be provisioned in two forms:
 
 *  via a declaration in the configuration file
