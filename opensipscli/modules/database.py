@@ -669,7 +669,7 @@ class database(Module):
             if cfg.read_param("database_force_drop",
                 "Do you really want to drop the '{}' database".
                     format(db_name),
-                False, True):
+                False, True, isbool=True):
                 if db.drop():
                     logger.info("database '%s' dropped!", db_name)
                 else:
@@ -687,7 +687,8 @@ class database(Module):
             else:
                 logger.info("database '{}' not dropped!".format(db_name))
         else:
-                logger.warning("database '{}' does not exist!".format(db_name))
+            logger.warning("database '{}' does not exist!".format(db_name))
+            return -1
 
     def do_drop_role(self, params=None):
         """

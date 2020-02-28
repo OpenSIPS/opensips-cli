@@ -68,9 +68,11 @@ class OpenSIPSCLIConfig:
         self.dynamic_options[key] = value
         logger.debug("set {}={}".format(key, value))
 
-    def getBool(self, key):
-        val = self.get(key)
+    def mkBool(self, val):
         return val.lower() in ['yes', '1', 'true']
+
+    def getBool(self, key):
+        return self.mkBool(self.get(key))
 
     # checks if a configuration exists
     def exists(self, key):
@@ -94,14 +96,14 @@ class OpenSIPSCLIConfig:
         return defaults.DEFAULT_SECTION
 
     # reads a param or returns a default
-    def read_param(self, param, prompt, default=None, yes_no=False):
+    def read_param(self, param, prompt, default=None, yes_no=False, isbool=False):
 
         if param:
             if type(param) != list:
                 param = [param]
             for p in param:
                 if self.exists(p):
-                    return self.get(p);
+                    return self.mkBool(self.get(p)) if isbool else self.get(p)
         val = ""
         if yes_no:
             prompt = prompt + " [y/n]"
