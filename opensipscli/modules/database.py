@@ -163,14 +163,12 @@ class database(Module):
             if not text:
                 return db_name
             ret = [t for t in db_name if t.startswith(text)]
-        elif command == 'create_module':
-            module_name = ['b2b', 'b2b_sca', 'call_center', 'carrierroute', 'closeddial',
-                           'clp', 'domainpolicy', 'emergency', 'fraud_detection', 'freeswitch_scripting',
-                           'imc', 'load_balancer', 'presence', 'registrant', 'rls', 'smpp',
-                           'tracer', 'userblacklist']
+        elif command == 'add':
+            modules = STANDARD_DB_MODULES + EXTRA_DB_MODULES
             if not text:
-                return module_name
-            ret = [t for t in module_name if t.startswith(text)]
+                return modules
+
+            ret = [t for t in modules if t.startswith(text)]
         elif command == 'migrate':
             db_source = ['opensips']
             if not text:
@@ -188,7 +186,7 @@ class database(Module):
                 return role_name
             ret = [t for t in role_name if t.startswith(text)]
 
-        return ret if ret else ['']
+        return ret or ['']
 
     def __exclude__(self):
         """
@@ -213,7 +211,6 @@ class database(Module):
             'alter_role',
             'drop_role',
             'get_role',
-            'create_module',
             ]
 
     def ask_db_url(self):
@@ -231,7 +228,7 @@ class database(Module):
         add a given table to the database (connection via URL)
         """
         if len(params) < 1:
-            logger.error("No module to add added")
+            logger.error("Please specify a module to add (e.g. dialog)")
             return -1
         module = params[0]
 
@@ -241,6 +238,9 @@ class database(Module):
             print()
             logger.error("no URL specified: aborting!")
             return -1
+
+        if db_url.lower().startswith("postgres"):
+            db_url = osdb.set_url_db(db_url, 'postgres')
 
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
@@ -502,54 +502,6 @@ class database(Module):
         db.destroy()
 
         return 0
-
-    def do_create_module(self, module_name):
-        """
-        create database table for given module
-        """
-
-        db_url = cfg.read_param("database_url",
-             "Please provide the URL to connect to the database")
-        if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        db_name = cfg.read_param("database_name",
-            "Please provide the database name")
-        if db_name is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        # create an object store database instance
-        db = self.get_db(db_url, db_name)
-        if db is None:
-            return -1
-
-        # connect to the database
-        db.connect(db_name)
-
-        # create table from schema-file for given module name
-        module = ' '.join(module_name)
-        logger.debug("module_name: '%s'", module)
-        #re.sub('\ |\[|\'|\]', '', module)
-        #module_name.strip('[']')
-        db_schema = db_url.split(":")[0]
-        schema_path = self.get_schema_path(db_schema)
-        if schema_path is None:
-            return -1
-        module_schema_file = os.path.join(schema_path,
-            "{}-create.sql".format(module))
-        try:
-            db.create_module(module_schema_file)
-            logger.info("database tables for module '%s' has been successfully created.", module_name)
-        except osdbError as ex:
-            logger.error("cannot import: {}".format(ex))
-
-        # terminate active database connection
-        db.destroy()
-
-        return True
 
     def do_create_role(self, params=None):
         """

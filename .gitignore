@@ -7,3 +7,4 @@ __pycach*
 /dist/
 /MANIFEST
 *egg-info/
+tags
