@@ -88,6 +88,12 @@ class osdbNoSuchModuleError(osdbError):
     """
     pass
 
+class osdbModuleAlreadyExistsError(osdbError):
+    """
+    OSDB: module error handler
+    """
+    pass
+
 class osdb(object):
     """
     Class: object store database
@@ -342,8 +348,8 @@ class osdb(object):
                     try:
                         self.__conn.execute(sql)
                     except sqlalchemy.exc.IntegrityError as ie:
-                        raise osdbError("cannot deploy {} file: {}".
-                                format(sql_file, ie)) from None
+                        raise osdbModuleAlreadyExistsError(
+                            "cannot deploy {} file: {}".format(sql_file, ie)) from None
 
     def exists(self, db=None):
         """

@@ -22,7 +22,8 @@ from opensipscli.logger import logger
 from opensipscli.config import cfg
 from opensipscli.db import (
     osdb, osdbError, osdbConnectError,
-    osdbArgumentError, osdbNoSuchModuleError
+    osdbArgumentError, osdbNoSuchModuleError,
+    osdbModuleAlreadyExistsError
 )
 
 import os
@@ -272,15 +273,15 @@ class database(Module):
         db.connect(db_name)
         try:
             db.create_module(module_file_path)
+            logger.info("Module {} has been successfully added!".
+                format(module))
+        except osdbModuleAlreadyExistsError:
+            logger.error("{} table(s) are already created!".format(module))
         except osdbError as ex:
-            logger.error("cannot import: {}".format(ex))
+            logger.error("failed to import: {}".format(ex))
             return -1
 
         db.destroy()
-
-        logger.info("Module {} has been successfully added!".
-            format(module))
-
         return True
 
     def do_alter_role(self, params=None):
