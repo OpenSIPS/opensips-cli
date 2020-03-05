@@ -163,7 +163,7 @@ class osdb(object):
             self.db_name = db_name
 		# TODO: do this only for SQLAlchemy
         if self.dialect == "postgres":
-            database_url = "{}/{}".format(self.db_url, self.db_name)
+            database_url = self.set_url_db(self.db_url, self.db_name)
             if sqlalchemy_utils.database_exists(database_url) is True:
                 engine = sqlalchemy.create_engine(database_url, isolation_level='AUTOCOMMIT')
                 self.__conn = engine.connect()
@@ -171,7 +171,7 @@ class osdb(object):
                 self.Session.configure(bind=self.__engine)
                 # instanciate the Session object
                 self.session = self.Session()
-                logger.warning("connected to database URL '%s'", database_url)
+                logger.debug("connected to database URL '%s'", database_url)
         else:
             self.__conn.execute("USE {}".format(self.db_name))
 
@@ -265,7 +265,7 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
-        database_url = "{}/{}".format(self.db_url, self.db_name)
+        database_url = self.set_url_db(self.db_url, self.db_name)
         try:
             sqlalchemy_utils.drop_database(database_url)
             logger.debug("database '%s' dropped", self.db_name)
@@ -353,17 +353,21 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             return False
-        database_url = "{}/{}".format(self.db_url, check_db)
-        logger.debug("check database URL '%s'!", database_url)
+
+        database_url = self.set_url_db(self.db_url, check_db)
+        logger.debug("check database URL '{}'".format(database_url))
 
         try:
             if sqlalchemy_utils.database_exists(database_url):
+                logger.debug("DB already exists!")
                 return True
         except sqlalchemy.exc.NoSuchModuleError as me:
             logger.error("cannot check if database {} exists: {}".
                     format(check_db, me))
             raise osdbError("cannot handle {} dialect".
                     format(self.dialect)) from None
+
+        logger.debug("DB does not exist")
         return False
 
     def exists_role(self, role_name=None):
@@ -631,3 +635,19 @@ class osdb(object):
             logger.error(ex)
             return False
         return result
+
+    @staticmethod
+    def set_url_db(url, db):
+        """
+        Force a given database @url string to include the given @db
+        """
+        at_idx = url.find('@')
+        if at_idx < 0:
+            logger.error("Bad database URL: {}, missing host part".format(url))
+            return None
+
+        db_idx = url.find('/', at_idx)
+        if db_idx < 0:
+            return url + '/' + db
+        else:
+            return url[:db_idx+1] + db

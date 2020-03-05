@@ -29,14 +29,6 @@ import os
 from getpass import getpass
 
 DEFAULT_DB_TEMPLATE = "template1"
-DEFAULT_DB_NAME = "opensips"
-DEFAULT_ROLE_NAME = "opensips"
-DEFAULT_ROLE_OPTIONS = [
-    "NOCREATEDB",
-    "NOCREATEROLE",
-    "LOGIN",
-    "REPLICATION"
-]
 
 STANDARD_DB_MODULES = [
     "acc",
@@ -221,7 +213,6 @@ class database(Module):
             'alter_role',
             'drop_role',
             'get_role',
-            'create_db',
             'create_module',
             ]
 
@@ -253,8 +244,7 @@ class database(Module):
 
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
-                    "Please provide the database to add the module to",
-                    DEFAULT_DB_NAME)
+                    "Please provide the database to add the module to")
         else:
             db_name = params[1]
 
@@ -326,8 +316,7 @@ class database(Module):
 
         if role_name is None:
             role_name = cfg.read_param("role_name",
-                "Please provide the role name to alter",
-                DEFAULT_ROLE_NAME)
+                "Please provide the role name to alter")
             logger.debug("role_name: '%s'", role_name)
 
         if db.exists_role(role_name) is True:
@@ -338,8 +327,7 @@ class database(Module):
 
             if role_options is None:
                 role_list = cfg.read_param("role_options",
-                    "Please adapt the role options to alter",
-                    DEFAULT_ROLE_OPTIONS)
+                    "Please adapt the role options to alter")
                 if len(role_list) > 0:
                     role_options = ' '.join(role_list)
                 logger.debug("role_options: '%s'", role_options)
@@ -360,49 +348,42 @@ class database(Module):
         """
 
         if len(params) >= 1:
-            db_name = ''.join(params[0])
+            db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
-                "Please provide the database to create",
-                DEFAULT_DB_NAME)
+                "Please provide the database to create")
         logger.debug("db_name: '%s'", db_name)
 
         db_url = self.ask_db_url()
         if db_url is None:
             return -1
 
-        if self._do_create_db([db_name], db_url) < 0:
+        if self.create_db([db_name], db_url) < 0:
             return -1
+
+        db_url = osdb.set_url_db(db_url, db_name.lower())
+
         if self.create_tables(db_name, db_url=db_url) < 0:
             return -1
 
         return 0
 
-    def do_create_db(self, params=None):
-        return self._do_create_db(params)
-
-    def _do_create_db(self, params=None, db_url=None):
+    def create_db(self, params=None, db_url=None):
         """
-        create database and roles assignment
+        For PostgreSQL, do the initial setup using 'postgres' as role + DB
         """
-        if db_url is None:
-            db_url = cfg.read_param("template_url",
-                 "Please provide the URL to connect to as template")
-            if db_url is None:
-                print()
-                logger.error("no URL specified: aborting!")
-                return -1
+        if db_url.lower().startswith("postgres"):
+            db_url = osdb.set_url_db(db_url, 'postgres')
 
         if len(params) >= 1:
-            db_name = ''.join(params[0])
+            db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
-                "Please provide the database to create",
-                DEFAULT_DB_NAME)
+                "Please provide the database to create")
         logger.debug("db_name: '%s'", db_name)
 
         # 1) create an object store database instance
-		#    -> use it to create the database itself
+        #    -> use it to create the database itself
         db = self.get_db(db_url, db_name)
         if db is None:
             return -1
@@ -412,7 +393,7 @@ class database(Module):
             logger.warn("database '{}' already exists!".format(db_name))
             return -2
 
-	    # create the db instance
+        # create the db instance
         if not db.create(db_name):
             return -1
 
@@ -425,8 +406,7 @@ class database(Module):
 
             if role_name is None:
                 role_name = cfg.read_param("role_name",
-                    "Please provide the associated role name to access the database",
-                    DEFAULT_ROLE_NAME)
+                    "Please provide a role name to access the database")
             logger.debug("role_name: '%s'", role_name)
 
             if db.exists_role(role_name) is False:
@@ -536,8 +516,7 @@ class database(Module):
             return -1
 
         db_name = cfg.read_param("database_name",
-            "Please provide the database name",
-            DEFAULT_DB_NAME)
+            "Please provide the database name")
         if db_name is None:
             logger.error("no URL specified: aborting!")
             return -1
@@ -605,8 +584,7 @@ class database(Module):
 
             if role_name is None:
                 role_name = cfg.read_param("role_name",
-                    "Please provide the role name to create",
-                    DEFAULT_ROLE_NAME)
+                    "Please provide the role name to create")
             logger.debug("role_name: '%s'", role_name)
 
             if len(params) >= 2:
@@ -616,8 +594,7 @@ class database(Module):
 
             if role_options is None:
                 role_list = cfg.read_param("role_options",
-                    "Please assing the list of role options to create",
-                    ' '.join(DEFAULT_ROLE_OPTIONS))
+                    "Please assing the list of role options to create")
                 role_options = ''.join(role_list)
             logger.debug("role_options: '%s'", role_options)
 
@@ -644,12 +621,17 @@ class database(Module):
         if db_url is None:
             return -1
 
+        """
+        For PostgreSQL, perform this operation using 'postgres' as role + DB
+        """
+        if db_url.lower().startswith("postgres"):
+            db_url = osdb.set_url_db(db_url, 'postgres')
+
         if params and len(params) > 0:
             db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
-                    "Please provide the database to drop",
-                    DEFAULT_DB_NAME)
+                    "Please provide the database to drop")
 
         # create an object store database instance
         db = self.get_db(db_url, db_name)
@@ -661,8 +643,7 @@ class database(Module):
                 role_name = params[1]
             else:
                 role_name = cfg.read_param("role_name",
-                    "Please provide the associated role name " +
-                        "to access the database", DEFAULT_ROLE_NAME)
+                    "Please provide a role name to access the database")
 
         # check to see if the database has already been created
         if db.exists():
@@ -670,20 +651,12 @@ class database(Module):
                 "Do you really want to drop the '{}' database".
                     format(db_name),
                 False, True, isbool=True):
+
                 if db.drop():
                     logger.info("database '%s' dropped!", db_name)
                 else:
                     logger.info("database '%s' not dropped!", db_name)
 
-                if db.dialect == "postgres":
-                    if db.exists_role(role_name) is True:
-                        if cfg.read_param("role_force_drop",
-                            "Do you really want to drop the '{}' role".
-                            format(role_name),
-                            False, True):
-				                # call function with parameter list
-                                params = [ role_name ]
-                                self.do_drop_role(params)
             else:
                 logger.info("database '{}' not dropped!".format(db_name))
         else:
@@ -722,8 +695,7 @@ class database(Module):
 
         if role_name is None:
             role_name = cfg.read_param("role_name",
-                    "Please provide the role name to drop",
-                    DEFAULT_ROLE_NAME)
+                    "Please provide the role name to drop")
 
         if db.exists_role(role_name=role_name) is True:
             if cfg.read_param("rule_force_drop",
@@ -763,8 +735,7 @@ class database(Module):
 
         if len(params) < 1:
             role_name = cfg.read_param("role_name",
-                "Please provide the role name to alter",
-                DEFAULT_ROLE_NAME)
+                "Please provide the role name to alter")
         else:
             role_name = params[0]
 
@@ -799,7 +770,7 @@ class database(Module):
              return -2
 
         print("Creating database {}...".format(new_db))
-        if self._do_create_db([new_db], db_url=db_url) < 0:
+        if self.create_db([new_db], db_url=db_url) < 0:
             return -1
         if self.create_tables(new_db, db_url=db_url) < 0:
             return -1
@@ -880,10 +851,11 @@ class database(Module):
             return os.path.join(self.db_path, db_schema)
 
         db_path = cfg.read_param("database_path",
-                "Please provide the path to the OpenSIPS DB scripts")
+                "Could not locate DB schema files for {}!  Custom path".format(
+                    db_schema))
         if db_path is None:
             print()
-            logger.error("don't know how to find the path to the OpenSIPS DB scripts")
+            logger.error("failed to locate {} DB schema files".format(db_schema))
             return None
 
         if db_path.endswith('/'):
