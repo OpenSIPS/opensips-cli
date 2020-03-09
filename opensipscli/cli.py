@@ -331,7 +331,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         return mod[0].__invoke__(cmd, params)
 
     def default(self, line):
-        aux = shlex.split(line)
+        try:
+            aux = shlex.split(line)
+        except ValueError:
+            """ if the line ends in a backspace, just clean it"""
+            line = line[:-1]
+            aux = shlex.split(line)
+
         module = str(aux[0])
         if len(aux) == 1:
             cmd = None
