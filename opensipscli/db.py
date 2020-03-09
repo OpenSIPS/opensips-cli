@@ -26,6 +26,7 @@ try:
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Date, Integer, String, Boolean
     from sqlalchemy.orm import sessionmaker, deferred
+    from sqlalchemy.engine.url import make_url
     sqlalchemy_available = True
     logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
 except ImportError:
@@ -94,6 +95,12 @@ class osdbModuleAlreadyExistsError(osdbError):
     """
     pass
 
+class osdbAccessDeniedError(osdbError):
+    """
+    OSDB: module error handler
+    """
+    pass
+
 class osdb(object):
     """
     Class: object store database
@@ -122,7 +129,15 @@ class osdb(object):
             # instanciate the Session object
             self.__session = self.Session()
         except sqlalchemy.exc.OperationalError as se:
-            logger.error("cannot connect to DB server: {}!".format(se))
+            if self.dialect == "mysql":
+                try:
+                    if int(se.args[0].split(",")[0].split("(")[2]) == 2006:
+                        raise osdbAccessDeniedError
+                except osdbAccessDeniedError:
+                    raise
+                except:
+                    logger.error("unexpected parsing exception")
+
             raise osdbError("unable to connect to the database")
         except sqlalchemy.exc.NoSuchModuleError:
             raise osdbError("cannot handle {} dialect".
@@ -190,19 +205,22 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
+
+        logger.debug("Create Database '%s' for dialect '%s' ...",
+                     self.db_name, self.dialect)
+
         # all good - it's time to create the database
         if self.dialect == "postgres":
-            logger.debug("Create Database '%s' for dialect: '%s'",
-                self.db_name, self.dialect)
             self.__conn.connection.connection.set_isolation_level(0)
             try:
-                self.__conn.execute("CREATE DATABASE {} WITH TEMPLATE template1".format(self.db_name))
-                logger.info("Database '%s' for dialect '%s' created", self.db_name, self.dialect)
+                self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
                 self.__conn.connection.connection.set_isolation_level(1)
             except sqlalchemy.exc.OperationalError as se:
                 logger.error("cannot create database: {}!".format(se))
         else:
             self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
+
+        logger.debug("success")
         return True
 
     def create_module(self, import_file):
@@ -210,6 +228,61 @@ class osdb(object):
         create a module object
         """
         self.exec_sql_file(import_file)
+
+    def create_user(self, user_url, db_name):
+        url = make_url(user_url)
+        if url.password is None:
+            logger.error("database URL does not include a password")
+            return False
+
+        if url.drivername.lower() == "mysql":
+            sqlcmd = """CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED WITH
+                        mysql_native_password BY '{}'""".format(
+                     url.username, url.host, url.password)
+            try:
+                result = self.__conn.execute(sqlcmd)
+                if result:
+                    logger.info("created user '{}'@'{}'".format(
+                                url.username, url.host))
+            except:
+                logger.error("failed to create user '{}'@'{}'".format(
+                                url.username, url.host))
+                return False
+
+            sqlcmd = """ALTER USER '{}'@'{}' IDENTIFIED WITH
+                        mysql_native_password BY '{}'""".format(
+                     url.username, url.host, url.password)
+            try:
+                result = self.__conn.execute(sqlcmd)
+                if result:
+                    logger.info("set password for '{}'@'{}'".format(
+                                url.username, url.host))
+            except:
+                logger.error("failed to set password for '{}'@'{}'".format(
+                                url.username, url.host))
+                return False
+
+            sqlcmd = "GRANT ALL ON {}.* TO '{}'@'{}'".format(
+                     db_name, url.username, url.host)
+            try:
+                result = self.__conn.execute(sqlcmd)
+                if result:
+                    logger.info("granted access to '{}'@'{}' on '{}'".format(
+                                url.username, url.host, db_name))
+            except:
+                logger.error("failed to grant access to '{}'@'{}'".format(
+                                url.username, url.host))
+                return False
+
+            sqlcmd = "FLUSH PRIVILEGES"
+            try:
+                result = self.__conn.execute(sqlcmd)
+                logger.info("flushed privileges")
+            except:
+                logger.error("failed to flush privileges")
+                return False
+
+        return True
 
     def create_role(self, role_name, role_options, role_password):
         """
@@ -365,7 +438,7 @@ class osdb(object):
 
         try:
             if sqlalchemy_utils.database_exists(database_url):
-                logger.debug("DB already exists!")
+                logger.debug("DB '{}' exists".format(check_db))
                 return True
         except sqlalchemy.exc.NoSuchModuleError as me:
             logger.error("cannot check if database {} exists: {}".
@@ -392,7 +465,7 @@ class osdb(object):
         if role_name is None:
             role_name = 'opensips'
 
-        filter_args = { 'rolname':role_name }
+        filter_args = {'rolname': role_name}
         logger.debug("filter argument: '%s'", filter_args)
 
         role_count = self.__session.query(Roles).\
@@ -657,3 +730,11 @@ class osdb(object):
             return url + '/' + db
         else:
             return url[:db_idx+1] + db
+
+    @staticmethod
+    def set_url_driver(url, driver):
+        return driver + url[url.find(':'):]
+
+    @staticmethod
+    def get_url_driver(url):
+        return make_url(url).drivername.lower()

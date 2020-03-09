@@ -66,9 +66,8 @@ DEFAULT_VALUES = {
     "url": "http://127.0.0.1:8888/mi",
 
     # database module
+    "database_url": "mysql://opensips:opensipsrw@localhost",
     "database_name": "opensips",
-    "database_user": "opensips",
-    "database_password": "opensipsrw",
     # PostgreSQL
     "role_name": "opensips",
     "role_options": "NOCREATEDB NOCREATEROLE LOGIN REPLICATION",

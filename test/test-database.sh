@@ -24,49 +24,23 @@ MYSQL_URL=mysql://opensips:opensipsrw@localhost
 PGSQL_URL=postgres://opensips:opensipsrw@localhost
 
 TESTS=(
-  test_mysql_drop_2_prompts
   test_mysql_drop_1_prompt
   test_mysql_drop_0_prompts
-  test_mysql_create_2_prompts
-  test_mysql_create_1_prompt
   test_mysql_create_0_prompts
 
-  test_pgsql_drop_2_prompts
   test_pgsql_drop_1_prompt
   test_pgsql_drop_0_prompts
-  test_pgsql_create_2_prompts
-  test_pgsql_create_1_prompt
   test_pgsql_create_0_prompts
 )
 
 
-test_mysql_drop_2_prompts() { test_db_drop_2_prompts $MYSQL_URL; }
 test_mysql_drop_1_prompt() { test_db_drop_1_prompt $MYSQL_URL; }
 test_mysql_drop_0_prompts() { test_db_drop_0_prompts $MYSQL_URL; }
-test_mysql_create_2_prompts() { test_db_create_2_prompts $MYSQL_URL; }
-test_mysql_create_1_prompt() { test_db_create_1_prompt $MYSQL_URL; }
 test_mysql_create_0_prompts() { test_db_create_0_prompts $MYSQL_URL; }
 
-test_pgsql_drop_2_prompts() { test_db_drop_2_prompts $PGSQL_URL; }
 test_pgsql_drop_1_prompt() { test_db_drop_1_prompt $PGSQL_URL; }
 test_pgsql_drop_0_prompts() { test_db_drop_0_prompts $PGSQL_URL; }
-test_pgsql_create_2_prompts() { test_db_create_2_prompts $PGSQL_URL; }
-test_pgsql_create_1_prompt() { test_db_create_1_prompt $PGSQL_URL; }
 test_pgsql_create_0_prompts() { test_db_create_0_prompts $PGSQL_URL; }
-
-test_db_drop_2_prompts() {
-  create_db $DB_NAME $1
-
-  cat >$CLI_CFG <<EOF
-[default]
-EOF
-
-  opensips-cli --config $CLI_CFG -x database drop $DB_NAME < <(cat <<EOF
-$1
-y
-EOF
-) &>/dev/null
-}
 
 
 test_db_drop_1_prompt() {
@@ -74,7 +48,7 @@ test_db_drop_1_prompt() {
 
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $1
+database_admin_url: $1
 EOF
 
   opensips-cli --config $CLI_CFG -x database drop $DB_NAME < <(cat <<EOF
@@ -89,53 +63,17 @@ test_db_drop_0_prompts() {
 
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $1
+database_admin_url: $1
 database_force_drop: false
 EOF
   opensips-cli --config $CLI_CFG -x database drop $DB_NAME # NOP, no delete
 
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $1
+database_admin_url: $1
 database_force_drop: true
 EOF
   opensips-cli --config $CLI_CFG -x database drop $DB_NAME
-}
-
-
-test_db_create_2_prompts() {
-  drop_db $DB_NAME $1
-
-  cat >$CLI_CFG <<EOF
-[default]
-EOF
-
-  # create
-  opensips-cli --config $CLI_CFG -x database create $DB_NAME < <(cat <<EOF
-$1
-a
-EOF
-) &>/dev/null
-
-  drop_db $DB_NAME $1
-}
-
-
-test_db_create_1_prompt() {
-  drop_db $DB_NAME $1
-
-  cat >$CLI_CFG <<EOF
-[default]
-database_url: $1
-EOF
-
-  # create
-  opensips-cli --config $CLI_CFG -x database create $DB_NAME < <(cat <<EOF
-a
-EOF
-) &>/dev/null
-
-  drop_db $DB_NAME $1
 }
 
 
@@ -144,7 +82,7 @@ test_db_create_0_prompts() {
 
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $1
+database_admin_url: $1
 database_modules: dialog
 EOF
 
@@ -158,7 +96,7 @@ EOF
 create_db() {
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $2
+database_admin_url: $2
 database_modules: dialog
 EOF
 
@@ -168,7 +106,7 @@ EOF
 drop_db() {
   cat >$CLI_CFG <<EOF
 [default]
-database_url: $2
+database_admin_url: $2
 database_force_drop: true
 EOF
 

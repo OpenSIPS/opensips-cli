@@ -23,11 +23,11 @@ from opensipscli.config import cfg
 from opensipscli.db import (
     osdb, osdbError, osdbConnectError,
     osdbArgumentError, osdbNoSuchModuleError,
-    osdbModuleAlreadyExistsError
+    osdbModuleAlreadyExistsError, osdbAccessDeniedError,
 )
 
 import os
-from getpass import getpass
+from getpass import getpass, getuser
 
 DEFAULT_DB_TEMPLATE = "template1"
 
@@ -214,15 +214,56 @@ class database(Module):
             'get_role',
             ]
 
-    def ask_db_url(self):
-        db_url = cfg.read_param("database_url",
-             "Please provide the URL of the SQL database")
-        if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
+    def get_db_engine(self):
+        if cfg.exists('database_admin_url'):
+            engine = osdb.get_url_driver(cfg.get('database_admin_url'))
+        elif cfg.exists('database_url'):
+            engine = osdb.get_url_driver(cfg.get('database_url'))
+        else:
+            engine = "mysql"
 
+        if engine not in SUPPORTED_BACKENDS:
+            logger.error("bad database engine ({}), supported: {}".format(
+                         engine, " ".join(SUPPORTED_BACKENDS)))
+            return None
+        return engine
+
+    def get_db_url(self, db_name=cfg.get('database_name')):
+        engine = self.get_db_engine()
+        if not engine:
+            return None
+
+        # make sure to inherit the 'database_admin_url' engine
+        db_url = osdb.set_url_driver(cfg.get("database_url"), engine)
+
+        logger.debug("DB URL: '{}'".format(db_url))
         return db_url
+
+    def get_admin_db_url(self, db_name):
+        engine = self.get_db_engine()
+        if not engine:
+            return None
+
+        if cfg.exists('database_admin_url'):
+            admin_url = cfg.get("database_admin_url")
+            if engine == "postgres":
+                admin_url = osdb.set_url_db(admin_url, 'postgres')
+        else:
+            if engine == 'postgres':
+                if getuser() != "postgres":
+                    logger.error("Command must be run as 'postgres' user: "
+                                 "sudo -u postgres opensips-cli ...")
+                    return None
+
+                """
+                For PG, do the initial setup using 'postgres' as role + DB
+                """
+                admin_url = "postgres://postgres@localhost/postgres"
+            else:
+                admin_url = "{}://root@localhost".format(engine)
+
+        logger.debug("admin DB URL: '{}'".format(admin_url))
+        return admin_url
 
     def do_add(self, params):
         """
@@ -233,56 +274,19 @@ class database(Module):
             return -1
         module = params[0]
 
-        db_url = cfg.read_param("database_url",
-                "Please provide us the URL of the database")
-        if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        if db_url.lower().startswith("postgres"):
-            db_url = osdb.set_url_db(db_url, 'postgres')
-
         if len(params) < 2:
             db_name = cfg.read_param("database_name",
                     "Please provide the database to add the module to")
         else:
             db_name = params[1]
 
-        # create an object store database instance
-        db = self.get_db(db_url, db_name)
-        if db is None:
+        db_url = self.get_db_url(db_name)
+        if not db_url:
+            logger.error("no DB URL specified: aborting!")
             return -1
 
-        if not db.exists():
-            logger.warning("database '{}' does not exist!".format(db_name))
-            return -1
-
-        db_schema = db.dialect
-        schema_path = self.get_schema_path(db_schema)
-        if schema_path is None:
-            return -1
-
-        module_file_path = os.path.join(schema_path,
-                "{}-create.sql".format(module))
-        if not os.path.isfile(module_file_path):
-            logger.warning("cannot find OpenSIPS DB file: '{}'!".
-                format(module_file_path))
-            return -1
-
-        db.connect(db_name)
-        try:
-            db.create_module(module_file_path)
-            logger.info("Module {} has been successfully added!".
-                format(module))
-        except osdbModuleAlreadyExistsError:
-            logger.error("{} table(s) are already created!".format(module))
-        except osdbError as ex:
-            logger.error("failed to import: {}".format(ex))
-            return -1
-
-        db.destroy()
-        return True
+        return self.create_tables(db_name, db_url, tables=[module],
+                                    create_std=False)
 
     def do_alter_role(self, params=None):
         """
@@ -347,7 +351,6 @@ class database(Module):
         """
         create database with role-assigment and tables
         """
-
         if len(params) >= 1:
             db_name = params[0]
         else:
@@ -355,39 +358,41 @@ class database(Module):
                 "Please provide the database to create")
         logger.debug("db_name: '%s'", db_name)
 
-        db_url = self.ask_db_url()
-        if db_url is None:
+        admin_url = self.get_admin_db_url(db_name)
+        if not admin_url:
             return -1
 
-        if self.create_db([db_name], db_url) < 0:
+        try:
+            admin_db = self.get_db(admin_url, db_name)
+        except osdbAccessDeniedError:
+            logger.error("failed to connect to DB as root, check " +
+                            "'database_admin_url'")
+            return -1
+        if not admin_db:
             return -1
 
-        db_url = osdb.set_url_db(db_url, db_name.lower())
+        if self.create_db(db_name, admin_url, admin_db) < 0:
+            return -1
 
-        if self.create_tables(db_name, db_url=db_url) < 0:
+        db_url = self.get_db_url(db_name)
+        if not db_url:
+            return -1
+
+        if self.ensure_user(db_url, db_name, admin_db) < 0:
+            return -1
+
+        if self.create_tables(db_name, db_url) < 0:
             return -1
 
         return 0
 
-    def create_db(self, params=None, db_url=None):
-        """
-        For PostgreSQL, do the initial setup using 'postgres' as role + DB
-        """
-        if db_url.lower().startswith("postgres"):
-            db_url = osdb.set_url_db(db_url, 'postgres')
-
-        if len(params) >= 1:
-            db_name = params[0]
-        else:
-            db_name = cfg.read_param("database_name",
-                "Please provide the database to create")
-        logger.debug("db_name: '%s'", db_name)
-
+    def create_db(self, db_name, admin_url, db=None):
         # 1) create an object store database instance
         #    -> use it to create the database itself
-        db = self.get_db(db_url, db_name)
-        if db is None:
-            return -1
+        if not db:
+            db = self.get_db(admin_url, db_name)
+            if not db:
+                return -1
 
         # check to see if the database has already been created
         if db.exists(db_name):
@@ -400,21 +405,12 @@ class database(Module):
 
         # create the role and assing correct access rights
         if db.dialect == "postgres":
-            if len(params) == 2:
-                role_name = ''.join(params[1])
-            else:
-                role_name = None
-
-            if role_name is None:
-                role_name = cfg.read_param("role_name",
-                    "Please provide a role name to access the database")
+            role_name = cfg.read_param("role_name",
+                "Please provide a role name to access the database")
             logger.debug("role_name: '%s'", role_name)
 
             if db.exists_role(role_name) is False:
-                # call function with parameter list
-                params = [ role_name ]
-                logger.debug("params: '%s'", params)
-                if self.do_create_role(params) is False:
+                if self.do_create_role([role_name]) is False:
                     return -3
 
             # assign the access rights
@@ -422,45 +418,42 @@ class database(Module):
 
         return 0
 
-    def create_tables(self, db_name=None, do_all_tables=False, db_url=None):
+    def create_tables(self, db_name, db_url, tables=[], create_std=True):
         """
         create database tables
         """
-        if db_url is None:
-            db_url = cfg.read_param("database_url",
-                 "Please provide the URL connecting to the database")
-            if db_url is None:
-                logger.error("no URL specified: aborting!")
-                return -1
 
         # 2) prepare new object store database instance
-		#    use it to connect to the created database
+        #    use it to connect to the created database
         db = self.get_db(db_url, db_name)
         if db is None:
+            return -1
+
+        if not db.exists():
+            logger.warning("database '{}' does not exist!".format(db_name))
             return -1
 
         # connect to the database
         db.connect(db_name)
 
-        # check to see if the database has already been created
-        #if db.exists(db_name):
-        #    logger.error("database '{}' already exists!".format(db_name))
-        #    return -2
-
-        db_schema = db.db_url.split(":")[0]
-        schema_path = self.get_schema_path(db_schema)
+        schema_path = self.get_schema_path(db.dialect)
         if schema_path is None:
             return -1
 
-        standard_file_path = os.path.join(schema_path, "standard-create.sql")
-        if not os.path.isfile(standard_file_path):
-            logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
-                    format(standard_file_path))
-            return -1
-        tables_files = [ standard_file_path ]
+        if create_std:
+            standard_file_path = os.path.join(schema_path, "standard-create.sql")
+            if not os.path.isfile(standard_file_path):
+                logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
+                        format(standard_file_path))
+                return -1
+            table_files = {'standard': standard_file_path}
+        else:
+            table_files = {}
 
         # check to see what tables we shall deploy
-        if cfg.exists("database_modules"):
+        if tables:
+            pass
+        elif cfg.exists("database_modules"):
             # we know exactly what modules we want to instsall
             tables_line = cfg.get("database_modules").strip().lower()
             if tables_line == "all":
@@ -477,7 +470,8 @@ class database(Module):
             tables = STANDARD_DB_MODULES
 
         # check for corresponding SQL schemas files in system path
-        logger.debug("deploying tables {}".format(" ".join(tables)))
+        logger.debug("checking tables: {}".format(" ".join(tables)))
+
         for table in tables:
             if table == "standard":
                 # already checked for it
@@ -485,23 +479,53 @@ class database(Module):
             table_file_path = os.path.join(schema_path,
                     "{}-create.sql".format(table))
             if not os.path.isfile(table_file_path):
-                logger.warn("cannot find file to create {}: {}".
+                logger.warn("cannot find SQL file for module {}: {}".
                         format(table, table_file_path))
             else:
-                tables_files.append(table_file_path)
+                table_files[table] = table_file_path
 
         # create tables from SQL schemas
-        for table_file in tables_files:
+        for module, table_file in table_files.items():
             print("Running {}...".format(os.path.basename(table_file)))
             try:
                 db.create_module(table_file)
+                logger.info("database table(s) have been successfully created")
+            except osdbModuleAlreadyExistsError:
+                logger.error("{} table(s) are already created!".format(module))
             except osdbError as ex:
                 logger.error("cannot import: {}".format(ex))
-        logger.info("database tables have been successfully created.")
 
         # terminate active database connection
         db.destroy()
+        return 0
 
+    def ensure_user(self, db_url, db_name, admin_db):
+        """
+        Ensures that the user/password in @db_url can connect to @db_name.
+        It assumes @db_name has been created beforehand.  If the user doesn't
+        exist or has insufficient permissions, this will be fixed using the
+        @admin_db connection.
+        """
+        db_url = osdb.set_url_db(db_url, db_name)
+
+        try:
+            db = self.get_db(db_url, db_name)
+            logger.info("access works, opensips user already exists")
+        except osdbAccessDeniedError:
+            logger.info("creating access user for {} ...".format(db_name))
+            if not admin_db.create_user(db_url, db_name):
+                logger.error("failed to create user on {} DB".format(db_name))
+                return -1
+
+            try:
+                db = self.get_db(db_url, db_name)
+            except Exception as e:
+                logger.exception(e)
+                logger.error("failed to connect to {} " +
+                                "with non-admin user".format(db_name))
+                return -1
+
+        db.destroy()
         return 0
 
     def do_create_role(self, params=None):
@@ -569,25 +593,23 @@ class database(Module):
     def do_drop(self, params=None):
         """
         drop a given database object (connection via URL)
-        """
-        db_url = self.ask_db_url()
-        if db_url is None:
-            return -1
-
-        """
         For PostgreSQL, perform this operation using 'postgres' as role + DB
         """
-        if db_url.lower().startswith("postgres"):
-            db_url = osdb.set_url_db(db_url, 'postgres')
-
         if params and len(params) > 0:
             db_name = params[0]
         else:
             db_name = cfg.read_param("database_name",
                     "Please provide the database to drop")
 
+        admin_db_url = self.get_admin_db_url(db_name)
+        if admin_db_url is None:
+            return -1
+
+        if admin_db_url.lower().startswith("postgres"):
+            admin_db_url = osdb.set_url_db(admin_db_url, 'postgres')
+
         # create an object store database instance
-        db = self.get_db(db_url, db_name)
+        db = self.get_db(admin_db_url, db_name)
         if db is None:
             return -1
 
@@ -609,7 +631,6 @@ class database(Module):
                     logger.info("database '%s' dropped!", db_name)
                 else:
                     logger.info("database '%s' not dropped!", db_name)
-
             else:
                 logger.info("database '{}' not dropped!".format(db_name))
         else:
@@ -709,13 +730,17 @@ class database(Module):
         old_db = params[0]
         new_db = params[1]
 
-        db_url = self.ask_db_url()
-        if db_url is None:
+        admin_url = self.get_admin_db_url(new_db)
+        if not admin_url:
             return -1
 
-        # create an object store database instance
-        db = self.get_db(db_url, old_db)
-        if db is None:
+        try:
+            db = self.get_db(admin_url, new_db)
+        except osdbAccessDeniedError:
+            logger.error("failed to connect to DB as root, check " +
+                            "'database_admin_url'")
+            return -1
+        if not db:
             return -1
 
         if not db.exists(old_db):
@@ -723,25 +748,24 @@ class database(Module):
              return -2
 
         print("Creating database {}...".format(new_db))
-        if self.create_db([new_db], db_url=db_url) < 0:
+        if self.create_db(new_db, admin_url, db) < 0:
             return -1
-        if self.create_tables(new_db, db_url=db_url) < 0:
+        if self.create_tables(new_db, admin_url) < 0:
             return -1
 
-        # get schema path for active database dialect
-        db_schema = db.db_url.split(":")[0]
-        schema_path = self.get_schema_path(db_schema)
+        backend = osdb.get_url_driver(admin_url)
+
+        # obtain the DB schema files for the in-use backend
+        schema_path = self.get_schema_path(backend)
         if schema_path is None:
             return -1
 
-        # get schema scripts for active database dialect
-        db_schema = db.db_url.split(":")[0]
-        migrate_scripts = self.get_migrate_scripts_path(db_schema)
+        migrate_scripts = self.get_migrate_scripts_path(backend)
         if migrate_scripts is None:
-            logger.debug("migration scripts for db_schema '%s' not found", db_schema)
+            logger.debug("migration scripts for %s not found", backend)
             return -1
         else:
-            logger.debug("migration scripts for db_schema: '%s'", migrate_scripts)
+            logger.debug("migration scripts for %s", migrate_scripts)
 
         print("Migrating all matching OpenSIPS tables...")
         db.migrate(migrate_scripts, old_db, new_db, MIGRATE_TABLES_24_TO_30)
@@ -768,17 +792,17 @@ class database(Module):
             logger.error("This database backend is not supported!  " \
                         "Supported: {}".format(', '.join(SUPPORTED_BACKENDS)))
 
-    def get_migrate_scripts_path(self, db_schema):
+    def get_migrate_scripts_path(self, backend):
         """
         helper function: migrate database schema
         """
-        if '+' in db_schema:
-            db_schema = db_schema[0:db_schema.index('+')]
+        if '+' in backend:
+            backend = backend[0:backend.index('+')]
 
         if self.db_path is not None:
             scripts = [
-                os.path.join(self.db_path, db_schema, 'table-migrate.sql'),
-                os.path.join(self.db_path, db_schema, 'db-migrate.sql'),
+                os.path.join(self.db_path, backend, 'table-migrate.sql'),
+                os.path.join(self.db_path, backend, 'db-migrate.sql'),
                 ]
 
             if any(not os.path.isfile(i) for i in scripts):
@@ -788,32 +812,32 @@ class database(Module):
 
             return scripts
 
-    def get_schema_path(self, db_schema):
+    def get_schema_path(self, backend):
         """
         helper function: get the path defining the root path holding sql schema template
         """
-        if '+' in db_schema:
-            db_schema = db_schema[0:db_schema.index('+')]
+        if '+' in backend:
+            backend = backend[0:backend.index('+')]
 
         if self.db_path is not None:
-            return os.path.join(self.db_path, db_schema)
+            return os.path.join(self.db_path, backend)
 
         if os.path.isfile(os.path.join('/usr/share/opensips',
-                                db_schema, 'standard-create.sql')):
+                                backend, 'standard-create.sql')):
             self.db_path = '/usr/share/opensips'
-            return os.path.join(self.db_path, db_schema)
+            return os.path.join(self.db_path, backend)
 
         db_path = cfg.read_param("database_path",
                 "Could not locate DB schema files for {}!  Custom path".format(
-                    db_schema))
+                    backend))
         if db_path is None:
             print()
-            logger.error("failed to locate {} DB schema files".format(db_schema))
+            logger.error("failed to locate {} DB schema files".format(backend))
             return None
 
         if db_path.endswith('/'):
             db_path = db_path[:-1]
-        if os.path.basename(db_path) == db_schema:
+        if os.path.basename(db_path) == backend:
             db_path = os.path.dirname(db_path)
 
         if not os.path.exists(db_path):
@@ -825,7 +849,7 @@ class database(Module):
                     format(db_path))
             return None
 
-        schema_path = os.path.join(db_path, db_schema)
+        schema_path = os.path.join(db_path, backend)
         if not os.path.isdir(schema_path):
             logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
                     format(schema_path))
