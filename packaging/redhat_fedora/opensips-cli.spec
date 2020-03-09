@@ -17,10 +17,17 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 AutoReqProv: no
 
+%if 0%{?rhel} == 7
+Requires: python36-sqlalchemy
+Requires: python36-sqlalchemy-utils
+Requires: python36-mysql
+Requires: python36-pyOpenSSL
+%else
 Requires: python3-sqlalchemy
 Requires: python3-sqlalchemy-utils
 Requires: python3-mysql
 Requires: python3-pyOpenSSL
+%endif
 
 %description
 OpenSIPS is a very fast and flexible SIP (RFC3261)
