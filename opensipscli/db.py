@@ -122,6 +122,8 @@ class osdb(object):
                 self.__engine = sqlalchemy.create_engine(db_url, isolation_level='AUTOCOMMIT')
             else:
                 self.__engine = sqlalchemy.create_engine(db_url)
+
+            logger.debug("connecting to %s", db_url)
             self.__conn = self.__engine.connect().\
                     execution_options(autocommit=True)
             # connect the Session object to our engine
@@ -137,6 +139,10 @@ class osdb(object):
                     raise
                 except:
                     logger.error("unexpected parsing exception")
+            elif self.dialect == "postgres" and \
+                    (("authentication" in se.args[0] and "failed" in se.args[0]) or \
+                     ("no password supplied" in se.args[0])):
+                raise osdbAccessDeniedError
 
             raise osdbError("unable to connect to the database")
         except sqlalchemy.exc.NoSuchModuleError:
@@ -184,15 +190,17 @@ class osdb(object):
             self.db_name = db_name
 		# TODO: do this only for SQLAlchemy
         if self.dialect == "postgres":
-            database_url = self.set_url_db(self.db_url, self.db_name)
-            if sqlalchemy_utils.database_exists(database_url) is True:
-                engine = sqlalchemy.create_engine(database_url, isolation_level='AUTOCOMMIT')
+            self.db_url = self.set_url_db(self.db_url, self.db_name)
+            if sqlalchemy_utils.database_exists(self.db_url) is True:
+                engine = sqlalchemy.create_engine(self.db_url, isolation_level='AUTOCOMMIT')
+                if self.__conn:
+                    self.__conn.close()
                 self.__conn = engine.connect()
                 # connect the Session object to our engine
                 self.Session.configure(bind=self.__engine)
                 # instanciate the Session object
                 self.session = self.Session()
-                logger.debug("connected to database URL '%s'", database_url)
+                logger.debug("connected to database URL '%s'", self.db_url)
         else:
             self.__conn.execute("USE {}".format(self.db_name))
 
@@ -229,49 +237,47 @@ class osdb(object):
         """
         self.exec_sql_file(import_file)
 
-    def create_user(self, user_url, db_name):
-        url = make_url(user_url)
+    def ensure_user(self, db_url):
+        url = make_url(db_url)
         if url.password is None:
             logger.error("database URL does not include a password")
             return False
 
         if url.drivername.lower() == "mysql":
-            sqlcmd = """CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED WITH
-                        mysql_native_password BY '{}'""".format(
-                     url.username, url.host, url.password)
+            sqlcmd = """CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED
+                        BY '{}'""".format(url.username, url.host, url.password)
             try:
                 result = self.__conn.execute(sqlcmd)
                 if result:
-                    logger.info("created user '{}'@'{}'".format(
-                                url.username, url.host))
+                    logger.info("created user '%s'@'%s'",
+                                url.username, url.host)
             except:
-                logger.error("failed to create user '{}'@'{}'".format(
-                                url.username, url.host))
+                logger.error("failed to create user '%s'@'%s'",
+                                url.username, url.host)
                 return False
 
-            sqlcmd = """ALTER USER '{}'@'{}' IDENTIFIED WITH
-                        mysql_native_password BY '{}'""".format(
-                     url.username, url.host, url.password)
+            sqlcmd = "SET PASSWORD FOR '{}'@'{}' = PASSWORD('{}')".format(
+                        url.username, url.host, url.password)
             try:
                 result = self.__conn.execute(sqlcmd)
                 if result:
-                    logger.info("set password for '{}'@'{}'".format(
-                                url.username, url.host))
+                    logger.info("set password for '%s'@'%s'",
+                                url.username, url.host)
             except:
-                logger.error("failed to set password for '{}'@'{}'".format(
-                                url.username, url.host))
+                logger.error("failed to set password for '%s'@'%s'",
+                                url.username, url.host)
                 return False
 
             sqlcmd = "GRANT ALL ON {}.* TO '{}'@'{}'".format(
-                     db_name, url.username, url.host)
+                     self.db_name, url.username, url.host)
             try:
                 result = self.__conn.execute(sqlcmd)
                 if result:
-                    logger.info("granted access to '{}'@'{}' on '{}'".format(
-                                url.username, url.host, db_name))
+                    logger.info("granted access to '%s'@'%s' on '%s'",
+                                url.username, url.host, self.db_name)
             except:
-                logger.error("failed to grant access to '{}'@'{}'".format(
-                                url.username, url.host))
+                logger.error("failed to grant access to '%s'@'%s'",
+                                url.username, url.host)
                 return False
 
             sqlcmd = "FLUSH PRIVILEGES"
@@ -281,10 +287,31 @@ class osdb(object):
             except:
                 logger.error("failed to flush privileges")
                 return False
+        elif url.drivername.lower() == "postgres":
+            if not self.exists_role(url.username):
+                logger.info("creating role %s", url.username)
+                if not self.create_role(url.username, url.password):
+                    logger.error("failed to create role %s", url.username)
+
+            self.create_role(url.username, url.password, update=True)
+
+            sqlcmd = "GRANT ALL PRIVILEGES ON DATABASE {} TO {}".format(
+                        self.db_name, url.username)
+            logger.info(sqlcmd)
+
+            try:
+                result = self.__conn.execute(sqlcmd)
+                if result:
+                    logger.debug("... OK")
+            except:
+                logger.error("failed to grant ALL to '%s' on db '%s'",
+                        url.username, self.db_name)
+                return False
 
         return True
 
-    def create_role(self, role_name, role_options, role_password):
+    def create_role(self, role_name, role_password, update=False,
+                    role_options="NOCREATEDB NOCREATEROLE LOGIN"):
         """
         create a role object (PostgreSQL secific)
         """
@@ -295,16 +322,22 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
-            return False
 
-        sqlcmd = "CREATE ROLE {} WITH {} PASSWORD '{}'".\
-            format(role_name, role_options, role_password)
+        if update:
+            sqlcmd = "ALTER USER {} WITH PASSWORD '{}' {}".format(
+                    role_name, role_password, role_options)
+        else:
+            sqlcmd = "CREATE ROLE {} WITH {} PASSWORD '{}'".format(
+                    role_name, role_options, role_password)
+        logger.info(sqlcmd)
+
         try:
             result = self.__conn.execute(sqlcmd)
             if result:
                 logger.info("role '{}' with options '{}' created".
                     format(role_name, role_options))
-        except:
+        except Exception as e:
+            logger.exception(e)
             logger.error("creation of new role '%s' with options '%s' failed",
                     role_name, role_options)
             return False
@@ -566,22 +599,28 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
+
+        return True
+
+    def grant_table_options(self, role, table, privs="ALL PRIVILEGES"):
+        if self.dialect != "postgres":
             return False
 
-        logger.debug("Role '%s' will be granted with options '%s' on database '%s'",
-					 role_name, role_options, self.db_name)
+        if not self.__conn:
+            raise osdbError("connection not available")
 
-        sqlcmd = "GRANT {} ON DATABASE {} TO {}".format(role_options, self.db_name, role_name)
+        sqlcmd = "GRANT {} ON TABLE {} TO {}".format(privs, table, role)
+        logger.info(sqlcmd)
+
         try:
             result = self.__conn.execute(sqlcmd)
-            if result:
-                logger.info("granted options '%s' to role '%s' on database '%s'",
-                    role_options, role_name, self.db_name)
-        except:
-            logger.error("granting options '%s' to role '%s' on database '%s' failed",
-                    role_options, role_name, self.db_name)
+        except Exception as e:
+            logger.exception(e)
+            logger.error("failed to grant '%s' to '%s' on table '%s'",
+                         privs, role, table)
             return False
-        return
+
+        return True
 
     def has_sqlalchemy():
         """
@@ -738,3 +777,11 @@ class osdb(object):
     @staticmethod
     def get_url_driver(url):
         return make_url(url).drivername.lower()
+
+    @staticmethod
+    def get_url_user(url):
+        return make_url(url).username
+
+    @staticmethod
+    def get_url_pswd(url):
+        return make_url(url).password

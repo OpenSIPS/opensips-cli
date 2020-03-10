@@ -68,9 +68,6 @@ DEFAULT_VALUES = {
     # database module
     "database_url": "mysql://opensips:opensipsrw@localhost",
     "database_name": "opensips",
-    # PostgreSQL
-    "role_name": "opensips",
-    "role_options": "NOCREATEDB NOCREATEROLE LOGIN REPLICATION",
 
     # user module
     "plain_text_passwords": "False",

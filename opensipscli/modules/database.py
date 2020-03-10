@@ -26,7 +26,7 @@ from opensipscli.db import (
     osdbModuleAlreadyExistsError, osdbAccessDeniedError,
 )
 
-import os
+import os, re
 from getpass import getpass, getuser
 
 DEFAULT_DB_TEMPLATE = "template1"
@@ -59,7 +59,6 @@ EXTRA_DB_MODULES = [
     "call_center",
     "carrierroute",
     "closeddial",
-    "clp",
     "domainpolicy",
     "emergency",
     "fraud_detection",
@@ -153,11 +152,6 @@ class database(Module):
         """
         helper for autocompletion in interactive mode
         """
-        role_commands = (
-            'alter_role',
-            'create_role',
-            'drop_role',
-            'get_role')
 
         if command == 'create':
             db_name = ['opensips', 'opensips_test']
@@ -181,12 +175,6 @@ class database(Module):
                 return db_dest
             ret = [t for t in db_dest if t.startswith(text)]
 
-        elif command in role_commands:
-            role_name = ['opensips', 'opensips_role']
-            if not text:
-                return role_name
-            ret = [t for t in role_name if t.startswith(text)]
-
         return ret or ['']
 
     def __exclude__(self):
@@ -208,10 +196,6 @@ class database(Module):
             'drop',
             'add',
             'migrate',
-            'create_role',
-            'alter_role',
-            'drop_role',
-            'get_role',
             ]
 
     def get_db_engine(self):
@@ -285,67 +269,25 @@ class database(Module):
             logger.error("no DB URL specified: aborting!")
             return -1
 
-        return self.create_tables(db_name, db_url, tables=[module],
-                                    create_std=False)
-
-    def do_alter_role(self, params=None):
-        """
-        alter role attributes (connect to given template database)
-        """
-
-        db_url = cfg.read_param("template_url",
-            "Please provide the URL to connect as template")
-
-        if db_url is None:
-            logger.error("no URL specified: aborting!")
+        admin_url = self.get_admin_db_url(db_name)
+        if not admin_url:
             return -1
 
-        db_template = cfg.read_param("database_template",
-            "Please provide the database template name",
-            DEFAULT_DB_TEMPLATE)
-        if db_template is None:
-            logger.error("no URL specified: aborting!")
+        try:
+            admin_db = self.get_db(admin_url, db_name)
+        except osdbAccessDeniedError:
+            logger.error("failed to connect to DB as root, check " +
+                            "'database_admin_url'")
+            return -1
+        if not admin_db:
             return -1
 
-        # create an object store database instance
-        db = self.get_db(db_url, db_template)
-        if db is None:
-            return -1
+        ret = self.create_tables(db_name, db_url, admin_db, tables=[module],
+                                 create_std=False)
 
-        role_name = None
-        role_options = None
-        role_password = None
+        admin_db.destroy()
+        return ret
 
-        if len(params) > 0:
-            role_name = ''.join(params[0])
-
-        if role_name is None:
-            role_name = cfg.read_param("role_name",
-                "Please provide the role name to alter")
-            logger.debug("role_name: '%s'", role_name)
-
-        if db.exists_role(role_name) is True:
-            if len(params) > 1:
-                role_options = params[1]
-            if len(params) > 2:
-                role_password = params[2]
-
-            if role_options is None:
-                role_list = cfg.read_param("role_options",
-                    "Please adapt the role options to alter")
-                if len(role_list) > 0:
-                    role_options = ' '.join(role_list)
-                logger.debug("role_options: '%s'", role_options)
-
-            if role_password is None:
-                role_password = getpass("New password: ")
-                logger.debug("role_password: '%s'", role_password)
-
-            if db.alter_role(role_name, role_options, role_password) is False:
-                logger.error("alter role '%s' didn't succeed", role_name)
-                db.destroy()
-        else:
-            logger.warning("can't alter non existing role '%s'", role_name)
 
     def do_create(self, params=None):
         """
@@ -365,8 +307,8 @@ class database(Module):
         try:
             admin_db = self.get_db(admin_url, db_name)
         except osdbAccessDeniedError:
-            logger.error("failed to connect to DB as root, check " +
-                            "'database_admin_url'")
+            logger.error("failed to connect to DB as %s, please fix your " +
+                        "'database_admin_url'", osdb.get_url_user(admin_url))
             return -1
         if not admin_db:
             return -1
@@ -381,9 +323,10 @@ class database(Module):
         if self.ensure_user(db_url, db_name, admin_db) < 0:
             return -1
 
-        if self.create_tables(db_name, db_url) < 0:
+        if self.create_tables(db_name, db_url, admin_db) < 0:
             return -1
 
+        admin_db.destroy()
         return 0
 
     def create_db(self, db_name, admin_url, db=None):
@@ -393,35 +336,29 @@ class database(Module):
             db = self.get_db(admin_url, db_name)
             if not db:
                 return -1
+            destroy = True
+        else:
+            destroy = False
 
         # check to see if the database has already been created
         if db.exists(db_name):
-            logger.warn("database '{}' already exists!".format(db_name))
+            logger.warn("database '%s' already exists!", db_name)
             return -2
 
         # create the db instance
         if not db.create(db_name):
             return -1
 
-        # create the role and assing correct access rights
-        if db.dialect == "postgres":
-            role_name = cfg.read_param("role_name",
-                "Please provide a role name to access the database")
-            logger.debug("role_name: '%s'", role_name)
-
-            if db.exists_role(role_name) is False:
-                if self.do_create_role([role_name]) is False:
-                    return -3
-
-            # assign the access rights
-            db.grant_db_options(role_name)
-
+        if destroy:
+            db.destroy()
         return 0
 
-    def create_tables(self, db_name, db_url, tables=[], create_std=True):
+    def create_tables(self, db_name, db_url, admin_db, tables=[],
+                        create_std=True):
         """
         create database tables
         """
+        db_url = osdb.set_url_db(db_url, db_name)
 
         # 2) prepare new object store database instance
         #    use it to connect to the created database
@@ -432,9 +369,6 @@ class database(Module):
         if not db.exists():
             logger.warning("database '{}' does not exist!".format(db_name))
             return -1
-
-        # connect to the database
-        db.connect(db_name)
 
         schema_path = self.get_schema_path(db.dialect)
         if schema_path is None:
@@ -484,12 +418,16 @@ class database(Module):
             else:
                 table_files[table] = table_file_path
 
+        username = osdb.get_url_user(db_url)
+        admin_db.connect(db_name)
+
         # create tables from SQL schemas
         for module, table_file in table_files.items():
-            print("Running {}...".format(os.path.basename(table_file)))
+            logger.info("Running {}...".format(os.path.basename(table_file)))
             try:
                 db.create_module(table_file)
-                logger.info("database table(s) have been successfully created")
+                if db.dialect == "postgres":
+                    self.pg_grant_table_access(table_file, username, admin_db)
             except osdbModuleAlreadyExistsError:
                 logger.error("{} table(s) are already created!".format(module))
             except osdbError as ex:
@@ -513,7 +451,7 @@ class database(Module):
             logger.info("access works, opensips user already exists")
         except osdbAccessDeniedError:
             logger.info("creating access user for {} ...".format(db_name))
-            if not admin_db.create_user(db_url, db_name):
+            if not admin_db.ensure_user(db_url):
                 logger.error("failed to create user on {} DB".format(db_name))
                 return -1
 
@@ -527,68 +465,6 @@ class database(Module):
 
         db.destroy()
         return 0
-
-    def do_create_role(self, params=None):
-        """
-        create a given role (connection via URL)
-        """
-        db_url = cfg.read_param("template_url",
-            "Please provide the URL to connect as template")
-
-        if db_url is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        db_template = cfg.read_param("database_template",
-            "Please provide the database template name",
-            DEFAULT_DB_TEMPLATE)
-
-        if db_template is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        # create an object store database instance
-        db = self.get_db(db_url, db_template)
-        if db is None:
-            return -1
-
-        if db.dialect == "postgres":
-            logger.debug("params: '%s' (len: %s)", params, len(params))
-            if len(params) >= 1:
-                role_name = ''.join(params[0])
-            else:
-                role_name = None
-
-            if role_name is None:
-                role_name = cfg.read_param("role_name",
-                    "Please provide the role name to create")
-            logger.debug("role_name: '%s'", role_name)
-
-            if len(params) >= 2:
-                role_options = ''.join(params[1])
-            else:
-                role_options = None
-
-            if role_options is None:
-                role_list = cfg.read_param("role_options",
-                    "Please assing the list of role options to create")
-                role_options = ''.join(role_list)
-            logger.debug("role_options: '%s'", role_options)
-
-            if len(params) >= 3:
-                role_password = ''.join(params[2])
-            else:
-                role_password= 'opensipspw'
-            logger.debug("role_password: '********'")
-
-        if db.exists_role(role_name) is False:
-            result =  db.create_role(role_name, role_options, role_password)
-            if result:
-                db.destroy()
-        else:
-            logger.warning("role '{}' already exists. Please use 'alter_role'".format(role_name))
-            return False
-        return True
 
     def do_drop(self, params=None):
         """
@@ -613,13 +489,6 @@ class database(Module):
         if db is None:
             return -1
 
-        if db.dialect == "postgres":
-            if params and len(params) > 1:
-                role_name = params[1]
-            else:
-                role_name = cfg.read_param("role_name",
-                    "Please provide a role name to access the database")
-
         # check to see if the database has already been created
         if db.exists():
             if cfg.read_param("database_force_drop",
@@ -635,92 +504,12 @@ class database(Module):
                 logger.info("database '{}' not dropped!".format(db_name))
         else:
             logger.warning("database '{}' does not exist!".format(db_name))
+            db.destroy()
             return -1
 
-    def do_drop_role(self, params=None):
-        """
-        drop a given role (connection to given template via URL)
-        """
+        db.destroy()
+        return 0
 
-        db_url = cfg.read_param("template_url",
-            "Please provide the URL to connect as template")
-
-        if db_url is None:
-            print()
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        db_template = cfg.read_param("database_template",
-            "Please provide the database template name",
-            DEFAULT_DB_TEMPLATE)
-        if db_template is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        # create an object store database instance
-        db = self.get_db(db_url, db_template)
-        if db is None:
-            return -1
-
-        role_name = None
-
-        if len(params) >= 1:
-            role_name = ''.join(params[0])
-
-        if role_name is None:
-            role_name = cfg.read_param("role_name",
-                    "Please provide the role name to drop")
-
-        if db.exists_role(role_name=role_name) is True:
-            if cfg.read_param("rule_force_drop",
-                    "Do you really want to drop the role '{}'".
-                        format(role_name),
-                    False, True):
-                db.drop_role(role_name)
-                db.destroy()
-            else:
-                logger.info("role '{}' not dropped!".format(role_name))
-        else:
-            logger.warning("role '{}' does not exist!".format(role_name))
-
-    def do_get_role(self, params=None):
-        """
-        get role attributes (connection to given template via URL)
-        """
-
-        db_url = cfg.read_param("template_url",
-            "Please provide the URL to connect as template")
-
-        if db_url is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        db_template = cfg.read_param("database_template",
-            "Please provide the database template name",
-            DEFAULT_DB_TEMPLATE)
-        if db_template is None:
-            logger.error("no URL specified: aborting!")
-            return -1
-
-        # create an object store database instance
-        db = self.get_db(db_url, db_template)
-        if db is None:
-            return -1
-
-        if len(params) < 1:
-            role_name = cfg.read_param("role_name",
-                "Please provide the role name to alter")
-        else:
-            role_name = params[0]
-
-        logger.debug("role_name: '%s'", role_name)
-
-
-        if db.exists_role(role_name) is True:
-            if db.get_role(role_name) is False:
-                logger.error("get role '%s' didn't succeed", role_name)
-        else:
-            logger.warning("can't get options of non existing role '{}'".format(role_name))
 
     def do_migrate(self, params):
         if len(params) < 2:
@@ -743,6 +532,10 @@ class database(Module):
         if not db:
             return -1
 
+        if db.dialect != "mysql":
+            logger.error("'migrate' is only available for MySQL right now! :(")
+            return -1
+
         if not db.exists(old_db):
              logger.error("the source database ({}) does not exist!".format(old_db))
              return -2
@@ -750,7 +543,7 @@ class database(Module):
         print("Creating database {}...".format(new_db))
         if self.create_db(new_db, admin_url, db) < 0:
             return -1
-        if self.create_tables(new_db, admin_url) < 0:
+        if self.create_tables(new_db, db, admin_url) < 0:
             return -1
 
         backend = osdb.get_url_driver(admin_url)
@@ -827,7 +620,7 @@ class database(Module):
             self.db_path = '/usr/share/opensips'
             return os.path.join(self.db_path, backend)
 
-        db_path = cfg.read_param("database_path",
+        db_path = cfg.read_param("database_schema_path",
                 "Could not locate DB schema files for {}!  Custom path".format(
                     backend))
         if db_path is None:
@@ -857,3 +650,20 @@ class database(Module):
 
         self.db_path = db_path
         return schema_path
+
+    def pg_grant_table_access(self, sql_file, username, admin_db):
+        """
+        Grant access to all tables and sequence IDs of a DB module
+        """
+        with open(sql_file, "r") as f:
+            for line in f.readlines():
+                res = re.search('CREATE TABLE (.*) ', line, re.IGNORECASE)
+                if res:
+                    table = res.group(1)
+                    admin_db.grant_table_options(username, table)
+
+                res = re.search('ALTER SEQUENCE (.*) MAXVALUE', line,
+                                re.IGNORECASE)
+                if res:
+                    seq = res.group(1)
+                    admin_db.grant_table_options(username, seq)
