@@ -24,6 +24,7 @@ from opensipscli.db import (
     osdb, osdbError, osdbConnectError,
     osdbArgumentError, osdbNoSuchModuleError,
     osdbModuleAlreadyExistsError, osdbAccessDeniedError,
+    SUPPORTED_BACKENDS,
 )
 
 import os, re
@@ -71,13 +72,6 @@ EXTRA_DB_MODULES = [
     "smpp",
     "tracer",
     "userblacklist"
-]
-
-SUPPORTED_BACKENDS = [
-    "mysql",
-    "postgres",
-    "sqlite",
-    "oracle",
 ]
 
 MIGRATE_TABLES_24_TO_30 = [
@@ -198,22 +192,8 @@ class database(Module):
             'migrate',
             ]
 
-    def get_db_engine(self):
-        if cfg.exists('database_admin_url'):
-            engine = osdb.get_url_driver(cfg.get('database_admin_url'))
-        elif cfg.exists('database_url'):
-            engine = osdb.get_url_driver(cfg.get('database_url'))
-        else:
-            engine = "mysql"
-
-        if engine not in SUPPORTED_BACKENDS:
-            logger.error("bad database engine ({}), supported: {}".format(
-                         engine, " ".join(SUPPORTED_BACKENDS)))
-            return None
-        return engine
-
     def get_db_url(self, db_name=cfg.get('database_name')):
-        engine = self.get_db_engine()
+        engine = osdb.get_db_engine()
         if not engine:
             return None
 
@@ -224,7 +204,7 @@ class database(Module):
         return db_url
 
     def get_admin_db_url(self, db_name):
-        engine = self.get_db_engine()
+        engine = osdb.get_db_engine()
         if not engine:
             return None
 

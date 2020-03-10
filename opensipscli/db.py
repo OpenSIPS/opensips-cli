@@ -18,6 +18,7 @@
 ##
 
 from opensipscli.logger import logger
+from opensipscli.config import cfg
 import re
 
 try:
@@ -32,6 +33,13 @@ try:
 except ImportError:
     logger.info("sqlalchemy and sqlalchemy_utils are not available!")
     sqlalchemy_available = False
+
+SUPPORTED_BACKENDS = [
+    "mysql",
+    "postgres",
+    "sqlite",
+    "oracle",
+]
 
 """
 SQLAlchemy: Classes for ORM handling
@@ -100,6 +108,7 @@ class osdbAccessDeniedError(osdbError):
     OSDB: module error handler
     """
     pass
+
 
 class osdb(object):
     """
@@ -754,6 +763,23 @@ class osdb(object):
             return False
         return result
 
+
+    @staticmethod
+    def get_db_engine():
+        if cfg.exists('database_admin_url'):
+            engine = osdb.get_url_driver(cfg.get('database_admin_url'))
+        elif cfg.exists('database_url'):
+            engine = osdb.get_url_driver(cfg.get('database_url'))
+        else:
+            engine = "mysql"
+
+        if engine not in SUPPORTED_BACKENDS:
+            logger.error("bad database engine ({}), supported: {}".format(
+                         engine, " ".join(SUPPORTED_BACKENDS)))
+            return None
+        return engine
+
+
     @staticmethod
     def set_url_db(url, db):
         """
@@ -770,9 +796,11 @@ class osdb(object):
         else:
             return url[:db_idx+1] + db
 
+
     @staticmethod
     def set_url_driver(url, driver):
         return driver + url[url.find(':'):]
+
 
     @staticmethod
     def set_url_password(url, password):
@@ -780,13 +808,16 @@ class osdb(object):
         url.password = password
         return str(url)
 
+
     @staticmethod
     def get_url_driver(url):
         return make_url(url).drivername.lower()
 
+
     @staticmethod
     def get_url_user(url):
         return make_url(url).username
+
 
     @staticmethod
     def get_url_pswd(url):

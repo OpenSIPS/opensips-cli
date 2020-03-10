@@ -20,7 +20,9 @@
 from opensipscli.module import Module
 from opensipscli.logger import logger
 from opensipscli.config import cfg
-from opensipscli.db import osdb
+from opensipscli.db import (
+        osdb, osdbError
+)
 
 import os
 import getpass
@@ -38,20 +40,25 @@ USER_RPID_COL = "rpid"
 class user(Module):
 
     def user_db_connect(self):
-        db_url = cfg.read_param(["database_user_url",
-                "database_url"],
+        engine = osdb.get_db_engine()
+
+        db_url = cfg.read_param(["database_user_url", "database_url"],
                 "Please provide us the URL of the database")
         if db_url is None:
             print()
             logger.error("no URL specified: aborting!")
             return None
 
-        db_name = cfg.read_param(["database_user_name",
-            "database_name"],
-            "Please provide the database to add user to",
-            DEFAULT_DB_NAME)
+        db_url = osdb.set_url_driver(db_url, engine)
+        db_name = cfg.read_param(["database_user_name", "database_name"],
+                "Please provide the database to add user to", DEFAULT_DB_NAME)
 
-        db = osdb(db_url, db_name)
+        try:
+            db = osdb(db_url, db_name)
+        except osdbError:
+            logger.error("failed to connect to database %s", db_name)
+            return None
+
         db.connect()
         return db
 
@@ -101,6 +108,8 @@ class user(Module):
         username, domain = self.user_get_domain(name)
 
         db = self.user_db_connect()
+        if not db:
+            return -1
 
         insert_dict = {
                 USER_NAME_COL: username,
@@ -147,6 +156,8 @@ class user(Module):
         username, domain = self.user_get_domain(name)
 
         db = self.user_db_connect()
+        if not db:
+            return -1
 
         user_dict = {
                 USER_NAME_COL: username,
@@ -193,6 +204,8 @@ class user(Module):
         username, domain = self.user_get_domain(name)
 
         db = self.user_db_connect()
+        if not db:
+            return -1
 
         delete_dict = {
                 USER_NAME_COL: username,
