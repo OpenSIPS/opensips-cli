@@ -165,7 +165,12 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         history_file = cfg.get('history_file')
         logger.debug("saving history in {}".format(history_file))
         os.makedirs(os.path.expanduser(os.path.dirname(history_file)), exist_ok=True)
-        readline.write_history_file(os.path.expanduser(history_file))
+        try:
+            readline.write_history_file(os.path.expanduser(history_file))
+        except PermissionError:
+            logger.warning("failed to write CLI history to {} " +
+                            "(no permission)".format(
+                history_file))
 
     def preloop(self):
         """
@@ -175,8 +180,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         logger.debug("using history file {}".format(history_file))
         try:
             readline.read_history_file(os.path.expanduser(history_file))
+        except PermissionError:
+            logger.warning("failed to read CLI history from {} " +
+                            "(no permission)".format(
+                history_file))
         except FileNotFoundError:
             pass
+
         readline.set_history_length(int(cfg.get('history_file_size')))
         if not self.registered_atexit:
             atexit.register(self.history_write)
