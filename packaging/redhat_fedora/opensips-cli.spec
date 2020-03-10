@@ -19,7 +19,6 @@ AutoReqProv: no
 
 %if 0%{?rhel} == 7
 Requires: python36-sqlalchemy
-Requires: python36-sqlalchemy-utils
 Requires: python36-mysql
 Requires: python36-pyOpenSSL
 %else
