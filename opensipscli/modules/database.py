@@ -307,8 +307,8 @@ class database(Module):
         try:
             admin_db = self.get_db(admin_url, db_name)
         except osdbAccessDeniedError:
-            logger.error("failed to connect to DB as %s, please fix your " +
-                        "'database_admin_url'", osdb.get_url_user(admin_url))
+            logger.error("failed to connect to DB as %s, please provide or " +
+                "fix the 'database_admin_url'", osdb.get_url_user(admin_url))
             return -1
         if not admin_db:
             return -1

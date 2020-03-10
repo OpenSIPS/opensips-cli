@@ -32,31 +32,24 @@ Once installed, the schema files will be auto-detected by `opensips-cli`.
 
 ## Setting up the `database` module
 
-The parameters for this tool can be provisioned in two forms:
-
-*  via a declaration in the configuration file
-*  typed in when prompted at execution
-
-Specifying a parameter in the configuration file may simplify the user
-interaction with the console (less prompts).
-
 The following parameters are allowed in the config file:
 
-* `database_path` - the directory to the OpenSIPS DB scripts, usually the
-`scripts/` directory in the OpenSIPS source tree, or `/usr/share/opensips/`
-* `database_url` - the connection string to the database.
-The URL combines schema, username, password, host and port.
-Example: `mysql://user:password@host`
-* `template_url` - the connection string to the database in template mode.
-The URL will connect to a given database and select a template to execute
-the given task. Only database products supporting a role concept will
-evaluate this config option (e.g. PostgreSQL).
-Example: `postgres://user:password@host:5432`
-* `database_name` - the name of the database. Modules may be
-created, dropped or added to this database.
+* `database_schema_path` - the directory to the OpenSIPS DB schema files,
+usually `/usr/share/opensips` if installed from packages or `./scripts` if you
+are using the OpenSIPS source tree.
+* `database_admin_url` - a connection string to the database with privileged
+(administrator) access level which will be used to create/drop databases, as
+well as to create or ensure access for the non-privileged DB access user
+provided via `database_url`.  The URL combines schema, username, password, host
+and port.  Default: `mysql://root@localhost`.
+* `database_url` - the connection string to the database.  A good practice
+would be to use a non-administrator access user for this URL.  Default:
+`mysql://opensips:opensipsrw@localhost`.
+* `database_name` - the name of the database. Modules may be created, dropped
+or added to this database.  Default: `opensips`.
 * `database_modules` - accepts the `ALL` keyword that indicates all the
 available modules should be installed, or a space-separated list of modules
-names. If processed with the `create` command, the corresponding tables will
+names.  If processed with the `create` command, the corresponding tables will
 be deployed.  Default modules: `acc alias_db auth_db avpops clusterer dialog
 dialplan dispatcher domain drouting group load_balancer msilo permissions
 rtpproxy rtpengine speeddial tls_mgm usrloc`.
@@ -69,27 +62,30 @@ Consider the following configuration file:
 
 ```
 [default]
-database_url: mysql://root@localhost
-database_name: opensips
+database_admin_url: mysql://root:secret@localhost
 database_modules: dialog usrloc
 
 # optional DB override instance, invoked using `opensips-cli -i postgres ...`
 [postgres]
-database_url: postgres://opensips@localhost:5432
-template_url: postgres://postgres@localhost:5432
-database_name: opensips
+database_url: postgres://opensipspg:opensipspgrw@localhost
+database_admin_url: postgres://root:secret@localhost
 database_modules: dialog usrloc
 ```
 
-The following command will create the `opensips` table, containing only the
+The following command will create the `opensips` database, containing only the
 `version`, `dialog` and `location` tables (according to the `database_modules`
-parameter):
+parameter).  Additionally, the `opensips:opensipsrw` user will be created will
+`ALL PRIVILEGES` for the `opensips` database.
+
+For some backends, such as PostgreSQL, any additionally required permissions
+will be transparently granted to the `opensips` user, for example:
+table-level or sequence-level permissions.
 
 ```
 opensips-cli -x database create
 ```
 
-If we want to add a new module, let's say `rtpproxy`, we have to run:
+If we want to add a new module, say `rtpproxy`, we have to run:
 
 ```
 opensips-cli -x database add rtpproxy
