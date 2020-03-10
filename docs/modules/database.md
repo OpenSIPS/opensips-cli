@@ -45,8 +45,9 @@ and port.  Default: `mysql://root@localhost`.
 * `database_url` - the connection string to the database.  A good practice
 would be to use a non-administrator access user for this URL.  Default:
 `mysql://opensips:opensipsrw@localhost`.
-* `database_name` - the name of the database. Modules may be created, dropped
-or added to this database.  Default: `opensips`.
+* `database_name` - the name of the database.  Modules may be separately added
+to this database if you choose not to install them all at once.  Default:
+`opensips`.
 * `database_modules` - accepts the `ALL` keyword that indicates all the
 available modules should be installed, or a space-separated list of modules
 names.  If processed with the `create` command, the corresponding tables will
