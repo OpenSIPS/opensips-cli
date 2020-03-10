@@ -246,6 +246,12 @@ class database(Module):
             else:
                 admin_url = "{}://root@localhost".format(engine)
 
+        if osdb.get_url_pswd(admin_url) is None:
+            pswd = getpass("Password for admin DB user ({}): ".format(
+                            osdb.get_url_user(admin_url)))
+            logger.debug("read password: '%s'", pswd)
+            admin_url = osdb.set_url_password(admin_url, pswd)
+
         logger.debug("admin DB URL: '{}'".format(admin_url))
         return admin_url
 
@@ -273,12 +279,7 @@ class database(Module):
         if not admin_url:
             return -1
 
-        try:
-            admin_db = self.get_db(admin_url, db_name)
-        except osdbAccessDeniedError:
-            logger.error("failed to connect to DB as root, check " +
-                            "'database_admin_url'")
-            return -1
+        admin_db = self.get_db(admin_url, db_name)
         if not admin_db:
             return -1
 
@@ -304,12 +305,7 @@ class database(Module):
         if not admin_url:
             return -1
 
-        try:
-            admin_db = self.get_db(admin_url, db_name)
-        except osdbAccessDeniedError:
-            logger.error("failed to connect to DB as %s, please provide or " +
-                "fix the 'database_admin_url'", osdb.get_url_user(admin_url))
-            return -1
+        admin_db = self.get_db(admin_url, db_name)
         if not admin_db:
             return -1
 
@@ -447,7 +443,7 @@ class database(Module):
         db_url = osdb.set_url_db(db_url, db_name)
 
         try:
-            db = self.get_db(db_url, db_name)
+            db = self.get_db(db_url, db_name, check_access=True)
             logger.info("access works, opensips user already exists")
         except osdbAccessDeniedError:
             logger.info("creating access user for {} ...".format(db_name))
@@ -456,7 +452,7 @@ class database(Module):
                 return -1
 
             try:
-                db = self.get_db(db_url, db_name)
+                db = self.get_db(db_url, db_name, check_access=True)
             except Exception as e:
                 logger.exception(e)
                 logger.error("failed to connect to {} " +
@@ -523,12 +519,7 @@ class database(Module):
         if not admin_url:
             return -1
 
-        try:
-            db = self.get_db(admin_url, new_db)
-        except osdbAccessDeniedError:
-            logger.error("failed to connect to DB as root, check " +
-                            "'database_admin_url'")
-            return -1
+        db = self.get_db(admin_url, new_db)
         if not db:
             return -1
 
@@ -569,12 +560,18 @@ class database(Module):
         db.destroy()
         return True
 
-    def get_db(self, db_url, db_name):
+    def get_db(self, db_url, db_name, cfg_url_param="database_admin_url",
+                check_access=False):
         """
         helper function: check database url and its dialect
         """
         try:
             return osdb(db_url, db_name)
+        except osdbAccessDeniedError:
+            if check_access:
+                raise
+            logger.error("failed to connect to DB as %s, please provide or " +
+                "fix the '%s'", osdb.get_url_user(db_url), cfg_url_param)
         except osdbArgumentError:
             logger.error("Bad URL, it should resemble: {}".format(
                 "backend://user:pass@hostname" if not \

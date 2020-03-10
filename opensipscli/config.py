@@ -96,8 +96,8 @@ class OpenSIPSCLIConfig:
         return defaults.DEFAULT_SECTION
 
     # reads a param or returns a default
-    def read_param(self, param, prompt, default=None, yes_no=False, isbool=False):
-
+    def read_param(self, param, prompt, default=None, yes_no=False,
+                    isbool=False, allow_empty=False):
         if param:
             if type(param) != list:
                 param = [param]
@@ -118,6 +118,9 @@ class OpenSIPSCLIConfig:
             except Exception as e:
                 return None
             if val == "":
+                if allow_empty:
+                    return ""
+
                 if default is not None:
                     return default
             elif yes_no:

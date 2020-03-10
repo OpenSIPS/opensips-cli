@@ -62,13 +62,11 @@ Consider the following configuration file:
 
 ```
 [default]
-database_admin_url: mysql://root:secret@localhost
 database_modules: dialog usrloc
 
 # optional DB override instance, invoked using `opensips-cli -i postgres ...`
 [postgres]
-database_url: postgres://opensipspg:opensipspgrw@localhost
-database_admin_url: postgres://root:secret@localhost
+database_admin_url: postgres://root@localhost
 database_modules: dialog usrloc
 ```
 
@@ -83,6 +81,7 @@ table-level or sequence-level permissions.
 
 ```
 opensips-cli -x database create
+Password for admin DB user (root): _
 ```
 
 If we want to add a new module, say `rtpproxy`, we have to run:

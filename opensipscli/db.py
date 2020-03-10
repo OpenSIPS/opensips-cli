@@ -775,6 +775,12 @@ class osdb(object):
         return driver + url[url.find(':'):]
 
     @staticmethod
+    def set_url_password(url, password):
+        url = make_url(url)
+        url.password = password
+        return str(url)
+
+    @staticmethod
     def get_url_driver(url):
         return make_url(url).drivername.lower()
 
