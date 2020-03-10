@@ -810,8 +810,18 @@ class osdb(object):
 
 
     @staticmethod
-    def get_url_driver(url):
-        return make_url(url).drivername.lower()
+    def get_url_driver(url, capitalize=False):
+        if capitalize:
+            driver = make_url(url).drivername.lower()
+            capitalized = {
+                'mysql': 'MySQL',
+                'postgres': 'PostgreSQL',
+                'sqlite': 'SQLite',
+                'oracle': 'Oracle',
+                }
+            return capitalized.get(driver, driver.capitalize())
+        else:
+            return make_url(url).drivername.lower()
 
 
     @staticmethod

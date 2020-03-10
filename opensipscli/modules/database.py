@@ -227,8 +227,9 @@ class database(Module):
                 admin_url = "{}://root@localhost".format(engine)
 
         if osdb.get_url_pswd(admin_url) is None:
-            pswd = getpass("Password for admin DB user ({}): ".format(
-                            osdb.get_url_user(admin_url)))
+            pswd = getpass("Password for admin {} user ({}): ".format(
+                osdb.get_url_driver(admin_url, capitalize=True),
+                osdb.get_url_user(admin_url)))
             logger.debug("read password: '%s'", pswd)
             admin_url = osdb.set_url_password(admin_url, pswd)
 
