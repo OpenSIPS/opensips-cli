@@ -92,7 +92,7 @@ opensips-cli -x database add rtpproxy
 ```
 The command above will create the `rtpproxy_sockets` table.
 
-A drop command will prompt the user whether he really wants to drop the
+A drop command will prompt the user whether they really want to drop the
 database or not:
 
 ```
