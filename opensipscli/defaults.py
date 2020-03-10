@@ -58,7 +58,7 @@ DEFAULT_VALUES = {
     "history_file": HISTORY_FILE,
     "history_file_size": "1000",
     "output_type": "pretty-print",
-    "log_level": "WARNING", # this is the default level in python logging
+    "log_level": "INFO",
 
     # communication information
     "communication_type": "fifo",
