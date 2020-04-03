@@ -29,6 +29,7 @@ from opensipscli.db import (
 
 import os, re
 from getpass import getpass, getuser
+from collections import OrderedDict
 
 DEFAULT_DB_TEMPLATE = "template1"
 
@@ -351,15 +352,15 @@ class database(Module):
         if schema_path is None:
             return -1
 
+        table_files = OrderedDict()
+
         if create_std:
             standard_file_path = os.path.join(schema_path, "standard-create.sql")
             if not os.path.isfile(standard_file_path):
                 logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
                         format(standard_file_path))
                 return -1
-            table_files = {'standard': standard_file_path}
-        else:
-            table_files = {}
+            table_files['standard'] = standard_file_path
 
         # check to see what tables we shall deploy
         if tables:
