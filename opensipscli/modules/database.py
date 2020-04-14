@@ -516,7 +516,7 @@ class database(Module):
         print("Creating database {}...".format(new_db))
         if self.create_db(new_db, admin_url, db) < 0:
             return -1
-        if self.create_tables(new_db, db, admin_url) < 0:
+        if self.create_tables(new_db, admin_url, db) < 0:
             return -1
 
         backend = osdb.get_url_driver(admin_url)
