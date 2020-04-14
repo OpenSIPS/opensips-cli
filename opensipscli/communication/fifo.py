@@ -29,7 +29,8 @@ REPLY_FIFO_FILE_TEMPLATE='opensips_fifo_reply_{}'
 def execute(method, params):
     jsoncmd = jsonrpc_helper.get_command(method, params)
     reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(random.randrange(32767))
-    reply_fifo_file = "/tmp/{}".format(reply_fifo_file_name)
+    reply_dir = cfg.get('fifo_reply_dir')
+    reply_fifo_file = "{}/{}".format(reply_dir, reply_fifo_file_name)
 
     # make sure fifo file does not exist
     try:
