@@ -72,10 +72,9 @@ database_modules: acc clusterer dialog dialplan dispatcher domain rtpproxy usrlo
 database_admin_url: postgres://root@localhost
 ```
 
-The following command will create the `opensips` database, containing only the
-`version`, `dialog` and `location` tables (according to the `database_modules`
-parameter).  Additionally, the `opensips:opensipsrw` user will be created will
-`ALL PRIVILEGES` for the `opensips` database.
+The following command will create the `opensips` database and all possible
+tables within the MySQL instance.  Additionally, the `opensips:opensipsrw` user
+will be created will `ALL PRIVILEGES` for the `opensips` database.
 
 For some backends, such as PostgreSQL, any additionally required permissions
 will be transparently granted to the `opensips` user, for example:
