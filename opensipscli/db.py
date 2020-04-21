@@ -142,7 +142,10 @@ class osdb(object):
         except sqlalchemy.exc.OperationalError as se:
             if self.dialect == "mysql":
                 try:
-                    if int(se.args[0].split(",")[0].split("(")[2]) == 2006:
+                    if int(se.args[0].split(",")[0].split("(")[2]) in [
+                            2006, # MySQL
+                            1045, # MariaDB
+                            ]:
                         raise osdbAccessDeniedError
                 except osdbAccessDeniedError:
                     raise
