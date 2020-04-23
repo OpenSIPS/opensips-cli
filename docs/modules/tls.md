@@ -1,38 +1,33 @@
 # OpenSIPS CLI - TLS module
 
-Using this module you can create TLS certificates and private keys.
-There are two commands implemented in this module:
-* `rootCA` - this command creates a self signed certificate for rootCA and
-a private key for rootCA
-* `userCERT` - this commnad creates a certificate which is signed by rootCA
+Using the `tls` module, you can generate TLS certificates and private keys.
+
+The module has two subcommands:
+* `rootCA` - generates a CA (certification authority) self signed certificate
+and private key pair
+* `userCERT` - generates a certificate which is signed by rootCA
 and assigned to an user. Moreover, this command creates a private key for that
 user and a ca-list(chain of trust in TSL)
 
 ## Configuration
 
-This module can be configured from either one of the following files:
-* ~/.opensips-cli.cfg
-* /etc/opensips-cli.cfg
-* /etc/opensips/opensips-cli.cfg
-or you can specify your own config files in the following variables
-(located in one of the above files):
-* tls_ca_config - for `rootCA` command 
-* tls_user_config - for `userCERT` command
+Certificates and private keys can be customized using the following settings:
 
-List of parameters for configuring CA:
-* tls_ca_common_name - the common name
-* tls_ca_dir - the director where rootCA will be stored
-* tls_ca_cert_file - the location of ca certificate inside the ca director
-* tls_ca_key_file - the location of ca private key  inside the ca director
-* tls_ca_key_size - the size of the RSA key
-* tls_ca_country - the initials of the country(example: 'ro') 
-* tls_ca_state - the state
-* tls_ca_city - the city
-* tls_ca_organisation - the name organisation
-* tls_ca_organisational_unit - the organisation unit
-* tls_ca_md - the md used for signing
-* tls_ca_notafter - the valadity period
-* tls_ca_overwrite - set this to y if you want to overwrite CA, n otherwise
+List of `opensips-cli.cfg` settings for configuring self-signed CA certificates:
+
+* tls_ca_dir - output directory where the cert and key will be written to
+* tls_ca_cert_file - output certificate file path, within `tls_ca_dir`
+* tls_ca_key_file - output private key file path, within `tls_ca_dir`
+* tls_ca_overwrite - set this to "y" in order to overwrite existing files
+* tls_ca_common_name - the address of the website (e.g. "opensips.org")
+* tls_ca_country - the initials of the country (e.g. "RO")
+* tls_ca_state - the state (e.g. "Bucharest")
+* tls_ca_locality - the city (e.g. "Bucharest")
+* tls_ca_organisation - the name of the organisation (e.g. "OpenSIPS")
+* tls_ca_organisational_unit - the organisational unit (e.g. "Project")
+* tls_ca_notafter - the validity period, in seconds (e.g. 315360000)
+* tls_ca_key_size - the size of the RSA key, in bits (e.g. 4096)
+* tls_ca_md - the digest algorithm to use for signing (e.g. SHA1)
 
 List of parameters for configuring user certificate:
 * tls_user_common_name - the common name
@@ -56,26 +51,26 @@ List of parameters for configuring user certificate:
 
 ## Examples
 
-To create a self signed certificate and a private key for rootCA enter this snippet:
+To create a self-signed certificate and a private key for rootCA, enter this snippet:
 ```
 opensips-cli -x tls rootCA
 ```
 Configuration file example for rootCA:
 ```
 [default]
-tls_ca_common_name: www.opensips.com
 tls_ca_dir: /etc/opensips/tls/rootCA
 tls_ca_cert_file: cacert.pem
 tls_ca_key_file: private/cakey.pem
-tls_ca_key_size: 4096
-tls_ca_country: ro
-tls_ca_state: Ilfov
-tls_ca_city: Bucharest
-tls_ca_organisation: Opensips
-tls_ca_organisational_unit: Solutions
-tls_ca_md: sha1
-tls_ca_notafter: 315360000
 tls_ca_overwrite: yes
+tls_ca_common_name: opensips.org
+tls_ca_country: RO
+tls_ca_state: Bucharest
+tls_ca_locality: Bucharest
+tls_ca_organisation: OpenSIPS
+tls_ca_organisational_unit: Project
+tls_ca_notafter: 315360000
+tls_ca_key_size: 4096
+tls_ca_md: SHA1
 ```
 
 To create a user certificate signed by rootCA and private key and a ca-list(chain of trust in TSL):

@@ -25,6 +25,7 @@ from time import gmtime, mktime
 from os.path import exists, join, dirname
 from os import makedirs
 from opensipscli.config import cfg, OpenSIPSCLIConfig
+from random import randrange
 
 try:
     from OpenSSL import crypto, SSL
@@ -35,63 +36,67 @@ except ImportError:
 
 class tls(Module):
     def do_rootCA(self, params):
-        tlscfg = cfg
-        ca_cfg = cfg.get("tls_ca_config")
-        if ca_cfg:
-            tlscfg = OpenSIPSCLIConfig()
-            tlscfg.parse(ca_cfg)
+        global cfg
+        logger.info("Preparing to generate CA cert + key...")
 
-        cn = tlscfg.read_param("tls_ca_common_name", "input the hostname of the website the certificate is for", "www.opensips.com")
-        ca_dir = tlscfg.read_param("tls_ca_dir", "ca director", "/etc/opensips/tls/rootCA/")
-        cert_file = tlscfg.read_param("tls_ca_cert_file","cert_file", "cacert.pem")
-        key_file = tlscfg.read_param("tls_ca_key_file","key_file", "private/cakey.pem")
+        # TODO
+        # separate cli.cfg files for TLS are fully deprecated, this if block is
+        # only kept for backwards-compatibility.  Remove starting from v3.2! <3
+        if cfg.exists('tls_ca_config'):
+            tls_cfg = cfg.get('tls_ca_config')
+            cfg = OpenSIPSCLIConfig()
+            cfg.parse(tls_cfg)
+
+        ca_dir = cfg.read_param("tls_ca_dir", "Output directory", "/etc/opensips/tls/rootCA/")
+        cert_file = cfg.read_param("tls_ca_cert_file", "Output cert file", "cacert.pem")
+        key_file = cfg.read_param("tls_ca_key_file", "Output key file", "private/cakey.pem")
         c_f = join(ca_dir, cert_file)
         k_f = join(ca_dir, key_file)
-        create_cert = False
-        if not exists(c_f) or not exists(k_f):
-            create_cert = True
-        else:
-            if tlscfg.read_param("tls_ca_overwrite", "rootCA already exists, do you want to overwrite it?", "yes", True):
-                create_cert = True
-        if create_cert:
-             # create a key pair
-            key = crypto.PKey()
-            key_size = int(tlscfg.read_param("tls_ca_key_size","key_size", 4096))
-            key.generate_key(crypto.TYPE_RSA, key_size)        
 
-            # create a self-signed cert
-            cert = crypto.X509() 
+        if (exists(c_f) or exists(k_f)) and not cfg.read_param("tls_ca_overwrite",
+                "CA certificate or key already exists, overwrite?", "yes", True):
+            return
 
-            cert.get_subject().C = tlscfg.read_param("tls_ca_country", "country")
-            cert.get_subject().ST = tlscfg.read_param("tls_ca_state", "state", "Ilfov")
-            cert.get_subject().L = tlscfg.read_param("tls_ca_city", "city", "Bucharest")
-            cert.get_subject().O = tlscfg.read_param("tls_ca_organisation", "organization", "opensips")
-            cert.get_subject().OU = tlscfg.read_param("tls_ca_organisational_unit", "organisational unit", "project")
-            cert.get_subject().CN = cn 
-            cert.set_serial_number(1)
-            cert.gmtime_adj_notBefore(0)
-            notafter = int(tlscfg.read_param("tls_ca_notafter", "duration", 315360000))
-            cert.gmtime_adj_notAfter(notafter)
-            cert.set_issuer(cert.get_subject())
-            cert.set_pubkey(key)
-            md = tlscfg.read_param("tls_ca_md", "md", "sha1")
-            cert.sign(key, md)
+        # create a self-signed cert
+        cert = crypto.X509()
 
+        cert.get_subject().CN = cfg.read_param("tls_ca_common_name", "Website address (CN)", "opensips.org")
+        cert.get_subject().C = cfg.read_param("tls_ca_country", "Country (C)", "RO")
+        cert.get_subject().ST = cfg.read_param("tls_ca_state", "State (ST)", "Bucharest")
+        cert.get_subject().L = cfg.read_param("tls_ca_locality", "Locality (L)", "Bucharest")
+        cert.get_subject().O = cfg.read_param("tls_ca_organisation", "Organization (O)", "OpenSIPS")
+        cert.get_subject().OU = cfg.read_param("tls_ca_organisational_unit", "Organisational Unit (OU)", "Project")
+        cert.set_serial_number(randrange(100000))
+        cert.gmtime_adj_notBefore(0)
+        notafter = int(cfg.read_param("tls_ca_notafter", "Certificate validity (seconds)", 315360000))
+        cert.gmtime_adj_notAfter(notafter)
+        cert.set_issuer(cert.get_subject())
+
+        # create a key pair
+        key = crypto.PKey()
+        key_size = int(cfg.read_param("tls_ca_key_size", "RSA key size (bits)", 4096))
+        key.generate_key(crypto.TYPE_RSA, key_size)
+
+        cert.set_pubkey(key)
+        md = cfg.read_param("tls_ca_md", "Digest Algorithm", "SHA1")
+        cert.sign(key, md)
+
+        try:
             if not exists(dirname(c_f)):
                 makedirs(dirname(c_f))
-            try:
-                open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
-            except Exception as e:
-                logger.error(e)
+            open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
+        except Exception as e:
+            logger.exception(e)
 
+        try:
             if not exists(dirname(k_f)):
                 makedirs(dirname(k_f))
-            try:
-                open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
-            except Exception as e:
-                logger.error(e)   
-            logger.info("CA certificate created in " + c_f)
-            logger.info("CA private key created in " + k_f)
+            open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
+        except Exception as e:
+            logger.exception(e)
+
+        logger.info("CA certificate created in " + c_f)
+        logger.info("CA private key created in " + k_f)
 
     def do_userCERT(self, params):
         tlscfg = cfg
