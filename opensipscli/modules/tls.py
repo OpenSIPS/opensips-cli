@@ -87,6 +87,8 @@ class tls(Module):
             open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
         except Exception as e:
             logger.exception(e)
+            logger.error("Failed to write to %s", c_f)
+            return
 
         try:
             if not exists(dirname(k_f)):
@@ -94,6 +96,8 @@ class tls(Module):
             open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
         except Exception as e:
             logger.exception(e)
+            logger.error("Failed to write to %s", k_f)
+            return
 
         logger.info("CA certificate created in " + c_f)
         logger.info("CA private key created in " + k_f)
@@ -158,21 +162,27 @@ class tls(Module):
                 makedirs(dirname(c_f))
             open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
+            logger.error("Failed to write to %s", c_f)
+            return
 
         try:
             if not exists(dirname(k_f)):
                 makedirs(dirname(k_f))
             open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
+            logger.error("Failed to write to %s", k_f)
+            return
 
         try:
             if not exists(dirname(ca_f)):
                 makedirs(dirname(ca_f))
             open(ca_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, ca_cert).decode('utf-8'))
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
+            logger.error("Failed to write to %s", ca_f)
+            return
 
         logger.info("user certificate created in " + c_f)
         logger.info("user private key created in " + k_f)
