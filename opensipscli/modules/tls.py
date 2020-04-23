@@ -129,8 +129,20 @@ class tls(Module):
 
         cacert = cfg.read_param("tls_user_cacert", "CA cert file", "/etc/opensips/tls/rootCA/cacert.pem")
         cakey = cfg.read_param("tls_user_cakey", "CA key file", "/etc/opensips/tls/rootCA/private/cakey.pem")
-        ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert, 'rt').read())
-        ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(cakey, 'rt').read())
+
+        try:
+            ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert, 'rt').read())
+        except Exception as e:
+            logger.exception(e)
+            logger.error("Failed to load %s", cacert)
+            return
+
+        try:
+            ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(cakey, 'rt').read())
+        except Exception as e:
+            logger.exception(e)
+            logger.error("Failed to load %s", cakey)
+            return
 
         # create a self-signed cert
         cert = crypto.X509()
