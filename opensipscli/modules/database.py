@@ -198,8 +198,9 @@ class database(Module):
         if not engine:
             return None
 
-        # make sure to inherit the 'database_admin_url' engine
+        # make sure to inherit the 'database_admin_url' engine + host
         db_url = osdb.set_url_driver(cfg.get("database_url"), engine)
+        db_url = osdb.set_url_host(db_url, osdb.get_db_host())
 
         logger.debug("DB URL: '{}'".format(db_url))
         return db_url

@@ -784,6 +784,16 @@ class osdb(object):
 
 
     @staticmethod
+    def get_db_host():
+        if cfg.exists('database_admin_url'):
+            return osdb.get_url_host(cfg.get('database_admin_url'))
+        elif cfg.exists('database_url'):
+            return osdb.get_url_host(cfg.get('database_url'))
+
+        return "localhost"
+
+
+    @staticmethod
     def set_url_db(url, db):
         """
         Force a given database @url string to include the given @db
@@ -813,6 +823,13 @@ class osdb(object):
 
 
     @staticmethod
+    def set_url_host(url, host):
+        url = make_url(url)
+        url.host = host
+        return str(url)
+
+
+    @staticmethod
     def get_url_driver(url, capitalize=False):
         if capitalize:
             driver = make_url(url).drivername.lower()
@@ -835,3 +852,8 @@ class osdb(object):
     @staticmethod
     def get_url_pswd(url):
         return make_url(url).password
+
+
+    @staticmethod
+    def get_url_host(url):
+        return make_url(url).host
