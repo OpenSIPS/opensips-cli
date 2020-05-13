@@ -63,13 +63,11 @@ Consider the following configuration file:
 
 ```
 [default]
+#database_modules: acc clusterer dialog dialplan dispatcher domain rtpproxy usrloc
 database_modules: ALL
-database_admin_url: mysql://root@localhost
 
-# optional DB override instance, invoked using `opensips-cli -i postgres ...`
-[postgres]
-database_modules: acc clusterer dialog dialplan dispatcher domain rtpproxy usrloc
-database_admin_url: postgres://root@localhost
+#database_admin_url: postgres://root@localhost
+database_admin_url: mysql://root@localhost
 ```
 
 The following command will create the `opensips` database and all possible
