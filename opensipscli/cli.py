@@ -231,8 +231,15 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             else:
                 command = self.command[1]
                 params = self.command[2:]
+
             logger.debug("running in non-interactive mode '{}'".format(self.command))
-            ret = self.run_command(self.command[0], command, params)
+
+            try:
+                ret = self.run_command(self.command[0], command, params)
+            except KeyboardInterrupt:
+                print('^C')
+                return -1
+
             # assume that by default it exists with success
             if ret is None:
                 ret = 0
