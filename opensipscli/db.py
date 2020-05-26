@@ -144,6 +144,7 @@ class osdb(object):
                 try:
                     if int(se.args[0].split(",")[0].split("(")[2]) in [
                             2006, # MySQL
+                            1044, # MariaDB
                             1045, # MariaDB
                             ]:
                         raise osdbAccessDeniedError

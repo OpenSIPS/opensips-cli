@@ -48,6 +48,7 @@ test_db_drop_1_prompt() {
 
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $1
 EOF
 
@@ -63,6 +64,7 @@ test_db_drop_0_prompts() {
 
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $1
 database_force_drop: false
 EOF
@@ -70,6 +72,7 @@ EOF
 
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $1
 database_force_drop: true
 EOF
@@ -82,6 +85,7 @@ test_db_create_0_prompts() {
 
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $1
 database_modules: dialog
 EOF
@@ -96,6 +100,7 @@ EOF
 create_db() {
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $2
 database_modules: dialog
 EOF
@@ -106,6 +111,7 @@ EOF
 drop_db() {
   cat >$CLI_CFG <<EOF
 [default]
+log_level: ERROR
 database_admin_url: $2
 database_force_drop: true
 EOF
