@@ -69,6 +69,7 @@ DEFAULT_VALUES = {
     # database module
     "database_url": "mysql://opensips:opensipsrw@localhost",
     "database_name": "opensips",
+    "database_schema_path": "/usr/share/opensips",
 
     # user module
     "plain_text_passwords": "False",

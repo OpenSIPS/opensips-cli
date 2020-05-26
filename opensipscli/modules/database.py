@@ -595,18 +595,7 @@ class database(Module):
         if self.db_path is not None:
             return os.path.join(self.db_path, backend)
 
-        if os.path.isfile(os.path.join('/usr/share/opensips',
-                                backend, 'standard-create.sql')):
-            self.db_path = '/usr/share/opensips'
-            return os.path.join(self.db_path, backend)
-
-        db_path = cfg.read_param("database_schema_path",
-                "Could not locate DB schema files for {}!  Custom path".format(
-                    backend))
-        if db_path is None:
-            print()
-            logger.error("failed to locate {} DB schema files".format(backend))
-            return None
+        db_path = cfg.get("database_schema_path")
 
         if db_path.endswith('/'):
             db_path = db_path[:-1]
@@ -626,6 +615,11 @@ class database(Module):
         if not os.path.isdir(schema_path):
             logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
                     format(schema_path))
+            return None
+
+        std_tables = os.path.join(schema_path, 'standard-create.sql')
+        if not os.path.isfile(std_tables):
+            logger.error("standard tables file not found ({})".format(std_tables))
             return None
 
         self.db_path = db_path
