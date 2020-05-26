@@ -13,12 +13,12 @@ which database to delete.
 * `add` - adds a new module's tables in an existing database. Receives as
 parameter the name of the module, as specified in the OpenSIPS scripts
 hierarchy.
-* `migrate` - copy and convert an OpenSIPS 2.4 database into its OpenSIPS
-3.0 equivalent
+* `migrate` - copy and convert an OpenSIPS database into its next OpenSIPS
+release equivalent
 
 ## Configuration
 
-## Database Schema Files
+### Database Schema Files
 
 The database schema files for each supported SQL backend can be installed via
 their corresponding OpenSIPS client module package.  For example (only install modules useful to you):
@@ -30,7 +30,7 @@ yum install opensips-db_mysql opensips-db_postgresql opensips-db_sqlite opensips
 
 Once installed, the schema files will be auto-detected by `opensips-cli`.
 
-## Setting up the `database` module
+### Setting up the `database` module
 
 The following parameters are allowed in the config file:
 
@@ -57,6 +57,8 @@ rtpproxy rtpengine speeddial tls_mgm usrloc`.
 database without user interaction.  Default: `false`
 
 ## Examples
+
+### Database Management
 
 Consider the following configuration file:
 
@@ -100,6 +102,33 @@ Do you really want to drop the 'opensips' database [Y/n] (Default is n): n
 But setting the `database_force_drop` parameter will drop it without asking:
 ```
 opensips-cli -o database_force_drop=true -x database drop
+```
+
+### Database Migration (MySQL only)
+
+The `database migrate` command can be used to _incrementally_ upgrade
+your OpenSIPS database.
+
+#### Migrating from 2.4 to 3.0
+
+```
+# fetch the 3.0 OpenSIPS repo & migration scripts
+git clone https://github.com/OpenSIPS/opensips -b 3.0 ~/src/opensips-3.0
+
+# provide the custom path to the migration scripts and perform the migration
+opensips-cli -o database_schema_path=~/src/opensips-3.0/scripts \
+             -x database migrate 2.4_to_3.0 opensips_2_4 opensips_mig_3_0
+```
+
+#### Migrating from 3.0 to 3.1
+
+```
+# fetch the 3.1 OpenSIPS repo & migration scripts
+git clone https://github.com/OpenSIPS/opensips -b 3.1 ~/src/opensips-3.1
+
+# provide the custom path to the migration scripts and perform the migration
+opensips-cli -o database_schema_path=~/src/opensips-3.1/scripts \
+             -x database migrate 3.0_to_3.1 opensips_3_0 opensips_mig_3_1
 ```
 
 ## Dependencies
