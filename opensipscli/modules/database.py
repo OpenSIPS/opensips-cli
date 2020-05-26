@@ -75,61 +75,130 @@ EXTRA_DB_MODULES = [
     "userblacklist"
 ]
 
-MIGRATE_TABLES_24_TO_30 = [
-    'registrant', # changed in 3.0
-    'tls_mgm',    # changed in 3.0
-    'acc',
-    'address',
-    'cachedb',
-    'carrierfailureroute',
-    'carrierroute',
-    'cc_agents',
-    'cc_calls',
-    'cc_cdrs',
-    'cc_flows',
-    'closeddial',
-    'clusterer',
-    'cpl',
-    'dbaliases',
-    'dialplan',
-    'dispatcher',
-    'domain',
-    'domainpolicy',
-    'dr_carriers',
-    'dr_gateways',
-    'dr_groups',
-    'dr_partitions',
-    'dr_rules',
-    'emergency_report',
-    'emergency_routing',
-    'emergency_service_provider',
-    'fraud_detection',
-    'freeswitch',
-    'globalblacklist',
-    'grp',
-    'imc_members',
-    'imc_rooms',
-    'load_balancer',
-    'location',
-    'missed_calls',
-    'presentity',
-    'pua',
-    're_grp',
-    'rls_presentity',
-    'rls_watchers',
-    'route_tree',
-    'rtpengine',
-    'rtpproxy_sockets',
-    'silo',
-    'sip_trace',
-    'smpp',
-    'speed_dial',
-    'subscriber',
-    'uri',
-    'userblacklist',
-    'usr_preferences',
-    'xcap',
-    ]
+DB_MIGRATIONS = {
+    '3.0_to_3.1': [
+        'smpp',          # new in 3.0
+        'cc_agents',     # changed in 3.1
+        'cc_calls',      # changed in 3.1
+        'cc_flows',      # changed in 3.1
+        'dialog',        # changed in 3.1
+        'dr_carriers',   # changed in 3.1
+        'dr_rules',      # changed in 3.1
+        'load_balancer', # changed in 3.1
+        'acc',
+        'active_watchers',
+        'address',
+        'b2b_entities',
+        'b2b_logic',
+        'b2b_sca',
+        'cachedb',
+        'carrierfailureroute',
+        'carrierroute',
+        'cc_cdrs',
+        'closeddial',
+        'clusterer',
+        'cpl',
+        'dbaliases',
+        'dialplan',
+        'dispatcher',
+        'domain',
+        'domainpolicy',
+        'dr_gateways',
+        'dr_groups',
+        'dr_partitions',
+        'emergency_report',
+        'emergency_routing',
+        'emergency_service_provider',
+        'fraud_detection',
+        'freeswitch',
+        'globalblacklist',
+        'grp',
+        'imc_members',
+        'imc_rooms',
+        'location',
+        'missed_calls',
+        'presentity',
+        'pua',
+        're_grp',
+        'registrant',
+        'rls_presentity',
+        'rls_watchers',
+        'route_tree',
+        'rtpengine',
+        'rtpproxy_sockets',
+        'silo',
+        'sip_trace',
+        'speed_dial',
+        'subscriber',
+        'tls_mgm',
+        'uri',
+        'userblacklist',
+        'usr_preferences',
+        'watchers',
+        'xcap',
+    ],
+
+    '2.4_to_3.0': [
+        'registrant', # changed in 3.0
+        'tls_mgm',    # changed in 3.0
+        'acc',
+        'active_watchers',
+        'address',
+        'b2b_entities',
+        'b2b_logic',
+        'b2b_sca',
+        'cachedb',
+        'carrierfailureroute',
+        'carrierroute',
+        'cc_agents',
+        'cc_calls',
+        'cc_cdrs',
+        'cc_flows',
+        'closeddial',
+        'clusterer',
+        'cpl',
+        'dbaliases',
+        'dialog',
+        'dialplan',
+        'dispatcher',
+        'domain',
+        'domainpolicy',
+        'dr_carriers',
+        'dr_gateways',
+        'dr_groups',
+        'dr_partitions',
+        'dr_rules',
+        'emergency_report',
+        'emergency_routing',
+        'emergency_service_provider',
+        'fraud_detection',
+        'freeswitch',
+        'globalblacklist',
+        'grp',
+        'imc_members',
+        'imc_rooms',
+        'load_balancer',
+        'location',
+        'missed_calls',
+        'presentity',
+        'pua',
+        're_grp',
+        'rls_presentity',
+        'rls_watchers',
+        'route_tree',
+        'rtpengine',
+        'rtpproxy_sockets',
+        'silo',
+        'sip_trace',
+        'speed_dial',
+        'subscriber',
+        'uri',
+        'userblacklist',
+        'usr_preferences',
+        'watchers',
+        'xcap',
+    ],
+}
 
 
 class database(Module):
@@ -160,15 +229,24 @@ class database(Module):
 
             ret = [t for t in modules if t.startswith(text)]
         elif command == 'migrate':
-            db_source = ['opensips']
-            if not text:
-                return db_source
-            ret = [t for t in db_source if t.startswith(text)]
+            arg = len(line.split())
+            if arg == 2 or (arg == 3 and line[-1] != ' '):
+                mig_flavours = [f + ' ' for f in DB_MIGRATIONS]
+                if not text:
+                    return mig_flavours
+                ret = [t for t in mig_flavours if t.startswith(text)]
 
-            db_dest = ['opensips_new']
-            if not text:
-                return db_dest
-            ret = [t for t in db_dest if t.startswith(text)]
+            elif arg == 3 or (arg == 4 and line[-1] != ' '):
+                db_source = ['opensips ']
+                if not text:
+                    return db_source
+                ret = [t for t in db_source if t.startswith(text)]
+
+            elif arg == 4 or (arg == 5 and line[-1] != ' '):
+                db_dest = ['opensips_new ']
+                if not text:
+                    return db_dest
+                ret = [t for t in db_dest if t.startswith(text)]
 
         return ret or ['']
 
@@ -491,12 +569,17 @@ class database(Module):
 
 
     def do_migrate(self, params):
-        if len(params) < 2:
-            print("Usage: database migrate <old-database> <new-database>")
+        if len(params) < 3:
+            print("Usage: database migrate <flavour> <old-database> <new-database>")
             return 0
 
-        old_db = params[0]
-        new_db = params[1]
+        flavour = params[0].lower()
+        old_db = params[1]
+        new_db = params[2]
+
+        if flavour not in DB_MIGRATIONS:
+            logger.error("unsupported migration flavour: {}".format(flavour))
+            return -1
 
         admin_url = self.get_admin_db_url(new_db)
         if not admin_url:
@@ -532,13 +615,11 @@ class database(Module):
             logger.debug("migration scripts for %s not found", backend)
             return -1
         else:
-            logger.debug("migration scripts for %s", migrate_scripts)
+            logger.debug("found migration scripts for %s", backend)
 
-        print("Migrating all matching OpenSIPS tables...")
-        db.migrate(migrate_scripts, old_db, new_db, MIGRATE_TABLES_24_TO_30)
-
-        print("Finished copying OpenSIPS table data " +
-                "into database '{}'!".format(new_db))
+        logger.info("Migrating all matching OpenSIPS tables...")
+        db.migrate(flavour.replace('.', '_').upper(),
+                    migrate_scripts, old_db, new_db, DB_MIGRATIONS[flavour])
 
         db.destroy()
         return True
@@ -565,7 +646,7 @@ class database(Module):
             logger.error("This database backend is not supported!  " \
                         "Supported: {}".format(', '.join(SUPPORTED_BACKENDS)))
 
-    def get_migrate_scripts_path(self, backend):
+    def get_migrate_scripts_path(self, backend="mysql"):
         """
         helper function: migrate database schema
         """
@@ -578,14 +659,16 @@ class database(Module):
                 os.path.join(self.db_path, backend, 'db-migrate.sql'),
                 ]
 
-            if any(not os.path.isfile(i) for i in scripts):
-                logger.error("The SQL migration scripts are missing!  " \
-                            "Please pull the latest OpenSIPS packages!")
-                return None
+            for s in scripts:
+                if not os.path.isfile(s):
+                    logger.error("Missing migration script ({}), please pull" \
+                            " the latest OpenSIPS {} module package!".format(
+                                s, backend))
+                    return None
 
             return scripts
 
-    def get_schema_path(self, backend):
+    def get_schema_path(self, backend="mysql"):
         """
         helper function: get the path defining the root path holding sql schema template
         """

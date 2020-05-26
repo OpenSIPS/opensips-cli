@@ -678,29 +678,36 @@ class osdb(object):
             return False
         return result
 
-    def migrate(self, migrate_scripts, old_db, new_db, tables=[]):
+    def migrate(self, proc_suffix, migrate_scripts, old_db, new_db, tables=[]):
+        """
+        migrate from source to destination database using SQL schema files
+        @flavour: values should resemble: '2.4_to_3.0', '3.0_to_3.1'
+        @sp_suffix: stored procedure name suffix, specific to each migration
+        """
+
         if self.dialect != "mysql":
             logger.error("Table data migration is only supported for MySQL!")
             return
 
-        """
-        migrate from source to destination database using SQL schema files
-        """
+        proc_db_migrate = 'OSIPS_DB_MIGRATE_{}'.format(proc_suffix)
+        proc_tb_migrate = 'OSIPS_TB_COPY_{}'.format(proc_suffix)
+
         self.connect(old_db)
 
+        """ drop DB/table migration stored procedures if already present """
         try:
             ret = self.find('mysql.proc', "count(*)",
-                        {'db': old_db, 'name': 'OSIPS_DB_MIGRATE_2_4_TO_3_0'})
+                        {'db': old_db, 'name': proc_db_migrate})
             if ret and ret.first()[0] != 0:
                 self.__conn.execute(sqlalchemy.sql.text(
-                    "DROP PROCEDURE IF EXISTS OSIPS_DB_MIGRATE_2_4_TO_3_0").
+                    "DROP PROCEDURE IF EXISTS {}".format(proc_db_migrate)).
                         execution_options(autocommit=True))
 
             ret = self.find('mysql.proc', "count(*)",
-                        {'db': old_db, 'name': 'OSIPS_TB_COPY_2_4_TO_3_0'})
+                        {'db': old_db, 'name': proc_tb_migrate})
             if ret and ret.first()[0] != 0:
                 self.__conn.execute(sqlalchemy.sql.text(
-                    "DROP PROCEDURE IF EXISTS OSIPS_TB_COPY_2_4_TO_3_0").
+                    "DROP PROCEDURE IF EXISTS {}".format(proc_tb_migrate)).
                         execution_options(autocommit=True))
         except Exception as e:
             logger.exception(e)
@@ -715,8 +722,8 @@ class osdb(object):
                 logger.info("Migrating {} data... ".format(tb))
                 try:
                     self.__conn.execute(sqlalchemy.sql.text(
-                        "CALL {}.OSIPS_TB_COPY_2_4_TO_3_0('{}', '{}', '{}')".format(
-                            old_db, old_db, new_db, tb)))
+                        "CALL {}.{}('{}', '{}', '{}')".format(
+                            old_db, proc_tb_migrate, old_db, new_db, tb)))
                 except Exception as e:
                     logger.exception(e)
                     logger.error("Failed to migrate '{}' table data, ".format(tb) +
@@ -724,11 +731,14 @@ class osdb(object):
         else:
             try:
                 self.__conn.execute(sqlalchemy.sql.text(
-                    "CALL {}.OSIPS_DB_MIGRATE_2_4_TO_3_0('{}', '{}')".format(
-                        old_db, old_db, new_db)))
+                    "CALL {}.{}('{}', '{}')".format(
+                        old_db, proc_db_migrate, old_db, new_db)))
             except Exception as e:
                 logger.exception(e)
                 logger.error("Failed to migrate database!")
+
+        print("Finished copying OpenSIPS table data " +
+                "into database '{}'!".format(new_db))
 
     def row2dict(self, row):
         """
