@@ -34,28 +34,27 @@ Once installed, the schema files will be auto-detected by `opensips-cli`.
 
 The following parameters are allowed in the config file:
 
-* `database_schema_path` - the directory to the OpenSIPS DB schema files,
+* `database_schema_path` (optional) - the directory to the OpenSIPS DB schema files,
 usually `/usr/share/opensips` if installed from packages or `./scripts` if you
-are using the OpenSIPS source tree.
-* `database_admin_url` - a connection string to the database with privileged
+are using the OpenSIPS source tree.  Default: `/usr/share/opensips`
+* `database_admin_url` (optional) - a connection string to the database with privileged
 (administrator) access level which will be used to create/drop databases, as
 well as to create or ensure access for the non-privileged DB access user
 provided via `database_url`.  The URL combines schema, username, password, host
 and port.  Default: `mysql://root@localhost`.
-* `database_url` - the connection string to the database.  A good practice
+* `database_url` (optional) - the connection string to the database.  A good practice
 would be to use a non-administrator access user for this URL.  Default:
 `mysql://opensips:opensipsrw@localhost`.
-* `database_name` - the name of the database.  Modules may be separately added
-to this database if you choose not to install them all at once.  Default:
-`opensips`.
-* `database_modules` - accepts the `ALL` keyword that indicates all the
+* `database_name` (optional) - the name of the database.  Modules may be separately added
+to this database if you choose not to install all of them.  Default: `opensips`.
+* `database_modules` (optional) - accepts the `ALL` keyword that indicates all the
 available modules should be installed, or a space-separated list of modules
 names.  If processed with the `create` command, the corresponding tables will
-be deployed.  Default modules: `acc alias_db auth_db avpops clusterer dialog
+be deployed.  Default: `acc alias_db auth_db avpops clusterer dialog
 dialplan dispatcher domain drouting group load_balancer msilo permissions
 rtpproxy rtpengine speeddial tls_mgm usrloc`.
-* `database_force_drop` - indicates whether the `drop` command will drop the
-database without user interaction.
+* `database_force_drop` (optional) - indicates whether the `drop` command will drop the
+database without user interaction.  Default: `false`
 
 ## Examples
 
