@@ -257,40 +257,65 @@ class osdb(object):
             return False
 
         if url.drivername.lower() == "mysql":
-            sqlcmd = """CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED
-                        BY '{}'""".format(url.username, url.host, url.password)
+            sqlcmd = "CREATE USER IF NOT EXISTS '{}' IDENTIFIED BY '{}'".format(
+                        url.username, url.password)
             try:
                 result = self.__conn.execute(sqlcmd)
                 if result:
-                    logger.info("created user '%s'@'%s'",
-                                url.username, url.host)
+                    logger.info("created user '%s'", url.username)
             except:
-                logger.error("failed to create user '%s'@'%s'",
-                                url.username, url.host)
+                logger.error("failed to create user '%s'", url.username)
                 return False
 
-            sqlcmd = "SET PASSWORD FOR '{}'@'{}' = PASSWORD('{}')".format(
-                        url.username, url.host, url.password)
-            try:
-                result = self.__conn.execute(sqlcmd)
-                if result:
-                    logger.info("set password for '%s'@'%s'",
-                                url.username, url.host)
-            except:
-                logger.error("failed to set password for '%s'@'%s'",
-                                url.username, url.host)
-                return False
+            if url.host == 'root':
+                logger.debug("skipping password change for root user")
+            else:
+                """
+                Query compatibility facts when changing a MySQL user password:
+                 - SET PASSWORD syntax has diverged between MySQL and MariaDB
+                 - ALTER USER syntax is not supported in MariaDB < 10.2
+                """
 
-            sqlcmd = "GRANT ALL ON {}.* TO '{}'@'{}'".format(
-                     self.db_name, url.username, url.host)
+                # try MariaDB syntax first
+                sqlcmd = "SET PASSWORD FOR '{}' = PASSWORD('{}')".format(
+                            url.username, url.password)
+                try:
+                    result = self.__conn.execute(sqlcmd)
+                    if result:
+                        logger.info("set password '%s%s%s' for '%s' (MariaDB)",
+                            url.password[0] if len(url.password) >= 1 else '',
+                            (len(url.password) - 2) * '*',
+                            url.password[-1] if len(url.password) >= 2 else '',
+                            url.username)
+                except sqlalchemy.exc.ProgrammingError as se:
+                    try:
+                        if int(se.args[0].split(",")[0].split("(")[2]) == 1064:
+                            # syntax error!  OK, now try Oracle MySQL syntax
+                            sqlcmd = "ALTER USER '{}' IDENTIFIED BY '{}'".format(
+                                        url.username, url.password)
+                            result = self.__conn.execute(sqlcmd)
+                            if result:
+                                logger.info("set password '%s%s%s' for '%s' (MySQL)",
+                                    url.password[0] if len(url.password) >= 1 else '',
+                                    (len(url.password) - 2) * '*',
+                                    url.password[-1] if len(url.password) >= 2 else '',
+                                    url.username)
+                    except:
+                        logger.exception("failed to set password for '%s'", url.username)
+                        return False
+                except:
+                    logger.exception("failed to set password for '%s'", url.username)
+                    return False
+
+            sqlcmd = "GRANT ALL ON {}.* TO '{}'".format(self.db_name, url.username)
             try:
                 result = self.__conn.execute(sqlcmd)
                 if result:
-                    logger.info("granted access to '%s'@'%s' on '%s'",
-                                url.username, url.host, self.db_name)
+                    logger.info("granted access to user '%s' on DB '%s'",
+                                url.username, self.db_name)
             except:
-                logger.error("failed to grant access to '%s'@'%s'",
-                                url.username, url.host)
+                logger.exception("failed to grant access to '%s' on DB '%s'",
+                                url.username, self.db_name)
                 return False
 
             sqlcmd = "FLUSH PRIVILEGES"
@@ -298,8 +323,9 @@ class osdb(object):
                 result = self.__conn.execute(sqlcmd)
                 logger.info("flushed privileges")
             except:
-                logger.error("failed to flush privileges")
+                logger.exception("failed to flush privileges")
                 return False
+
         elif url.drivername.lower() == "postgres":
             if not self.exists_role(url.username):
                 logger.info("creating role %s", url.username)
