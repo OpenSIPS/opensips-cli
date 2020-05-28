@@ -267,7 +267,7 @@ class osdb(object):
                 logger.error("failed to create user '%s'", url.username)
                 return False
 
-            if url.host == 'root':
+            if url.username == 'root':
                 logger.debug("skipping password change for root user")
             else:
                 """

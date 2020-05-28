@@ -505,19 +505,16 @@ class database(Module):
 
         try:
             db = self.get_db(db_url, db_name, check_access=True)
-            logger.info("access works, opensips user already exists")
+            logger.info("connected to DB, '%s' user is already created",
+                        osdb.get_url_user(db_url))
         except osdbAccessDeniedError:
             logger.info("creating access user for {} ...".format(db_name))
             if not admin_db.ensure_user(db_url):
                 logger.error("failed to create user on {} DB".format(db_name))
                 return -1
 
-            try:
-                db = self.get_db(db_url, db_name, check_access=True)
-            except Exception as e:
-                logger.exception(e)
-                logger.error("failed to connect to {} " +
-                                "with non-admin user".format(db_name))
+            db = self.get_db(db_url, db_name, cfg_url_param='database_url')
+            if db is None:
                 return -1
 
         db.destroy()
