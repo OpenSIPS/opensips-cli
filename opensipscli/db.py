@@ -720,24 +720,18 @@ class osdb(object):
 
         self.connect(old_db)
 
-        """ drop DB/table migration stored procedures if already present """
+        # separately drop DB/table migration stored procedures if already
+        # present, since there are issues with multiple statements in 1 import
         try:
-            ret = self.find('mysql.proc', "count(*)",
-                        {'db': old_db, 'name': proc_db_migrate})
-            if ret and ret.first()[0] != 0:
-                self.__conn.execute(sqlalchemy.sql.text(
-                    "DROP PROCEDURE IF EXISTS {}".format(proc_db_migrate)).
-                        execution_options(autocommit=True))
+            self.__conn.execute(sqlalchemy.sql.text(
+                "DROP PROCEDURE IF EXISTS {}".format(proc_db_migrate)).
+                    execution_options(autocommit=True))
 
-            ret = self.find('mysql.proc', "count(*)",
-                        {'db': old_db, 'name': proc_tb_migrate})
-            if ret and ret.first()[0] != 0:
-                self.__conn.execute(sqlalchemy.sql.text(
-                    "DROP PROCEDURE IF EXISTS {}".format(proc_tb_migrate)).
-                        execution_options(autocommit=True))
-        except Exception as e:
-            logger.exception(e)
-            logger.error("Failed to re-create migration stored procedures!")
+            self.__conn.execute(sqlalchemy.sql.text(
+                "DROP PROCEDURE IF EXISTS {}".format(proc_tb_migrate)).
+                    execution_options(autocommit=True))
+        except:
+            logger.exception("Failed to drop migration stored procedures!")
 
         for ms in migrate_scripts:
             logger.debug("Importing {}...".format(ms))
