@@ -119,7 +119,7 @@ class user(Module):
             }
         # check if the user already exists
         if db.entry_exists(USER_TABLE, insert_dict):
-            logger.warning("User {}@{} already exists".
+            logger.error("User {}@{} already exists".
                     format(username, domain))
             return -1
 
@@ -140,8 +140,8 @@ class user(Module):
                 "" if not plain_text_pw else password
 
         db.insert(USER_TABLE, insert_dict)
-        logger.debug("User {}@{} has been successfully added!".
-                format(username, domain))
+        logger.info("Successfully added {}@{}".format(username, domain))
+
         db.destroy()
         return True
 
@@ -149,9 +149,9 @@ class user(Module):
 
         if len(params) < 1:
             name = cfg.read_param(None,
-                    "Please provide the username you want to change the password")
+                    "Please provide the username to change the password for")
             if not name:
-                logger.warning("no username to change password!")
+                logger.error("empty username")
                 return -1
         else:
             name = params[0]
@@ -176,7 +176,7 @@ class user(Module):
         else:
             password = self.user_get_password()
             if password is None:
-                logger.error("password not specified: " +
+                logger.error("Password not specified: " +
                         "cannot change passowrd for user {}@{}".
                         format(user, domain))
                 return -1
@@ -188,8 +188,8 @@ class user(Module):
             }
 
         db.update(USER_TABLE, update_dict, user_dict)
-        logger.debug("User's {}@{} password has been been successfully changed".
-                format(username, domain))
+        logger.info("Successfully changed password for {}@{}".
+                        format(username, domain))
         db.destroy()
         return True
 
@@ -215,13 +215,13 @@ class user(Module):
             }
         # check if the user already exists
         if not db.entry_exists(USER_TABLE, delete_dict):
-            logger.warning("User {}@{} does not exist".
+            logger.error("User {}@{} does not exist".
                     format(username, domain))
             return -1
 
         db.delete(USER_TABLE, delete_dict)
-        logger.debug("User's {}@{} password has been been successfully deleted".
-                format(username, domain))
+        logger.info("Successfully deleted {}@{}".format(username, domain))
+
         db.destroy()
         return True
 
