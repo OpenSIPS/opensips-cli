@@ -202,20 +202,28 @@ class osdb(object):
         if db_name is not None:
             self.db_name = db_name
 		# TODO: do this only for SQLAlchemy
-        if self.dialect == "postgres":
-            self.db_url = self.set_url_db(self.db_url, self.db_name)
-            if sqlalchemy_utils.database_exists(self.db_url) is True:
-                engine = sqlalchemy.create_engine(self.db_url, isolation_level='AUTOCOMMIT')
-                if self.__conn:
-                    self.__conn.close()
-                self.__conn = engine.connect()
-                # connect the Session object to our engine
-                self.Session.configure(bind=self.__engine)
-                # instanciate the Session object
-                self.session = self.Session()
-                logger.debug("connected to database URL '%s'", self.db_url)
-        else:
-            self.__conn.execute("USE {}".format(self.db_name))
+
+        try:
+            if self.dialect == "postgres":
+                self.db_url = self.set_url_db(self.db_url, self.db_name)
+                if sqlalchemy_utils.database_exists(self.db_url) is True:
+                    engine = sqlalchemy.create_engine(self.db_url, isolation_level='AUTOCOMMIT')
+                    if self.__conn:
+                        self.__conn.close()
+                    self.__conn = engine.connect()
+                    # connect the Session object to our engine
+                    self.Session.configure(bind=self.__engine)
+                    # instanciate the Session object
+                    self.session = self.Session()
+                    logger.debug("connected to database URL '%s'", self.db_url)
+            else:
+                self.__conn.execute("USE {}".format(self.db_name))
+        except Exception as e:
+            logger.error("failed to connect to %s", self.db_url)
+            logger.error(e)
+            return False
+
+        return True
 
     def create(self, db_name=None):
         """
@@ -238,6 +246,7 @@ class osdb(object):
                 self.__conn.connection.connection.set_isolation_level(1)
             except sqlalchemy.exc.OperationalError as se:
                 logger.error("cannot create database: {}!".format(se))
+                return False
         else:
             self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
 

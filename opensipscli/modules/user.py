@@ -59,7 +59,9 @@ class user(Module):
             logger.error("failed to connect to database %s", db_name)
             return None
 
-        db.connect()
+        if not db.connect():
+            return None
+
         return db
 
     def user_get_domain(self, name):
