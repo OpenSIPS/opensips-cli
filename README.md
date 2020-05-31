@@ -18,10 +18,9 @@ methods, such as fifo or http.
 
 # Compatibility
 
-This tool uses the new JSON-RPC Interface in OpenSIPS, that has been added in
-OpenSIPS 3.0. Therefore this tool can only be used with OpenSIPS versions
-higher than 3.0. For older versions of OpenSIPS, use the old `opensipsctl`
-tool from the `opensips` project.
+This tool uses the new JSON-RPC interface added in OpenSIPS 3.0, therefore
+it can only be used with OpenSIPS versions higher than or equal to 3.0.  For older
+versions of OpenSIPS, use the classic `opensipsctl` tool from the `opensips` project.
 
 ## Usage
 
