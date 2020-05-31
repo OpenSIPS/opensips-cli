@@ -44,7 +44,8 @@ class JSONRPCError(JSONRPCException):
         return self.data
 
     def __str__(self):
-        return '{}: {}'.format(self.code, self.message)
+        return '{}: {}{}'.format(self.code, self.message,
+                " ({})".format(self.data) if self.data else "")
 
 def get_command(method, params={}):
     cmd = {
@@ -58,10 +59,12 @@ def get_command(method, params={}):
 def get_reply(cmd):
     try:
         j = json.loads(cmd, object_pairs_hook=OrderedDict)
-        if 'error' in j and j['error'] is not None:
-            error = j['error']
-            raise JSONRPCError(j['error']['code'], j['error']['message'])
-        elif not 'result' in j:
+        if isinstance(j.get('error'), dict):
+            raise JSONRPCError(j['error'].get('code', 500),
+                               j['error'].get('message'),
+                               j['error'].get('data'))
+
+        elif 'result' not in j:
             raise JSONRPCError(-32603, 'Internal error')
         else:
             return j['result']
