@@ -175,7 +175,8 @@ class mi(Module):
         return l if len(l) > 0 else ['']
 
     def __exclude__(self):
-        return not comm.valid()
+        vld = comm.valid()
+        return (not vld[0], vld[1])
 
     def __get_methods__(self):
         return comm.execute('which')

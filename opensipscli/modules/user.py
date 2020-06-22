@@ -231,6 +231,6 @@ class user(Module):
         elif cfg.exists("database_url"):
             db_url = cfg.get("database_url")
         else:
-            return not osdb.has_sqlalchemy()
-        return not osdb.has_dialect(osdb.get_dialect(db_url))
+            return (not osdb.has_sqlalchemy(), None)
+        return (not osdb.has_dialect(osdb.get_dialect(db_url)), None)
 

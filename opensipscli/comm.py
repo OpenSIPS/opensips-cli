@@ -52,10 +52,10 @@ def execute(cmd, params=[], silent=False):
 def valid():
     global comm_handler
     if not comm_handler:
-        return False
+        return (False, None)
     try:
         if hasattr(comm_handler, "valid"):
             return comm_handler.valid()
-        return True
+        return (True, None)
     except:
-        return False
+        return (False, None)

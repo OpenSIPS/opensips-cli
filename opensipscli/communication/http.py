@@ -20,6 +20,7 @@
 import socket
 import urllib.parse
 import urllib.request
+from opensipscli.logger import logger
 from opensipscli.config import cfg
 from opensipscli.communication import jsonrpc_helper
 
@@ -45,10 +46,11 @@ def valid():
         s = socket.socket()
         s.connect((url_parsed.hostname, url_parsed.port))
         s.close()
-        return True
+        return (True, None)
     except Exception as e:
-        logger.debug("could not connect to {} ({})".format(url, e))
-        return False
-    return False
+        msg = "could not connect to {} ({})".format(url, e)
+        logger.debug(msg)
+        return (False, [msg, 'Is OpenSIPS running?'])
+    return (False, None)
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

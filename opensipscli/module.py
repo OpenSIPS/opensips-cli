@@ -26,7 +26,7 @@ class Module:
         """
         indicates whether the module should be excluded
         """
-        return False
+        return (False, None)
 
     def __invoke__(self, cmd, params=None):
         """

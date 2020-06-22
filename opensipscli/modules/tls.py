@@ -202,4 +202,4 @@ class tls(Module):
 
 
     def __exclude__(self):
-        return not openssl_available
+        return (not openssl_available, None)

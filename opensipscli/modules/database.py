@@ -256,9 +256,9 @@ class database(Module):
         """
         if cfg.exists("database_url"):
             db_url = cfg.get("database_url")
-            return not osdb.has_dialect(osdb.get_dialect(db_url))
+            return (not osdb.has_dialect(osdb.get_dialect(db_url)), None)
         else:
-            return not osdb.has_sqlalchemy()
+            return (not osdb.has_sqlalchemy(), None)
 
     def __get_methods__(self):
         """

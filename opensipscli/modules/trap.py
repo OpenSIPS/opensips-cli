@@ -121,4 +121,4 @@ class trap(Module):
 
     def __exclude__(self):
         # check to see if we have gdb installed
-        return shutil.which("gdb") is None
+        return (shutil.which("gdb") is None, None)

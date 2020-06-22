@@ -35,6 +35,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     OpenSIPS-Cli shell
     """
     modules = {}
+    excluded_errs = {}
     registered_atexit = False
 
     def __init__(self, options):
@@ -151,7 +152,10 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                 logger.debug("Skipping module '{}' - module does not implement Module".
                         format(name))
                 continue
-            if mod.__exclude__(mod):
+            excl_mod = mod.__exclude__(mod)
+            if excl_mod[0] is True:
+                if excl_mod[1]:
+                    self.excluded_errs[name] = excl_mod[1]
                 logger.debug("Skipping module '{}' - excluded on purpose".format(name))
                 continue
             logger.debug("Loaded module '{}'".format(name))
@@ -326,8 +330,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         try:
             mod = self.modules[module]
         except (AttributeError, KeyError):
-            logger.error("no module '{}' loaded".format(module))
-            return -1
+            if module in self.excluded_errs:
+                for err_msg in self.excluded_errs[module]:
+                    logger.error(err_msg)
+                return -1
+            else:
+                logger.error("no module '{}' loaded".format(module))
+                return -1
         # if the module does not return any methods (returned None)
         # we simply call the module's name method
         if not mod[1]:
