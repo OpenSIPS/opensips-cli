@@ -10,8 +10,9 @@ modules that implement different features. New modules can be easily added by
 creating a new module that implements the [OpenSIPS CLI
 Module](opensipscli/module.py) Interface.
 
-OpenSIPS CLI is an interactive console that features auto-completion, commands
-history and navigation, but can also be used to execute one-liners.
+OpenSIPS CLI is an interactive console that features auto-completion and
+reverse/forward command history search, but can also be used to execute
+one-liners for automation purposes.
 
 OpenSIPS CLI can communicate with an OpenSIPS server using different transport
 methods, such as fifo or http.
@@ -63,9 +64,14 @@ The configuration file can have multiple sections/instances, managed by the
 instances from the configuration file by specifying the `-i INSTANCE` argument
 when starting the cli tool.
 
-If no configuration file is specified by the `-f|--config` parameter, OpenSIPS
-CLI searches for one in the following locations, in this exact order:
-`~/.opensips-cli.cfg`, `/etc/opensips-cli.cfg`, `/etc/opensips/opensips-cli.cfg`. If no file is found, it starts with the default configuration.
+If no configuration file is specified by the `-f|--config` argument, OpenSIPS
+CLI searches for one in the following locations:
+
+* `~/.opensips-cli.cfg` (highest precedence)
+* `/etc/opensips-cli.cfg`
+* `/etc/opensips/opensips-cli.cfg` (lowest precedence)
+
+If no file is found, it starts with the default configuration.
 
 The OpenSIPS CLI core can use the following parameters:
 
