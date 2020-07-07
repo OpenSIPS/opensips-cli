@@ -56,7 +56,7 @@ rtpproxy rtpengine speeddial tls_mgm usrloc`.
 * `database_force_drop` (optional) - indicates whether the `drop` command will drop the
 database without user interaction.  Default: `false`
 
-## Examples
+## Usage Examples
 
 ### Database Management
 
@@ -73,11 +73,10 @@ database_admin_url: mysql://root@localhost
 
 The following command will create the `opensips` database and all possible
 tables within the MySQL instance.  Additionally, the `opensips:opensipsrw` user
-will be created will `ALL PRIVILEGES` for the `opensips` database.
-
-For some backends, such as PostgreSQL, any additionally required permissions
-will be transparently granted to the `opensips` user, for example:
-table-level or sequence-level permissions.
+will be created will `ALL PRIVILEGES` for the `opensips` database.  For some
+backends, such as PostgreSQL, any additionally required permissions will be
+transparently granted to the `opensips` user, for example: table-level or
+sequence-level permissions.
 
 ```
 opensips-cli -x database create
