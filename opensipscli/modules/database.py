@@ -675,7 +675,7 @@ class database(Module):
         if self.db_path is not None:
             return os.path.join(self.db_path, backend)
 
-        db_path = cfg.get("database_schema_path")
+        db_path = os.path.expanduser(cfg.get("database_schema_path"))
 
         if db_path.endswith('/'):
             db_path = db_path[:-1]
