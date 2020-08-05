@@ -18,6 +18,7 @@
 ##
 
 import socket
+import ssl
 import urllib.parse
 import urllib.request
 from opensipscli.logger import logger
@@ -30,7 +31,11 @@ def execute(method, params):
     headers = { 'Content-Type': 'application/json' }
     request = urllib.request.Request(url,
             jsoncmd.encode(), headers)
-    replycmd = urllib.request.urlopen(request).read().decode()
+    url_parsed = urllib.parse.urlparse(url)
+    if url_parsed.scheme == 'https':
+        replycmd = urllib.request.urlopen(request, context = ssl._create_unverified_context()).read().decode()
+    else:
+        replycmd = urllib.request.urlopen(request).read().decode()
     return jsonrpc_helper.get_reply(replycmd)
 
 def valid():
