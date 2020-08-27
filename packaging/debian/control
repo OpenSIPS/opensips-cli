@@ -10,7 +10,10 @@ Package: opensips-cli
 Architecture: all
 Multi-Arch: foreign
 Depends: python, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysqldb
-Description: very fast and configurable SIP server
+Description: Interactive command-line tool for OpenSIPS 3.0+
+ This package contains the OpenSIPS CLI tool, an interactive command line tool
+ that can be used to control and monitor OpenSIPS 3.0+ servers.
+ .
  OpenSIPS is a very fast and flexible SIP (RFC3261)
  server. Written entirely in C, OpenSIPS can handle thousands calls
  per second even on low-budget hardware.
@@ -24,6 +27,3 @@ Description: very fast and configurable SIP server
  Authentication, Record Routing, SMS Gateway, Jabber/XMPP Gateway, Transaction
  Module, SIP Registrar and User Location, Load Balancing/Dispatching/LCR,
  XMLRPC Interface.
- .
- This package contains the OpenSIPS CLI tool, an interactive command line tool
- that can be used to control and monitor OpenSIPS servers.

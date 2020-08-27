@@ -1,7 +1,7 @@
-Summary:  Very fast and configurable SIP server
+Summary:  Interactive command-line tool for OpenSIPS 3.0+
 Name:     opensips-cli
 Version:  0.1
-Release:  1%{?dist}
+Release:  2%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
 Source0:  http://download.opensips.org/%{name}-%{version}.tar.gz
@@ -28,6 +28,9 @@ Requires: python36-pyOpenSSL
 %endif
 
 %description
+This package contains the OpenSIPS CLI tool, an interactive command line tool
+that can be used to control and monitor OpenSIPS 3.0+ servers.
+.
 OpenSIPS is a very fast and flexible SIP (RFC3261)
 server. Written entirely in C, OpenSIPS can handle thousands calls
 per second even on low-budget hardware.
@@ -41,9 +44,6 @@ scripts, Instant Messaging, MySQL support, Presence Agent, Radius
 Authentication, Record Routing, SMS Gateway, Jabber/XMPP Gateway, Transaction
 Module, Registrar and User Location, Load Balaning/Dispatching/LCR,
 XMLRPC Interface.
-.
-This package contains the OpenSIPS CLI tool, an interactive command line tool
-that can be used to control and monitor OpenSIPS servers.
 
 %prep
 %autosetup -n %{name}-%{version}
@@ -67,5 +67,7 @@ rm -rf $RPM_BUILD_ROOT
 %license LICENSE
 
 %changelog
+* Thu Aug 27 2020 Liviu Chircu <liviu@opensips.org> - 0.1-2
+- Update package summary.
 * Fri Jan 3 2020 Nick Altmann <nick.altmann@gmail.com> - 0.1-1
 - Initial spec.
