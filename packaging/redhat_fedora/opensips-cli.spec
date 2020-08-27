@@ -22,10 +22,9 @@ Requires: python36-sqlalchemy
 Requires: python36-mysql
 Requires: python36-pyOpenSSL
 %else
-Requires: python3-sqlalchemy
-Requires: python3-sqlalchemy-utils
-Requires: python3-mysql
-Requires: python3-pyOpenSSL
+Requires: python36-sqlalchemy
+Requires: python36-mysql
+Requires: python36-pyOpenSSL
 %endif
 
 %description

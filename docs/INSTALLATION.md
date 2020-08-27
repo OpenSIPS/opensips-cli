@@ -69,8 +69,7 @@ sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
 ```
 # required OS packages
 sudo yum install python36 python36-pip python36-devel gcc mysql-devel \
-                 python3-mysql python3-sqlalchemy python3-sqlalchemy-utils \
-                 python3-pyOpenSSL
+                 python36-mysql python36-sqlalchemy python36-pyOpenSSL
 
 # alternatively, you can build the requirements from source
 sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
