@@ -4,7 +4,7 @@ Version:  0.1
 Release:  2%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
-Source0:  http://download.opensips.org/%{name}-%{version}.tar.gz
+Source0:  https://github.com/OpenSIPS/opensips-cli/archive/%{version}.tar.gz
 URL:      http://opensips.org
 
 BuildArch: noarch
@@ -22,9 +22,15 @@ Requires: python36-sqlalchemy
 Requires: python36-mysql
 Requires: python36-pyOpenSSL
 %else
+%if 0%{?rhel} == 8
+Requires: python3-sqlalchemy
+Requires: python3-mysqlclient
+Requires: python3-pyOpenSSL
+%else
 Requires: python36-sqlalchemy
 Requires: python36-mysql
 Requires: python36-pyOpenSSL
+%endif
 %endif
 
 %description
