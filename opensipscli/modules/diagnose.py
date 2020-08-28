@@ -42,9 +42,6 @@ except:
 import json
 from json.decoder import WHITESPACE
 
-JSONRPC_RCV_HOST = '127.0.0.1'
-JSONRPC_RCV_PORT = 8888
-
 DNS_THR_EVENTS = ['dns']
 SQL_THR_EVENTS = ['mysql', 'pgsql']
 NOSQL_THR_EVENTS = ['Cassandra', 'cachedb_local', 'MongoDB',
@@ -74,7 +71,13 @@ class ThresholdCollector(StoppableThread):
             kwargs['args'] = (kwargs['events'],)
             del kwargs['events']
             self.skip_summ = kwargs['skip_summ']
+            self.__rcv_proto = kwargs['rcv_proto']
+            self.__rcv_ip = kwargs['rcv_ip']
+            self.__rcv_port = kwargs['rcv_port']
             del kwargs['skip_summ']
+            del kwargs['rcv_proto']
+            del kwargs['rcv_ip']
+            del kwargs['rcv_port']
         except:
             self.skip_summ = False
 
@@ -88,8 +91,8 @@ class ThresholdCollector(StoppableThread):
 
         ans = comm.execute("event_subscribe", {
                 'event': 'E_CORE_THRESHOLD',
-                'socket': 'jsonrpc:{}:{}'.format(
-                            JSONRPC_RCV_HOST, JSONRPC_RCV_PORT),
+                'socket': '{}:{}:{}'.format(
+                        self.__rcv_proto,self.__rcv_ip,self.__rcv_port),
                 'expire': 10,
                 }, silent=True)
 
@@ -98,8 +101,8 @@ class ThresholdCollector(StoppableThread):
     def mi_unsub(self):
         comm.execute("event_subscribe", {
                 'event': 'E_CORE_THRESHOLD',
-                'socket': 'jsonrpc:{}:{}'.format(
-                            JSONRPC_RCV_HOST, JSONRPC_RCV_PORT),
+                'socket': '{}:{}:{}'.format(
+                        self.__rcv_proto,self.__rcv_ip,self.__rcv_port),
                 'expire': 0, # there is no "event_unsubscribe", this is good enough
                 }, silent=True)
 
@@ -111,7 +114,7 @@ class ThresholdCollector(StoppableThread):
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((JSONRPC_RCV_HOST, JSONRPC_RCV_PORT))
+            s.bind((self.__rcv_ip,self.__rcv_port))
             s.settimeout(0.1)
             s.listen()
 
@@ -193,10 +196,33 @@ class diagnose(Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.t = None
+        self.__rcv_proto = 'tcp'
+        self.__rcv_ip = cfg.get("diagnose_listen_ip")
+        self.__rcv_port = int(cfg.get("diagnose_listen_port"))
+
+    def getOpenSIPSVersion(self):
+        ans = comm.execute('version')
+        if not ans:
+            return
+
+        ver = re.match(r'OpenSIPS \((?P<major>\d)\.(?P<minor>\d)\.\d.*', ans['Server'])
+        return ver.groupdict()
 
     def startThresholdCollector(self, events, skip_summ=False):
+        version = self.getOpenSIPSVersion()
+        if not version:
+            logger.error("Can't detect OpenSIPS version")
+            return False
+        if int(version['major']) < 3:
+            logger.error("OpenSIPS-CLI works with OpenSIPS starting from version 3.0")
+            return False
+        moduleName = 'event_stream.so'
+        if int(version['minor']) == 0:
+            self.__rcv_proto = 'jsonrpc'
+            moduleName = 'event_jsonrpc.so'
         # subscribe for, then collect "query threshold exceeded" events
-        self.t = ThresholdCollector(events=events, skip_summ=skip_summ)
+        self.t = ThresholdCollector(events=events, skip_summ=skip_summ,
+                rcv_proto=self.__rcv_proto,rcv_ip=self.__rcv_ip,rcv_port=self.__rcv_port,)
         self.t.daemon = True
         self.t.start()
         for i in range(15):
@@ -205,7 +231,7 @@ class diagnose(Module):
             time.sleep(0.05)
 
         logger.error("Failed to subscribe for JSON-RPC events")
-        logger.error("Is the event_jsonrpc.so OpenSIPS module loaded?")
+        logger.error("Is the {} OpenSIPS module loaded?".format(moduleName))
         self.stopThresholdCollector()
 
         return False
