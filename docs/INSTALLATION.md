@@ -67,9 +67,13 @@ sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
 #### Red Hat / CentOS
 
 ```
-# required OS packages
+# required CentOS 7 packages
 sudo yum install python36 python36-pip python36-devel gcc mysql-devel \
                  python36-mysql python36-sqlalchemy python36-pyOpenSSL
+
+# required CentOS 8 packages
+sudo yum install python3 python3-pip python3-devel gcc mysql-devel \
+                 python3-mysqlclient python3-sqlalchemy python3-pyOpenSSL
 
 # alternatively, you can build the requirements from source
 sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL

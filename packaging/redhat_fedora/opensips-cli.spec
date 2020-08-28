@@ -22,15 +22,9 @@ Requires: python36-sqlalchemy
 Requires: python36-mysql
 Requires: python36-pyOpenSSL
 %else
-%if 0%{?rhel} == 8
 Requires: python3-sqlalchemy
 Requires: python3-mysqlclient
 Requires: python3-pyOpenSSL
-%else
-Requires: python36-sqlalchemy
-Requires: python36-mysql
-Requires: python36-pyOpenSSL
-%endif
 %endif
 
 %description
