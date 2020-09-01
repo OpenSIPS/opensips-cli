@@ -15,8 +15,15 @@ commonly occurring emergencies in production, such as:
 
 ## Configuration
 
-No additional configuration is required by this module.  Its `diagnose load`
-subcommand works best if the `psutil` Python package is present on the system.
+If OpenSIPS CLI is running not on the same host with OpenSIPS, it can accept
+the following parameters in the config file:
+* diagnose_listen_ip - ip address for listening JSON-RPC events from OpenSIPS
+By default ip is `127.0.0.1`
+* diagnose_listen_port - port for listening JSON-RPC events from OpenSIPS
+By default port is `8899`
+
+Subcommand `diagnose load` works best if the `psutil` Python package is present
+on the system.
 
 ## Examples
 

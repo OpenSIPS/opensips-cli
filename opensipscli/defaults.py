@@ -73,6 +73,10 @@ DEFAULT_VALUES = {
 
     # user module
     "plain_text_passwords": "False",
+
+    # diagnose module
+    "diagnose_listen_ip": "127.0.0.1",
+    "diagnose_listen_port": "8899",
 }
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
