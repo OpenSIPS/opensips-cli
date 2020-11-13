@@ -248,15 +248,9 @@ class trace(Module):
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        if cfg.exists("trace_listen_ip"):
-            trace_ip = cfg.get("trace_listen_ip")
-        else:
-            trace_ip = "127.0.0.1"
-        if cfg.exists("trace_listen_port"):
-            trace_port = cfg.get("trace_listen_port")
-        else:
-            trace_port = 0
-        s.bind((trace_ip, int(trace_port)))
+        trace_ip = cfg.get("trace_listen_ip")
+        trace_port = int(cfg.get("trace_listen_port"))
+        s.bind((trace_ip, trace_port))
         if trace_port == 0:
             trace_port = s.getsockname()[1]
         s.listen(1)

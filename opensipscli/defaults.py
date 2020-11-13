@@ -77,6 +77,10 @@ DEFAULT_VALUES = {
     # diagnose module
     "diagnose_listen_ip": "127.0.0.1",
     "diagnose_listen_port": "8899",
+
+    # trace module
+    "trace_listen_ip": "127.0.0.1",
+    "trace_listen_port": "0",
 }
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
