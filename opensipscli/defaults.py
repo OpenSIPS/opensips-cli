@@ -22,6 +22,7 @@ Default configuration for OpenSIPS CLI
 """
 
 import os
+import time
 
 VERSION = '0.1.0'
 
@@ -81,6 +82,9 @@ DEFAULT_VALUES = {
     # trace module
     "trace_listen_ip": "127.0.0.1",
     "trace_listen_port": "0",
+
+    # trap module
+    "trap_file": '/tmp/gdb_opensips_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
 }
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

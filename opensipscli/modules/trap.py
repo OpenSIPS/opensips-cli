@@ -24,11 +24,9 @@ from opensipscli import comm
 from threading import Thread
 import subprocess
 import shutil
-import time
 import os
 
 PROCESS_NAME = 'opensips'
-TRAP_FILE_NAME = '/tmp/gdb_opensips_{}'.format(time.strftime('%Y%m%d_%H%M%S'))
 
 class trap(Module):
 
@@ -56,10 +54,7 @@ class trap(Module):
         self.gdb_outputs = {}
         self.process_info = ""
 
-        if cfg.exists("trap_file"):
-            trap_file = cfg.get("trap_file")
-        else:
-            trap_file = TRAP_FILE_NAME
+        trap_file = cfg.get("trap_file")
 
         logger.info("Trapping {} in {}".format(PROCESS_NAME, trap_file))
         if params and len(params) > 0:
