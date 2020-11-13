@@ -41,7 +41,18 @@ class trap(Module):
         except:
             self.pids = []
 
-    def get_gdb_output(self, process, pid):
+    def get_gdb_output(self, pid):
+        if os.path.islink("/proc/{}/exe".format(pid)):
+            # get process line of pid
+            process = os.readlink("/proc/{}/exe".format(pid))
+        else:
+            logger.error("could not find OpenSIPS process {} running on local machine".format(pid))
+            return -1
+        # Check if process is opensips (can be different if CLI is running on another host)
+        path, filename = os.path.split(process)
+        if filename != PROCESS_NAME:
+            logger.error("process ID {} is not OpenSIPS process".format(pid))
+            return -1
         logger.debug("Dumping backtrace for {} pid {}".format(process, pid))
         cmd = ["gdb", process, pid, "-batch", "--eval-command", "bt full"]
         out = subprocess.check_output(cmd)
@@ -78,12 +89,9 @@ class trap(Module):
 
         logger.debug("Dumping PIDs: {}".format(", ".join(self.pids)))
 
-        # get process line of first pid
-        process = os.readlink("/proc/{}/exe".format(self.pids[0]))
-
         threads = []
         for pid in self.pids:
-            thread = Thread(target=self.get_gdb_output, args=(process, pid))
+            thread = Thread(target=self.get_gdb_output, args=(pid,))
             thread.start()
             threads.append(thread)
 
