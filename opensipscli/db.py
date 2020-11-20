@@ -835,8 +835,12 @@ class osdb(object):
 
     @staticmethod
     def set_url_db(url, db):
-        """
-        Force a given database @url string to include the given @db
+        """Force a given database @url string to include the given @db.
+
+        Args:
+            url (str): the URL to change the DB for.
+            db (str): the name of the database to set.  If None, the database
+                      part will be removed from the URL.
         """
         at_idx = url.find('@')
         if at_idx < 0:
@@ -845,8 +849,12 @@ class osdb(object):
 
         db_idx = url.find('/', at_idx)
         if db_idx < 0:
+            if db is None:
+                return url
             return url + '/' + db
         else:
+            if db is None:
+                return url[:db_idx]
             return url[:db_idx+1] + db
 
 

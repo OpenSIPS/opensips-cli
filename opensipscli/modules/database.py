@@ -292,6 +292,8 @@ class database(Module):
             admin_url = cfg.get("database_admin_url")
             if engine == "postgres":
                 admin_url = osdb.set_url_db(admin_url, 'postgres')
+            else:
+                admin_url = osdb.set_url_db(admin_url, None)
         else:
             if engine == 'postgres':
                 if getuser() != "postgres":
