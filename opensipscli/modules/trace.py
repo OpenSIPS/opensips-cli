@@ -269,7 +269,7 @@ class trace(Module):
             'uri': trace_socket,
         }
         if filters:
-            args['filters'] = filters
+            args['filter'] = filters
 
         logger.debug("filters are {}".format(filters))
         trace_started = comm.execute('trace_start', args)
