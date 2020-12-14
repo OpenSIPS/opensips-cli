@@ -230,13 +230,13 @@ class trace(Module):
         if params is None:
             caller_f = input("Caller filter: ")
             if caller_f != "":
-                filters.append(caller_f)
+                filters.append("caller={}".format(caller_f))
             callee_f = input("Callee filter: ")
             if callee_f != "":
-                filters.append(callee_f)
+                filters.append("callee={}".format(callee_f))
             ip_f = input("Source IP filter: ")
             if ip_f != "":
-                filters.append(ip_f)
+                filters.append("ip={}".format(ip_f))
             if len(filters) == 0:
                 ans = cfg.read_param(None, "No filter specified! "\
                         "Continue without a filter?", False, True)
