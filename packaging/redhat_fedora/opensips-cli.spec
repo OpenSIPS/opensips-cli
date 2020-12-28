@@ -17,6 +17,7 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 AutoReqProv: no
 
+Requires: python3
 %if 0%{?rhel} == 7
 Requires: python36-sqlalchemy
 Requires: python36-mysql
