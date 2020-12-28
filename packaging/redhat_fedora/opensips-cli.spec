@@ -4,7 +4,7 @@ Version:  0.1
 Release:  2%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
-Source0:  https://github.com/OpenSIPS/opensips-cli/archive/%{version}.tar.gz
+Source0:  Source0:  http://download.opensips.org/cli/%{name}-%{version}.tar.gz
 URL:      http://opensips.org
 
 BuildArch: noarch
