@@ -30,12 +30,11 @@ try:
     sqlalchemy_available = True
     logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
     try:
-        import something
+        import sqlalchemy_utils
     except ImportError:
         logger.debug("using embedded implementation of SQLAlchemy_Utils")
         # copied from SQLAlchemy_utils repository
         from opensipscli.libs import sqlalchemy_utils
-        print(repr(sqlalchemy_utils))
 except ImportError:
     logger.info("sqlalchemy not available!")
     sqlalchemy_available = False
