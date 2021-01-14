@@ -23,15 +23,21 @@ import re
 
 try:
     import sqlalchemy
-    import sqlalchemy_utils
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Date, Integer, String, Boolean
     from sqlalchemy.orm import sessionmaker, deferred
     from sqlalchemy.engine.url import make_url
     sqlalchemy_available = True
     logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
+    try:
+        import something
+    except ImportError:
+        logger.debug("using embedded implementation of SQLAlchemy_Utils")
+        # copied from SQLAlchemy_utils repository
+        from opensipscli.libs import sqlalchemy_utils
+        print(repr(sqlalchemy_utils))
 except ImportError:
-    logger.info("sqlalchemy and sqlalchemy_utils are not available!")
+    logger.info("sqlalchemy not available!")
     sqlalchemy_available = False
 
 SUPPORTED_BACKENDS = [
@@ -201,7 +207,7 @@ class osdb(object):
         """
         if db_name is not None:
             self.db_name = db_name
-		# TODO: do this only for SQLAlchemy
+            # TODO: do this only for SQLAlchemy
 
         try:
             if self.dialect == "postgres":
