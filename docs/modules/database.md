@@ -34,8 +34,8 @@ Once installed, the schema files will be auto-detected by `opensips-cli`.
 
 The following parameters are allowed in the config file:
 
-* `database_schema_path` (optional) - the directory to the OpenSIPS DB schema files,
-usually `/usr/share/opensips` if installed from packages or `./scripts` if you
+* `database_schema_path` (optional) - absolute path to the OpenSIPS DB schema directory,
+usually `/usr/share/opensips` if installed from packages or `/path/to/opensips/scripts` if you
 are using the OpenSIPS source tree.  Default: `/usr/share/opensips`
 * `database_admin_url` (optional) - a connection string to the database with privileged
 (administrator) access level which will be used to create/drop databases, as
