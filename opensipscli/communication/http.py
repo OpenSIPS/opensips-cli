@@ -32,10 +32,13 @@ def execute(method, params):
     request = urllib.request.Request(url,
             jsoncmd.encode(), headers)
     url_parsed = urllib.parse.urlparse(url)
-    if url_parsed.scheme == 'https':
-        replycmd = urllib.request.urlopen(request, context = ssl._create_unverified_context()).read().decode()
-    else:
-        replycmd = urllib.request.urlopen(request).read().decode()
+    try:
+        if url_parsed.scheme == 'https':
+            replycmd = urllib.request.urlopen(request, context = ssl._create_unverified_context()).read().decode()
+        else:
+            replycmd = urllib.request.urlopen(request).read().decode()
+    except urllib.error.HTTPError as e:
+        raise jsonrpc_helper.JSONRPCException(str(e))
     return jsonrpc_helper.get_reply(replycmd)
 
 def valid():
