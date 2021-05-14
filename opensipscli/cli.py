@@ -122,19 +122,25 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         # remove all loaded modules
         self.modules = {}
 
+        skip_modules = []
+        if cfg.exists('skip_modules'):
+            skip_modules = cfg.get('skip_modules')
+        sys_modules = {}
         if not self.execute:
             print(self.intro)
             # add the built-in modules and commands list
             for mod in ['set', 'clear', 'help', 'history', 'exit', 'quit']:
                 self.modules[mod] = (self, None)
-
-        if not cfg.exists('skip_modules'):
-            skip_modules = []
+            sys_modules = sys.modules
         else:
-            skip_modules = cfg.get('skip_modules')
+            try:
+                mod = "opensipscli.modules.{}".format(self.command[0])
+                sys_modules = { mod: sys.modules[mod] }
+            except:
+                pass
 
-        available_modules = { key[20:]: sys.modules[key] for key in
-                sys.modules.keys() if
+        available_modules = { key[20:]: sys_modules[key] for key in
+                sys_modules.keys() if
                 key.startswith("opensipscli.modules.") and
                 key[20:] not in skip_modules }
         for name, module in available_modules.items():
