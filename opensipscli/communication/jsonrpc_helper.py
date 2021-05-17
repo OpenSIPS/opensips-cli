@@ -69,7 +69,7 @@ def get_reply(cmd):
         else:
             return j['result']
     except JSONDecodeError:
-        raise JSONRPCException
+        raise JSONRPCException("could not decode json: '{}'".format(cmd))
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
