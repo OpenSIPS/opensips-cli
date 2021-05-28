@@ -76,6 +76,75 @@ EXTRA_DB_MODULES = [
 ]
 
 DB_MIGRATIONS = {
+    '3.1_to_3.2': [
+        'b2b_logic',         # changed in 3.2
+        'pua',               # changed in 3.2
+        'registrant',        # changed in 3.2
+        'subscriber',        # changed in 3.2
+        'jwt_profiles',      # new in 3.1
+        'jwt_secrets',       # new in 3.1
+        'qr_profiles',       # new in 3.1
+        'rc_clients',        # new in 3.1
+        'rc_vendors',        # new in 3.1
+        'rc_ratesheets',     # new in 3.1
+        'rc_demo_ratesheet', # new in 3.1
+        'acc',
+        'active_watchers',
+        'address',
+        'b2b_entities',
+        'b2b_sca',
+        'cachedb',
+        'carrierfailureroute',
+        'carrierroute',
+        'cc_agents',
+        'cc_calls',
+        'cc_cdrs',
+        'cc_flows',
+        'closeddial',
+        'clusterer',
+        'cpl',
+        'dbaliases',
+        'dialog',
+        'dialplan',
+        'dispatcher',
+        'domain',
+        'domainpolicy',
+        'dr_carriers',
+        'dr_gateways',
+        'dr_groups',
+        'dr_partitions',
+        'dr_rules',
+        'emergency_report',
+        'emergency_routing',
+        'emergency_service_provider',
+        'fraud_detection',
+        'freeswitch',
+        'globalblacklist',
+        'grp',
+        'imc_members',
+        'imc_rooms',
+        'load_balancer',
+        'location',
+        'missed_calls',
+        'presentity',
+        're_grp',
+        'rls_presentity',
+        'rls_watchers',
+        'route_tree',
+        'rtpengine',
+        'rtpproxy_sockets',
+        'silo',
+        'sip_trace',
+        'smpp',
+        'speed_dial',
+        'tls_mgm',
+        'uri',
+        'userblacklist',
+        'usr_preferences',
+        'watchers',
+        'xcap',
+    ],
+
     '3.0_to_3.1': [
         'smpp',          # new in 3.0
         'cc_agents',     # changed in 3.1
