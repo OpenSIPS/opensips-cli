@@ -60,6 +60,7 @@ class tls(Module):
         # create a self-signed cert
         cert = crypto.X509()
 
+        cert.set_version(2)
         cert.get_subject().CN = cfg.read_param("tls_ca_common_name", "Website address (CN)", "opensips.org")
         cert.get_subject().C = cfg.read_param("tls_ca_country", "Country (C)", "RO")
         cert.get_subject().ST = cfg.read_param("tls_ca_state", "State (ST)", "Bucharest")
@@ -71,6 +72,13 @@ class tls(Module):
         notafter = int(cfg.read_param("tls_ca_notafter", "Certificate validity (seconds)", 315360000))
         cert.gmtime_adj_notAfter(notafter)
         cert.set_issuer(cert.get_subject())
+
+        extensions = [
+            crypto.X509Extension(b'basicConstraints', False, b'CA:TRUE'),
+            crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth')
+        ]
+
+        cert.add_extensions(extensions)
 
         # create a key pair
         key = crypto.PKey()
@@ -147,6 +155,7 @@ class tls(Module):
         # create a self-signed cert
         cert = crypto.X509()
 
+        cert.set_version(2)
         cert.get_subject().CN = cfg.read_param("tls_user_common_name", "Website address (CN)", "www.opensips.org")
         cert.get_subject().C = cfg.read_param("tls_user_country", "Country (C)", "RO")
         cert.get_subject().ST = cfg.read_param("tls_user_state", "State (ST)", "Bucharest")
@@ -159,6 +168,13 @@ class tls(Module):
         notafter = int(cfg.read_param("tls_user_notafter", "Certificate validity (seconds)", 315360000))
         cert.gmtime_adj_notAfter(notafter)
         cert.set_issuer(ca_cert.get_subject())
+
+        extensions = [
+            crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'),
+            crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth')
+        ]
+
+        cert.add_extensions(extensions)
 
         # create a key pair
         key = crypto.PKey()
