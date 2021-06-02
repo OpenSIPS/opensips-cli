@@ -606,7 +606,7 @@ class osdb(object):
             for k, v in filter_keys.items():
                 where_str += " AND {} = ".format(k)
                 if type(v) == int:
-                    where_str += v
+                    where_str += str(v)
                 else:
                     where_str += "'{}'".format(
                             v.translate(str.maketrans({'\'': '\\\''})))
