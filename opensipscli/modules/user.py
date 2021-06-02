@@ -47,7 +47,7 @@ class user(Module):
         if db_url is None:
             print()
             logger.error("no URL specified: aborting!")
-            return None
+            return None, None
 
         db_url = osdb.set_url_driver(db_url, engine)
         db_name = cfg.read_param(["database_user_name", "database_name"],
@@ -57,12 +57,23 @@ class user(Module):
             db = osdb(db_url, db_name)
         except osdbError:
             logger.error("failed to connect to database %s", db_name)
-            return None
+            return None, None
 
         if not db.connect():
-            return None
+            return None, None
 
-        return db
+        res = db.find('version', 'table_version', {'table_name': USER_TABLE})
+        if not res:
+            osips_ver = '3.2+'
+        else:
+            # RFC 8760 support was introduced in OpenSIPS 3.2 (table ver 8+)
+            tb_ver = res.first()[0]
+            if tb_ver >= 8:
+                osips_ver = '3.2+'
+            else:
+                osips_ver = '3.1'
+
+        return db, osips_ver
 
     def user_get_domain(self, name):
         s = name.split('@')
@@ -109,7 +120,7 @@ class user(Module):
             name = params[0]
         username, domain = self.user_get_domain(name)
 
-        db = self.user_db_connect()
+        db, osips_ver = self.user_db_connect()
         if not db:
             return -1
 
@@ -133,11 +144,14 @@ class user(Module):
                 return -1
         insert_dict[USER_HA1_COL] = \
                 self.user_get_ha1(username, domain, password)
-        insert_dict[USER_HA1B_COL] = \
-                self.user_get_ha1b(username, domain, password)
-        plain_text_pw = cfg.getBool("plain_text_passwords")
+
+        # only populate the 'ha1b' column on 3.1 or older OpenSIPS DBs
+        if osips_ver < '3.2':
+            insert_dict[USER_HA1B_COL] = \
+                    self.user_get_ha1b(username, domain, password)
+
         insert_dict[USER_PASS_COL] = \
-                "" if not plain_text_pw else password
+                password if cfg.getBool("plain_text_passwords") else ""
 
         db.insert(USER_TABLE, insert_dict)
         logger.info("Successfully added {}@{}".format(username, domain))
@@ -157,7 +171,7 @@ class user(Module):
             name = params[0]
         username, domain = self.user_get_domain(name)
 
-        db = self.user_db_connect()
+        db, osips_ver = self.user_db_connect()
         if not db:
             return -1
 
@@ -183,9 +197,12 @@ class user(Module):
         plain_text_pw = cfg.getBool("plain_text_passwords")
         update_dict = {
                 USER_HA1_COL: self.user_get_ha1(username, domain, password),
-                USER_HA1B_COL: self.user_get_ha1b(username, domain, password),
-                USER_PASS_COL: "" if not plain_text_pw else password
+                USER_PASS_COL: password if plain_text_pw else ""
             }
+
+        if osips_ver < '3.2':
+            update_dict[USER_HA1B_COL] = self.user_get_ha1b(
+                    username, domain, password)
 
         db.update(USER_TABLE, update_dict, user_dict)
         logger.info("Successfully changed password for {}@{}".
@@ -205,7 +222,7 @@ class user(Module):
             name = params[0]
         username, domain = self.user_get_domain(name)
 
-        db = self.user_db_connect()
+        db, _ = self.user_db_connect()
         if not db:
             return -1
 
