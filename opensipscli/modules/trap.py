@@ -78,7 +78,7 @@ class trap(Module):
                 logger.warning("could not get OpenSIPS pids through MI!")
                 try:
                     ps_pids = subprocess.check_output(["pidof",PROCESS_NAME])
-                    self.pids = ps_pids.split()
+                    self.pids = ps_pids.decode().split()
                 except:
                     logger.warning("could not find any OpenSIPS running!")
                     self.pids = []
