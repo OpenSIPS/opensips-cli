@@ -93,7 +93,7 @@ def valid():
             msg = "fifo file {} does not exist!".format(opensips_fifo)
             logger.debug(msg)
             return (False, [msg, 'Is OpenSIPS running?'])
-        logger.warning("switched fifo from '{}' to fallback '{}'".
+        logger.debug("switched fifo from '{}' to fallback '{}'".
                 format(opensips_fifo_bk, opensips_fifo))
 
     try:
