@@ -19,14 +19,25 @@
 
 import os
 import stat
+import errno
 import random
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.communication import jsonrpc_helper
 
 REPLY_FIFO_FILE_TEMPLATE='opensips_fifo_reply_{}'
+fifo_file = None
+
+def get_sticky(path):
+    if path == '/':
+        return None
+    if os.stat(path).st_mode & 0o1000 == 0o1000:
+        return path
+    return get_sticky(os.path.split(path)[0])
 
 def execute(method, params):
+    global fifo_file
+
     jsoncmd = jsonrpc_helper.get_command(method, params)
     reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(random.randrange(32767))
     reply_dir = cfg.get('fifo_reply_dir')
@@ -50,17 +61,18 @@ def execute(method, params):
                 "cannot create reply file {}: {}!".
                 format(reply_fifo_file, ex))
 
-    opensips_fifo = cfg.get('fifo_file')
-    if not os.path.exists(opensips_fifo):
-        raise jsonrpc_helper.JSONRPCException(
-                "fifo file {} does not exist!".
-                format(opensips_fifo))
-
     fifocmd = ":{}:{}". format(reply_fifo_file_name, jsoncmd)
-    with open(opensips_fifo, 'w') as fifo:
+    try:
+        fifo = open(fifo_file, 'w')
         fifo.write(fifocmd)
         logger.debug("sent command '{}'".format(fifocmd))
+        fifo.close()
+    except Exception as ex:
+        raise jsonrpc_helper.JSONRPCException(
+                "cannot access fifo file {}: {}!".
+                format(fifo_file, ex))
 
+    logger.debug("reply file '{}'".format(reply_fifo_file))
     with open(reply_fifo_file, 'r') as reply_fifo:
         replycmd = reply_fifo.readline()
         #logger.debug("received reply '{}'".format(replycmd))
@@ -70,9 +82,40 @@ def execute(method, params):
     return jsonrpc_helper.get_reply(replycmd)
 
 def valid():
+    global fifo_file
+
     opensips_fifo = cfg.get('fifo_file')
     if not os.path.exists(opensips_fifo):
-        msg = "fifo file {} does not exist!".format(opensips_fifo)
+        opensips_fifo_bk = opensips_fifo
+        opensips_fifo = cfg.get('fifo_file_fallback')
+        if not opensips_fifo or not os.path.exists(opensips_fifo):
+            logger.debug("test")
+            msg = "fifo file {} does not exist!".format(opensips_fifo)
+            logger.debug(msg)
+            return (False, [msg, 'Is OpenSIPS running?'])
+        logger.warning("switched fifo from '{}' to fallback '{}'".
+                format(opensips_fifo_bk, opensips_fifo))
+
+    try:
+        open(opensips_fifo, 'w').close()
+    except OSError as ex:
+        extra = []
+        if ex.errno == errno.EACCES:
+            sticky = get_sticky(os.path.dirname(opensips_fifo))
+            if sticky:
+                extra = ["starting with Linux kernel 4.19, processes can " +
+                        "no longer read from FIFO files ",
+                        "that are saved in directories with sticky " +
+                        "bits (such as {})".format(sticky),
+                        "and are not owned by the same user the " +
+                        "process runs with. ",
+                        "To fix this, either store the file in a non-sticky " +
+                        "bit directory (such as /var/run/opensips), ",
+                        "or disable fifo file protection using " +
+                        "'sysctl fs.protected_fifos = 0' (NOT RECOMMENDED)"]
+
+        msg = "cannot access fifo file {}: {}".format(opensips_fifo, ex)
         logger.debug(msg)
-        return (False, [msg, 'Is OpenSIPS running?'])
+        return (False, [msg] + extra)
+    fifo_file = opensips_fifo
     return (True, None)

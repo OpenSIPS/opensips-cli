@@ -83,7 +83,10 @@ The OpenSIPS CLI core can use the following parameters:
 * `log_level`: The level of the console logging (Default: `WARNING`)
 * `communication_type`: Communication transport used by OpenSIPS CLI (Default: `fifo`)
 * `fifo_file`: The OpenSIPS FIFO file to which the CLI will write commands
-(Default: `/tmp/opensips_fifo`)
+(Default: `/var/run/opensips/opensips_fifo`)
+* `fifo_file_fallback`: A fallback FIFO file that is being used when the `fifo_file`
+is not found - this has been introduces for backwards compatibility when the default
+`fifo_file` has been changed from `/tmp/opensips_fifo` (Default: `/tmp/opensips_fifo`)
 * `fifo_reply_dir`: The default directory where `opensips-cli` will create the
 fifo used for the reply from OpenSIPS (Default: `/tmp`)
 * `url`: The default URL used when `http` `communication_type` is used
