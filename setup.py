@@ -62,7 +62,8 @@ setup(
     packages = [
         "opensipscli",
         "opensipscli.modules",
-        "opensipscli.communication"
+        "opensipscli.communication",
+        "opensipscli.libs"
     ],
     install_requires=[
         'mysqlclient<1.4.0rc1',
