@@ -26,7 +26,7 @@ List of `opensips-cli.cfg` settings for configuring self-signed CA certificates:
 * tls_ca_organisational_unit - the organisational unit (e.g. "Project")
 * tls_ca_notafter - the validity period, in seconds (e.g. 315360000)
 * tls_ca_key_size - the size of the RSA key, in bits (e.g. 4096)
-* tls_ca_md - the digest algorithm to use for signing (e.g. SHA1)
+* tls_ca_md - the digest algorithm to use for signing (e.g. SHA256)
 
 List of `opensips-cli.cfg` settings for configuring user certificates:
 
@@ -45,7 +45,7 @@ List of `opensips-cli.cfg` settings for configuring user certificates:
 * tls_user_organisational_unit - the organisational unit (e.g. "Project")
 * tls_user_notafter - the validity period, in seconds (e.g. 315360000)
 * tls_user_key_size - the size of the RSA key, in bits (e.g. 4096)
-* tls_user_md - the digest algorithm to use for signing (e.g. SHA1)
+* tls_user_md - the digest algorithm to use for signing (e.g. SHA256)
 
 
 ## Examples
@@ -69,7 +69,7 @@ tls_ca_organisation: OpenSIPS
 tls_ca_organisational_unit: Project
 tls_ca_notafter: 315360000
 tls_ca_key_size: 4096
-tls_ca_md: SHA1
+tls_ca_md: SHA256
 ```
 
 To create a user certificate signed by the above rootCA, along with a private
@@ -95,5 +95,5 @@ tls_user_organisation: OpenSIPS
 tls_user_organisational_unit: Project
 tls_user_notafter: 315360000
 tls_user_key_size: 4096
-tls_user_md: SHA1
+tls_user_md: SHA256
 ```

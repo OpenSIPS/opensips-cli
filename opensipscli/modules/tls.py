@@ -86,7 +86,7 @@ class tls(Module):
         key.generate_key(crypto.TYPE_RSA, key_size)
 
         cert.set_pubkey(key)
-        md = cfg.read_param("tls_ca_md", "Digest Algorithm", "SHA1")
+        md = cfg.read_param("tls_ca_md", "Digest Algorithm", "SHA256")
         cert.sign(key, md)
 
         try:
@@ -182,7 +182,7 @@ class tls(Module):
         key.generate_key(crypto.TYPE_RSA, key_size)
 
         cert.set_pubkey(key)
-        md = cfg.read_param("tls_user_md", "Digest Algorithm", "SHA1")
+        md = cfg.read_param("tls_user_md", "Digest Algorithm", "SHA256")
         cert.sign(ca_key, md)
 
         try:
