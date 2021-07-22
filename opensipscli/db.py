@@ -159,36 +159,24 @@ class DBURL(object):
             self.port = int(arr[1].strip())
 
     def __repr__(self):
-        url = self.drivername + '://'
-        if self.username is not None:
-            url += self.username
-        if self.username is not None and self.password is not None:
-            url += ':***'
-        if self.username is not None:
-            url += '@'
-        if self.host is not None:
-            url += self.host
-        if self.port is not None:
-            url += ':' + str(self.port)
-        if self.database is not None:
-            url += '/' + self.database
-        return url
+        return "{}://{}{}{}{}{}{}".format(
+            self.drivername,
+            self.username or "",
+            ":***" if self.username != None and self.password != None else "",
+            "@" if self.username != None else "",
+            self.host or "",
+            ":" + str(self.port) if self.port != None else "",
+            "/" + self.database if self.database != None else "")
 
     def __str__(self):
-        url = self.drivername + '://'
-        if self.username is not None:
-            url += self.username
-        if self.username is not None and self.password is not None:
-            url += ':' + self.password
-        if self.username is not None:
-            url += '@'
-        if self.host is not None:
-            url += self.host
-        if self.port is not None:
-            url += ':' + str(self.port)
-        if self.database is not None:
-            url += '/' + self.database
-        return url
+        return "{}://{}{}{}{}{}{}".format(
+            self.drivername,
+            self.username or "",
+            ":" + self.password if self.username != None and self.password != None else "",
+            "@" if self.username != None else "",
+            self.host or "",
+            ":" + str(self.port) if self.port != None else "",
+            "/" + self.database if self.database != None else "")
 
 
 def make_url(url_string):
