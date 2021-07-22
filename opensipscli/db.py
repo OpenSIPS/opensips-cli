@@ -26,7 +26,11 @@ try:
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy import Column, Date, Integer, String, Boolean
     from sqlalchemy.orm import sessionmaker, deferred
-    from sqlalchemy.engine.url import make_url
+
+    # for now, we use our own make_url(), since Alchemy API is highly unstable
+    #  (https://github.com/OpenSIPS/opensips-cli/issues/85)
+    #from sqlalchemy.engine.url import make_url
+
     sqlalchemy_available = True
     logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
     try:
@@ -114,6 +118,81 @@ class osdbAccessDeniedError(osdbError):
     """
     pass
 
+class DBURL(object):
+    def __init__(self, url):
+        arr = url.split('://')
+        self.drivername = arr[0].strip()
+
+        if len(arr) != 2 or not self.drivername:
+            raise Exception('Failed to parse RFC 1738 URL')
+
+        self.username = None
+        self.password = None
+        self.host = None
+        self.port = None
+        self.database = None
+
+        url = arr[1].strip()
+        if not url:
+            return
+
+        arr = url.split('/')
+        if len(arr) > 1:
+            self.database = "/".join(arr[1:]).strip()
+        url = arr[0].strip()
+
+        arr = url.split('@')
+        if len(arr) > 1:
+            # handle user + password
+            upass = arr[0].strip().split(':')
+            self.username = upass[0].strip()
+            if len(upass) > 1:
+                self.password = ":".join(upass[1:]).strip()
+            url = arr[1].strip()
+        else:
+            url = arr[0].strip()
+
+        # handle host + port
+        arr = url.strip().split(':')
+        self.host = arr[0].strip()
+        if len(arr) > 1:
+            self.port = int(arr[1].strip())
+
+    def __repr__(self):
+        url = self.drivername + '://'
+        if self.username is not None:
+            url += self.username
+        if self.username is not None and self.password is not None:
+            url += ':***'
+        if self.username is not None:
+            url += '@'
+        if self.host is not None:
+            url += self.host
+        if self.port is not None:
+            url += ':' + str(self.port)
+        if self.database is not None:
+            url += '/' + self.database
+        return url
+
+    def __str__(self):
+        url = self.drivername + '://'
+        if self.username is not None:
+            url += self.username
+        if self.username is not None and self.password is not None:
+            url += ':' + self.password
+        if self.username is not None:
+            url += '@'
+        if self.host is not None:
+            url += self.host
+        if self.port is not None:
+            url += ':' + str(self.port)
+        if self.database is not None:
+            url += '/' + self.database
+        return url
+
+
+def make_url(url_string):
+    return DBURL(url_string)
 
 class osdb(object):
     """
