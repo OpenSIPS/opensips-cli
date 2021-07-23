@@ -216,8 +216,9 @@ class osdb(object):
                 try:
                     if int(se.args[0].split(",")[0].split("(")[2]) in [
                             2006, # MySQL
-                            1044, # MariaDB
-                            1045, # MariaDB
+                            1698, # MariaDB "Access Denied"
+                            1044, # MariaDB "DB Access Denied"
+                            1045, # MariaDB "Access Denied (Using Password)"
                             ]:
                         raise osdbAccessDeniedError
                 except osdbAccessDeniedError:
