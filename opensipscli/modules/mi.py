@@ -37,7 +37,7 @@ except ImportError:
 MI_ARRAY_PARAMS_COMMANDS = {
     "fs_subscribe": (1, "events"),
     "fs_unsubscribe": (1, "events"),
-    "b2b_trigger_scenario": (1, "scenario_params"),
+    "b2b_trigger_scenario": (3, "scenario_params"),
     "dlg_push_var": (2, "DID"),
     "get_statistics": (0, "statistics"),
     "list_statistics": (0, "statistics"),
