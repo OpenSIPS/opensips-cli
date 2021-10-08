@@ -286,3 +286,7 @@ class trace(Module):
             comm.execute('trace_stop', {'id' : trace_name }, True)
             if conn is not None:
                 conn.close()
+
+    def __exclude__(self):
+        valid = comm.valid()
+        return (not valid[0], valid[1])

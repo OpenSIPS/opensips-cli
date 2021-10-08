@@ -1053,6 +1053,10 @@ class diagnose(Module):
     def __get_methods__(self):
         return ['', 'sip', 'dns', 'sql', 'nosql', 'memory', 'load', 'brief', 'full']
 
+    def __exclude__(self):
+        valid = comm.valid()
+        return (not valid[0], valid[1])
+
 def desc_sip_msg(sip_msg):
     """summarizes a SIP message into a useful one-liner"""
     try:

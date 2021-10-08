@@ -123,5 +123,8 @@ class trap(Module):
         return None
 
     def __exclude__(self):
+        valid = comm.valid()
+        if not valid[0]:
+            return False, valid[1]
         # check to see if we have gdb installed
         return (shutil.which("gdb") is None, None)
