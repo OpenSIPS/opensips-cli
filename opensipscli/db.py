@@ -289,7 +289,7 @@ class osdb(object):
                     # instanciate the Session object
                     self.session = self.Session()
                     logger.debug("connected to database URL '%s'", self.db_url)
-            else:
+            elif self.dialect != "sqlite":
                 self.__conn.execute("USE {}".format(self.db_name))
         except Exception as e:
             logger.error("failed to connect to %s", self.db_url)
@@ -320,7 +320,7 @@ class osdb(object):
             except sqlalchemy.exc.OperationalError as se:
                 logger.error("cannot create database: {}!".format(se))
                 return False
-        else:
+        elif self.dialect != "sqlite":
             self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
 
         logger.debug("success")
@@ -498,7 +498,10 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
-        database_url = self.set_url_db(self.db_url, self.db_name)
+        if self.dialect != "sqlite":
+            database_url = self.set_url_db(self.db_url, self.db_name)
+        else:
+            database_url = 'sqlite:///' + self.db_name
         try:
             sqlalchemy_utils.drop_database(database_url)
             logger.debug("database '%s' dropped", self.db_name)
@@ -587,7 +590,11 @@ class osdb(object):
         if not self.__conn:
             return False
 
-        database_url = self.set_url_db(self.db_url, check_db)
+        if self.dialect != "sqlite":
+            database_url = self.set_url_db(self.db_url, check_db)
+        else:
+            database_url = 'sqlite:///' + check_db
+
         logger.debug("check database URL '{}'".format(database_url))
 
         try:

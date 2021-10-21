@@ -407,18 +407,27 @@ class database(Module):
             logger.error("no DB URL specified: aborting!")
             return -1
 
-        admin_url = self.get_admin_db_url(db_name)
-        if not admin_url:
+        engine = osdb.get_db_engine()
+        if not engine:
             return -1
 
-        admin_db = self.get_db(admin_url, db_name)
-        if not admin_db:
+        if engine != 'sqlite':
+            admin_url = self.get_admin_db_url(db_name)
+            if not admin_url:
+                return -1
+
+        db = self.get_db(admin_url if engine != 'sqlite' else db_url, db_name)
+        if not db:
             return -1
 
-        ret = self.create_tables(db_name, db_url, admin_db, tables=[module],
+        if engine == 'sqlite' and not db.exists(db_name):
+            logger.error("database '%s' does not exist!", db_name)
+            return -1
+
+        ret = self.create_tables(db_name, db_url, db, tables=[module],
                                  create_std=False)
 
-        admin_db.destroy()
+        db.destroy()
         return ret
 
 
@@ -433,28 +442,34 @@ class database(Module):
                 "Please provide the database to create")
         logger.debug("db_name: '%s'", db_name)
 
-        admin_url = self.get_admin_db_url(db_name)
-        if not admin_url:
+        engine = osdb.get_db_engine()
+        if not engine:
             return -1
 
-        admin_db = self.get_db(admin_url, db_name)
-        if not admin_db:
-            return -1
-
-        if self.create_db(db_name, admin_url, admin_db) < 0:
-            return -1
+        if engine != 'sqlite':
+            admin_url = self.get_admin_db_url(db_name)
+            if not admin_url:
+                return -1
 
         db_url = self.get_db_url(db_name)
         if not db_url:
             return -1
 
-        if self.ensure_user(db_url, db_name, admin_db) < 0:
+        db = self.get_db(admin_url if engine != 'sqlite' else db_url, db_name)
+        if not db:
             return -1
 
-        if self.create_tables(db_name, db_url, admin_db) < 0:
+        if self.create_db(db_name, \
+            admin_url if engine != 'sqlite' else db_url, db) < 0:
             return -1
 
-        admin_db.destroy()
+        if self.ensure_user(db_url, db_name, db) < 0:
+            return -1
+
+        if self.create_tables(db_name, db_url, db) < 0:
+            return -1
+
+        db.destroy()
         return 0
 
     def create_db(self, db_name, admin_url, db=None):
@@ -486,7 +501,10 @@ class database(Module):
         """
         create database tables
         """
-        db_url = osdb.set_url_db(db_url, db_name)
+        if admin_db.dialect != "sqlite":
+            db_url = osdb.set_url_db(db_url, db_name)
+        else:
+            db_url = 'sqlite:///' + db_name
 
         # 2) prepare new object store database instance
         #    use it to connect to the created database
@@ -494,7 +512,7 @@ class database(Module):
         if db is None:
             return -1
 
-        if not db.exists():
+        if admin_db.dialect != "sqlite" and not db.exists():
             logger.warning("database '{}' does not exist!".format(db_name))
             return -1
 
@@ -572,7 +590,10 @@ class database(Module):
         exist or has insufficient permissions, this will be fixed using the
         @admin_db connection.
         """
-        db_url = osdb.set_url_db(db_url, db_name)
+        if admin_db.dialect != "sqlite":
+            db_url = osdb.set_url_db(db_url, db_name)
+        else:
+            db_url = 'sqlite:///' + db_name
 
         try:
             db = self.get_db(db_url, db_name, check_access=True)
@@ -602,15 +623,24 @@ class database(Module):
             db_name = cfg.read_param("database_name",
                     "Please provide the database to drop")
 
-        admin_db_url = self.get_admin_db_url(db_name)
-        if admin_db_url is None:
+        engine = osdb.get_db_engine()
+        if not engine:
             return -1
 
-        if admin_db_url.lower().startswith("postgres"):
-            admin_db_url = osdb.set_url_db(admin_db_url, 'postgres')
+        if engine != 'sqlite':
+            db_url = self.get_admin_db_url(db_name)
+            if db_url is None:
+                return -1
+
+            if db_url.lower().startswith("postgres"):
+                db_url = osdb.set_url_db(db_url, 'postgres')
+        else:
+            db_url = self.get_db_url(db_name)
+            if not db_url:
+                return -1
 
         # create an object store database instance
-        db = self.get_db(admin_db_url, db_name)
+        db = self.get_db(db_url, db_name)
         if db is None:
             return -1
 
@@ -707,7 +737,7 @@ class database(Module):
         except osdbArgumentError:
             logger.error("Bad URL, it should resemble: {}".format(
                 "backend://user:pass@hostname" if not \
-                    db_url.startswith('sqlite:') else "sqlite:///path/to/db"))
+                    db_url.startswith('sqlite:') else "sqlite:////path/to/db"))
         except osdbConnectError:
             logger.error("Failed to connect to database!")
         except osdbNoSuchModuleError:
