@@ -87,13 +87,18 @@ repository:
 ```
 git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
 cd ~/src/opensips-cli
+
+# local install (only visible to your user)
+python3 setup.py install --user clean
+
+# system-wide install
 sudo python3 setup.py install clean
 ```
 
 ### Cleaning up the install
 
 To clean up the manually built and installed `opensips-cli` binary and package
-files, run:
+files, run a command similar to:
 
 ```
 sudo rm -fr /usr/local/bin/opensips-cli /usr/local/lib/python3.6/dist-packages/opensipscli*
