@@ -108,7 +108,7 @@ class user(Module):
         string = "{}@{}:{}:{}".format(user, domain, domain, password)
         return hashlib.md5(string.encode('utf-8')).hexdigest()
 
-    def do_add(self, params=None):
+    def do_add(self, params=None, modifiers=None):
 
         if len(params) < 1:
             name = cfg.read_param(None,
@@ -159,7 +159,7 @@ class user(Module):
         db.destroy()
         return True
 
-    def do_password(self, params=None):
+    def do_password(self, params=None, modifiers=None):
 
         if len(params) < 1:
             name = cfg.read_param(None,
@@ -210,7 +210,7 @@ class user(Module):
         db.destroy()
         return True
 
-    def do_delete(self, params=None):
+    def do_delete(self, params=None, modifiers=None):
 
         if len(params) < 1:
             name = cfg.read_param(None,

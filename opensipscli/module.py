@@ -28,12 +28,12 @@ class Module:
         """
         return (False, None)
 
-    def __invoke__(self, cmd, params=None):
+    def __invoke__(self, cmd, params=None, modifiers=None):
         """
         used to invoke a command from the module (starting with prefix 'do_')
         """
         f = getattr(self, 'do_' + cmd)
-        return f(params)
+        return f(params, modifiers)
 
     def __get_methods__(self):
          """
@@ -44,12 +44,19 @@ class Module:
          return ([x[3:] for x in dir(self)
                  if x.startswith('do_') and callable(getattr(self, x))])
 
+    def __get_modifiers__(self):
+         """
+         returns all the available modifiers of a specific module
+         """
+         return None
+
     def __complete__(self, command, text, line, begidx, endidx):
         """
         returns a list with all the auto-completion values
         """
         if not command:
-            return ['']
+            modifiers = self.__get_modifiers__()
+            return modifiers if modifiers else ['']
         try:
             compfunc = getattr(self, 'complete_' + command)
             l = compfunc(text, line, begidx, endidx)

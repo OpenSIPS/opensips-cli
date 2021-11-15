@@ -30,10 +30,10 @@ class instance(Module):
             l.insert(0, default_section)
         return l
 
-    def do_show(self, params):
+    def do_show(self, params, modifiers):
         print(cfg.current_instance)
 
-    def do_list(self, params):
+    def do_list(self, params, modifiers):
         for i in self.get_instances():
             print(i)
 
@@ -42,7 +42,7 @@ class instance(Module):
             return []
         return [ a for a in self.get_instances() if a.startswith(text)]
 
-    def do_switch(self, params):
+    def do_switch(self, params, modifiers):
         if len(params) == 0:
             return
         new_instance = params[0]

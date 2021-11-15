@@ -223,7 +223,7 @@ class trace(Module):
     def __get_methods__(self):
         return None
 
-    def do_trace(self, params):
+    def do_trace(self, params, modifiers):
 
         filters = []
 

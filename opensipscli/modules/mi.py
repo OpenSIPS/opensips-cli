@@ -124,7 +124,7 @@ class mi(Module):
                 new_params.append(params[MI_ARRAY_PARAMS_COMMANDS[cmd][0]:])
         return new_params
 
-    def __invoke__(self, cmd, params=None):
+    def __invoke__(self, cmd, params=None, modifiers=None):
         params = self.parse_params(cmd, params)
         # Mi Module works with JSON Communication
         logger.debug("running command '{}' '{}'".format(cmd, params))

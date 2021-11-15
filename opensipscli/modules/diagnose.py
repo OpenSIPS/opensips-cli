@@ -1021,7 +1021,7 @@ class diagnose(Module):
         self.print_diag_footer()
         return True
 
-    def __invoke__(self, cmd, params=None):
+    def __invoke__(self, cmd, params=None, modifiers=None):
         if cmd is None:
             return self.diagnosis_summary()
         if cmd == 'dns':

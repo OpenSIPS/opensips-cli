@@ -35,7 +35,7 @@ except ImportError:
     openssl_available = False
 
 class tls(Module):
-    def do_rootCA(self, params):
+    def do_rootCA(self, params, modifiers=None):
         global cfg
         logger.info("Preparing to generate CA cert + key...")
 
@@ -110,7 +110,7 @@ class tls(Module):
         logger.info("CA certificate created in " + c_f)
         logger.info("CA private key created in " + k_f)
 
-    def do_userCERT(self, params):
+    def do_userCERT(self, params, modifiers=None):
         global cfg
         logger.info("Preparing to generate user cert + key + CA list...")
 

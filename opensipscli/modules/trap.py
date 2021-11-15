@@ -59,7 +59,7 @@ class trap(Module):
         if len(out) != 0:
             self.gdb_outputs[pid] = out.decode()
 
-    def do_trap(self, params):
+    def do_trap(self, params, modifiers):
 
         self.pids = []
         self.gdb_outputs = {}

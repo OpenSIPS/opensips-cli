@@ -387,7 +387,7 @@ class database(Module):
         logger.debug("admin DB URL: '{}'".format(admin_url))
         return admin_url
 
-    def do_add(self, params):
+    def do_add(self, params, modifiers=None):
         """
         add a given table to the database (connection via URL)
         """
@@ -431,7 +431,7 @@ class database(Module):
         return ret
 
 
-    def do_create(self, params=None):
+    def do_create(self, params=None, modifiers=None):
         """
         create database with role-assigment and tables
         """
@@ -612,7 +612,7 @@ class database(Module):
         db.destroy()
         return 0
 
-    def do_drop(self, params=None):
+    def do_drop(self, params=None, modifiers=None):
         """
         drop a given database object (connection via URL)
         For PostgreSQL, perform this operation using 'postgres' as role + DB
@@ -666,7 +666,7 @@ class database(Module):
         return 0
 
 
-    def do_migrate(self, params):
+    def do_migrate(self, params, modifiers=None):
         if len(params) < 3:
             print("Usage: database migrate <flavour> <old-database> <new-database>")
             return 0

@@ -233,19 +233,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             if len(self.command) < 1:
                 logger.error("no modules to run specified!")
                 return -1
-            if len(self.command) < 2:
-                logger.debug("no method to in '{}' run specified!".
-                        format(self.command[0]))
-                command = None
-                params = None
-            else:
-                command = self.command[1]
-                params = self.command[2:]
 
-            logger.debug("running in non-interactive mode '{}'".format(self.command))
+            module, command, modifiers, params = self.parse_command(self.command)
 
+            logger.debug("running in non-interactive mode {} {} {}".
+                    format(module, command, params))
             try:
-                ret = self.run_command(self.command[0], command, params)
+                ret = self.run_command(module, command, modifiers, params)
             except KeyboardInterrupt:
                 print('^C')
                 return -1
@@ -282,17 +276,38 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         """
 
         # builtin commands
-        params = line.split()
-        if module[1] is not None and \
-                (len(params) < 2 or (len(params) == 2 and line[-1] != ' ')):
-            l = [a for a in module[1] if a.startswith(text)]
+        _, command, modifiers, params = self.parse_command(line.split())
+        # get all the available modifiers of the module
+        all_params = []
+        if not command:
+            # haven't got to a command yet, so we might have some modifiers
+            try:
+                modiffunc = getattr(module[0], '__get_modifiers__')
+                modifiers_params = modiffunc()
+            except:
+                pass
+            all_params = [ x for x in modifiers_params if x not in modifiers ]
+            # if we are introducing a modifier, auto-complete only them
+            if begidx > 1 and line[begidx-1] == '-':
+                stripped_params = [ p.lstrip("-") for p in modifiers_params ]
+                l = [a for a in stripped_params if a.startswith(text)]
+                if len(l) == 1:
+                    l[0] = l[0] + " "
+                else:
+                    l = [a for a in l if a not in [ m.strip("-") for m in modifiers]]
+                return l
+
+        if module[1]:
+            all_params = all_params + module[1]
+        if len(all_params) > 0 and (not command or
+                (len(params) == 0 and line[-1] != ' ')):
+            l = [a for a in all_params if a.startswith(text)]
             if len(l) == 1:
                 l[0] += " "
         else:
             try:
                 compfunc = getattr(module[0], '__complete__')
-                p = params[1] if len(params) > 1 else None
-                l = compfunc(p, text, line, begidx, endidx)
+                l = compfunc(command, text, line, begidx, endidx)
                 if not l:
                     return None
             except AttributeError:
@@ -328,8 +343,34 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         except IndexError:
             return ['']
 
+    # Parse parameters
+    def parse_command(self, line):
+
+        module = line[0]
+        if len(line) < 2:
+            return module, None, [], []
+        paramIndex = 1
+        while paramIndex < len(line):
+            if line[paramIndex][0] != "-":
+                break
+            paramIndex = paramIndex + 1
+        if paramIndex == 1:
+            modifiers = []
+            command = line[1]
+            params = line[2:]
+        elif paramIndex == len(line):
+            modifiers = line[1:paramIndex]
+            command = None
+            params = []
+        else:
+            modifiers = line[1:paramIndex]
+            command = line[paramIndex]
+            params = line[paramIndex + 1:]
+
+        return module, command, modifiers, params
+
     # Execute commands from Modules
-    def run_command(self, module, cmd, params):
+    def run_command(self, module, cmd, modifiers, params):
         """
         run a module command with given parameters
         """
@@ -360,7 +401,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
                     format(cmd, module))
             return -1
         logger.debug("running command '{}' '{}'".format(cmd, params))
-        return mod[0].__invoke__(cmd, params)
+        return mod[0].__invoke__(cmd, params, modifiers)
 
     def default(self, line):
         try:
@@ -370,14 +411,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             line = line[:-1]
             aux = shlex.split(line)
 
-        module = str(aux[0])
-        if len(aux) == 1:
-            cmd = None
-            params = None
-        else:
-            cmd = str(aux[1])
-            params = aux[2:]
-        self.run_command(module, cmd, params)
+        module, cmd, modifiers, params = self.parse_command(aux)
+        self.run_command(module, cmd, modifiers, params)
 
     def do_history(self, line):
         """
