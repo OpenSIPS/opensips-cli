@@ -30,6 +30,13 @@ are:
   * `yaml` - prints the output in a YAML format
   * `none` - does not print anything
 
+## Modifiers
+
+The `mi` module can receive a set of modifiers for its commands that influence
+the communication with OpenSIPS. Available modifiers are:
+* `-j`: the modifier instructs the module to avoid converting the parameters
+as strings and treat them as JSON values, if possible.
+
 ## Examples
 
 Fetch the OpenSIPS `uptime` in a YAML format:
@@ -58,6 +65,12 @@ load:load: 0
 net:waiting_udp: 0
 net:waiting_tcp: 0
 net:waiting_tls: 0
+```
+
+Use the `-j` modifier for specifying array params as well as json:
+```
+opensips-cli -x -- mi -j raise_event E_TEST '["127.0.0.1", 5060]'
+opensips-cli -x -- mi -j raise_event event=E_TEST params='{"ip":"127.0.0.1", "port":5060}}'
 ```
 
 ## Limitations

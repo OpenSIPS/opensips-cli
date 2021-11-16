@@ -47,6 +47,9 @@ MI_ARRAY_PARAMS_COMMANDS = {
     "dfks_set_feature": (4, "values"),
 }
 
+
+MI_MODIFIERS = [ "-j" ]
+
 class mi(Module):
 
     def print_pretty_print(self, result):
@@ -95,7 +98,7 @@ class mi(Module):
             return None
         return self.get_params_set(cmds[2:])
 
-    def parse_params(self, cmd, params):
+    def parse_params(self, cmd, params, modifiers):
 
         # first, we check to see if we have only named parameters
         nparams = self.get_params_set(params)
@@ -107,16 +110,27 @@ class mi(Module):
                 value = "" if len(s) == 1 else s[1]
                 # check to see if we have to split them in array or not
                 if cmd in MI_ARRAY_PARAMS_COMMANDS and \
+                        "-j" not in modifiers and \
                         MI_ARRAY_PARAMS_COMMANDS[cmd][1] == s[0]:
-                    new_params[s[0]] = shlex.split(value)
-                else:
-                    new_params[s[0]] = value
+                    value = shlex.split(value)
+                new_params[s[0]] = value
         else:
             # old style positional parameters
             logger.debug("positional parameters are used")
             # if the command is not in MI_ARRAY_PARAMS_COMMANDS, return the
             # parameters as they are
-            if not cmd in MI_ARRAY_PARAMS_COMMANDS:
+            logger.debug("0. {}".format(params))
+            if "-j" in modifiers:
+                json_params = []
+                for x in params:
+                    try:
+                        x = json.loads(x)
+                    except:
+                        pass
+                    json_params.append(x)
+                params = json_params
+
+            if not cmd in MI_ARRAY_PARAMS_COMMANDS or "-j" in modifiers:
                 return params
             # build params based on their index
             new_params = params[0:MI_ARRAY_PARAMS_COMMANDS[cmd][0]]
@@ -125,7 +139,7 @@ class mi(Module):
         return new_params
 
     def __invoke__(self, cmd, params=None, modifiers=None):
-        params = self.parse_params(cmd, params)
+        params = self.parse_params(cmd, params, modifiers)
         # Mi Module works with JSON Communication
         logger.debug("running command '{}' '{}'".format(cmd, params))
         res = comm.execute(cmd, params)
@@ -180,3 +194,6 @@ class mi(Module):
 
     def __get_methods__(self):
         return comm.execute('which')
+
+    def __get_modifiers__(self):
+        return MI_MODIFIERS
