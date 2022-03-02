@@ -73,7 +73,7 @@ def execute(method, params):
                 format(fifo_file, ex))
 
     logger.debug("reply file '{}'".format(reply_fifo_file))
-    with open(reply_fifo_file, 'r') as reply_fifo:
+    with open(reply_fifo_file, 'r', errors='replace') as reply_fifo:
         replycmd = reply_fifo.readline()
         #logger.debug("received reply '{}'".format(replycmd))
 
