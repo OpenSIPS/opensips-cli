@@ -66,7 +66,6 @@ EXTRA_DB_MODULES = [
     "fraud_detection",
     "freeswitch_scripting",
     "imc",
-    "load_balancer",
     "presence",
     "registrant",
     "rls",
