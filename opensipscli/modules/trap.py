@@ -26,9 +26,15 @@ import subprocess
 import shutil
 import os
 
-PROCESS_NAME = 'opensips'
+DEFAULT_PROCESS_NAME = 'opensips'
 
 class trap(Module):
+
+    def get_process_name(self):
+        if cfg.exists("process_name"):
+            return cfg.get("process_name")
+        else:
+            return DEFAULT_PROCESS_NAME
 
     def get_pids(self):
         try:
@@ -50,8 +56,9 @@ class trap(Module):
             return -1
         # Check if process is opensips (can be different if CLI is running on another host)
         path, filename = os.path.split(process)
-        if filename != PROCESS_NAME:
-            logger.error("process ID {} is not OpenSIPS process".format(pid))
+        process_name = self.get_process_name()
+        if filename != process_name:
+            logger.error("process ID {}/{} is not OpenSIPS process".format(pid, filename))
             return -1
         logger.debug("Dumping backtrace for {} pid {}".format(process, pid))
         cmd = ["gdb", process, pid, "-batch", "--eval-command", "bt full"]
@@ -66,8 +73,9 @@ class trap(Module):
         self.process_info = ""
 
         trap_file = cfg.get("trap_file")
+        process_name = self.get_process_name()
 
-        logger.info("Trapping {} in {}".format(PROCESS_NAME, trap_file))
+        logger.info("Trapping {} in {}".format(process_name, trap_file))
         if params and len(params) > 0:
             self.pids = params
         else:
@@ -77,7 +85,7 @@ class trap(Module):
             if len(self.pids) == 0:
                 logger.warning("could not get OpenSIPS pids through MI!")
                 try:
-                    ps_pids = subprocess.check_output(["pidof",PROCESS_NAME])
+                    ps_pids = subprocess.check_output(["pidof", process_name])
                     self.pids = ps_pids.decode().split()
                 except:
                     logger.warning("could not find any OpenSIPS running!")

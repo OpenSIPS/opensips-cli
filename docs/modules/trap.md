@@ -10,6 +10,7 @@ specified as additional parameters to the `trap` command.
 This module can have the following parameters specified through a config file:
 * `trap_file` - name of the file that will contain the trap (Default is
 `/tmp/gdb_opensips_$(date +%Y%m%d_%H%M%S)`).
+* `process_name` - name of OpenSIPS process (Default is `opensips`).
 
 ## Examples
 
