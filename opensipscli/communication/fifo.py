@@ -61,6 +61,11 @@ def execute(method, params):
                 "cannot create reply file {}: {}!".
                 format(reply_fifo_file, ex))
 
+    if not os.path.exists(fifo_file):
+        raise jsonrpc_helper.JSONRPCException(
+                "fifo file '{}' not found!".
+                format(reply_fifo_file))
+
     fifocmd = ":{}:{}". format(reply_fifo_file_name, jsoncmd)
     try:
         fifo = open(fifo_file, 'w')
