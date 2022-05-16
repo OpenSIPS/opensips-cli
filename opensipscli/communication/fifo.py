@@ -89,7 +89,6 @@ def valid():
         opensips_fifo_bk = opensips_fifo
         opensips_fifo = cfg.get('fifo_file_fallback')
         if not opensips_fifo or not os.path.exists(opensips_fifo):
-            logger.debug("test")
             msg = "fifo file {} does not exist!".format(opensips_fifo)
             logger.debug(msg)
             return (False, [msg, 'Is OpenSIPS running?'])
