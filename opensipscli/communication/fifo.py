@@ -112,7 +112,7 @@ def valid():
                         "To fix this, either store the file in a non-sticky " +
                         "bit directory (such as /var/run/opensips), ",
                         "or disable fifo file protection using " +
-                        "'sysctl fs.protected_fifos = 0' (NOT RECOMMENDED)"]
+                        "'sysctl fs.protected_fifos=0' (NOT RECOMMENDED)"]
 
         msg = "cannot access fifo file {}: {}".format(opensips_fifo, ex)
         logger.debug(msg)
