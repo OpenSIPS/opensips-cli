@@ -9,7 +9,7 @@ Homepage: https://github.com/OpenSIPS/opensips-cli
 Package: opensips-cli
 Architecture: all
 Multi-Arch: foreign
-Depends: python, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysqldb, python3-pymysql
+Depends: python3, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysqldb, python3-pymysql
 Description: Interactive command-line tool for OpenSIPS 3.0+
  This package contains the OpenSIPS CLI tool, an interactive command line tool
  that can be used to control and monitor OpenSIPS 3.0+ servers.
