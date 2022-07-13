@@ -35,6 +35,8 @@ USER_DOMAIN_COL = "domain"
 USER_PASS_COL = "password"
 USER_HA1_COL = "ha1"
 USER_HA1B_COL = "ha1b"
+USER_HA1_SHA256_COL = "ha1_sha256"
+USER_HA1_SHA512T256_COL = "ha1_sha512t256"
 USER_RPID_COL = "rpid"
 
 class user(Module):
@@ -108,6 +110,16 @@ class user(Module):
         string = "{}@{}:{}:{}".format(user, domain, domain, password)
         return hashlib.md5(string.encode('utf-8')).hexdigest()
 
+    def user_get_ha1_sha256(self, user, domain, password):
+        string = "{}:{}:{}".format(user, domain, password)
+        return hashlib.sha256(string.encode('utf-8')).hexdigest()
+
+    def user_get_ha1_sha512t256(self, user, domain, password):
+        string = "{}:{}:{}".format(user, domain, password)
+        o = hashlib.new("sha512_256")
+        o.update(string.encode('utf-8'))
+        return o.hexdigest()
+
     def do_add(self, params=None, modifiers=None):
 
         if len(params) < 1:
@@ -149,6 +161,11 @@ class user(Module):
         if osips_ver < '3.2':
             insert_dict[USER_HA1B_COL] = \
                     self.user_get_ha1b(username, domain, password)
+        else:
+            insert_dict[USER_HA1_SHA256_COL] = \
+                    self.user_get_ha1_sha256(username, domain, password)
+            insert_dict[USER_HA1_SHA512T256_COL] = \
+                    self.user_get_ha1_sha512t256(username, domain, password)
 
         insert_dict[USER_PASS_COL] = \
                 password if cfg.getBool("plain_text_passwords") else ""
