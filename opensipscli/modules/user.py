@@ -116,7 +116,7 @@ class user(Module):
 
     def user_get_ha1_sha512t256(self, user, domain, password):
         string = "{}:{}:{}".format(user, domain, password)
-        o = hashlib.new("sha512_256")
+        o = hashlib.new("sha512-256")
         o.update(string.encode('utf-8'))
         return o.hexdigest()
 
