@@ -84,6 +84,8 @@ def execute(method, params):
         with open(reply_fifo_file, 'r', errors='replace') as reply_fifo:
             replycmd = reply_fifo.readline()
             #logger.debug("received reply '{}'".format(replycmd))
+    except KeyboardInterrupt:
+        exit()
     finally:
         os.unlink(reply_fifo_file)
 
