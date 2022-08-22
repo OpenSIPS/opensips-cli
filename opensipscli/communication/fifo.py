@@ -78,12 +78,15 @@ def execute(method, params):
                 format(fifo_file, ex))
 
     logger.debug("reply file '{}'".format(reply_fifo_file))
-    with open(reply_fifo_file, 'r', errors='replace') as reply_fifo:
-        replycmd = reply_fifo.readline()
-        #logger.debug("received reply '{}'".format(replycmd))
 
-    # TODO: should we add this in a loop?
-    os.unlink(reply_fifo_file)
+    replycmd = None
+    try:
+        with open(reply_fifo_file, 'r', errors='replace') as reply_fifo:
+            replycmd = reply_fifo.readline()
+            #logger.debug("received reply '{}'".format(replycmd))
+    finally:
+        os.unlink(reply_fifo_file)
+
     return jsonrpc_helper.get_reply(replycmd)
 
 def valid():
