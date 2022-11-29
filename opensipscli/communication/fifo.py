@@ -17,10 +17,11 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-import os
-import stat
 import errno
+import os
 import random
+import stat
+import time
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.communication import jsonrpc_helper
@@ -39,7 +40,7 @@ def execute(method, params):
     global fifo_file
 
     jsoncmd = jsonrpc_helper.get_command(method, params)
-    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(random.randrange(32767))
+    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(time.time())
     reply_dir = cfg.get('fifo_reply_dir')
     reply_fifo_file = "{}/{}".format(reply_dir, reply_fifo_file_name)
 
