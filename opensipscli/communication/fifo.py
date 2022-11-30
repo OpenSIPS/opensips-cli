@@ -40,7 +40,11 @@ def execute(method, params):
     global fifo_file
 
     jsoncmd = jsonrpc_helper.get_command(method, params)
-    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(time.time())
+
+    # the "_" replacement is necessary, as OpenSIPS rejects "." in file names
+    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(
+            str(time.time()).replace('.', '_'))
+
     reply_dir = cfg.get('fifo_reply_dir')
     reply_fifo_file = "{}/{}".format(reply_dir, reply_fifo_file_name)
 
