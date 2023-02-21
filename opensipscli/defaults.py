@@ -24,8 +24,6 @@ Default configuration for OpenSIPS CLI
 import os
 import time
 
-VERSION = '0.1.0'
-
 DEFAULT_SECTION = 'default'
 DEFAULT_NAME = 'opensips-cli'
 try:

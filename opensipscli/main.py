@@ -19,7 +19,7 @@
 
 import sys
 import argparse
-from opensipscli import cli, defaults
+from opensipscli import cli, defaults, version
 
 parser = argparse.ArgumentParser(description='OpenSIPS CLI interactive tool',
                                  prog=sys.argv[0],
@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description='OpenSIPS CLI interactive tool',
 parser.add_argument('-v', '--version',
                     action='version',
                     default=None,
-                    version='OpenSIPS CLI {}'.format(defaults.VERSION))
+                    version='OpenSIPS CLI {}'.format(version.__version__))
 # Argument used to enable debugging
 parser.add_argument('-d', '--debug',
                     action='store_true',

@@ -28,7 +28,7 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
-from opensipscli import defaults
+from opensipscli import version
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -49,7 +49,7 @@ class CleanCommand(Command):
 
 setup(
     name = "opensipscli",
-    version = defaults.VERSION,
+    version = version.__version__,
     author = "OpenSIPS Project",
     author_email = "project@opensips.org",
     maintainer = "Razvan Crainea",
