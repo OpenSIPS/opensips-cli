@@ -25,6 +25,8 @@ versions of OpenSIPS, use the classic `opensipsctl` tool from the `opensips` pro
 
 ## Usage
 
+### Tool
+
 Simply run `opensips-cli` tool directly in your cli.
 By default the tool will start in interactive mode.
 
@@ -48,6 +50,37 @@ the root of the project, simply do:
 ```
 export PYTHONPATH=.
 bin/opensips-cli
+```
+
+### Python Module
+
+The module can be used as a python module as well. A simple snippet of running
+an MI command using the tool is:
+
+```
+from opensipscli import cli
+
+opensipscli = cli.OpenSIPSCLI()
+print(opensipscli.mi('ps'))
+```
+
+The OpenSIPSCLI object can receive a set of arguments/modifiers through the
+`OpenSIPSCLIArgs` class, i.e.:
+
+```
+from opensipscli import args
+...
+args = OpenSIPSCLIArgs(debug=True)
+opensipscli = cli.OpenSIPSCLI(args)
+...
+```
+
+Custom settings can be provided thourgh the arguments, i.e.:
+```
+# run commands over http
+args = OpenSIPSCLIArgs(communcation_type = "http",
+                       url="http://127.0.0.1:8080/mi")
+...
 ```
 
 ## Configuration

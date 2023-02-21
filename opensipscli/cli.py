@@ -24,13 +24,14 @@ import shlex
 import readline
 import atexit
 import importlib
+from opensipscli import args
 from opensipscli import comm
 from opensipscli import defaults
 from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.modules import *
 
-class OpenSIPSCLIShell(cmd.Cmd, object):
+class OpenSIPSCLI(cmd.Cmd, object):
     """
     OpenSIPS-Cli shell
     """
@@ -38,10 +39,13 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
     excluded_errs = {}
     registered_atexit = False
 
-    def __init__(self, options):
+    def __init__(self, options = None):
         """
         contructor for OpenSIPS-Cli
         """
+
+        if not options:
+            options = args.OpenSIPSCLIArgs()
 
         self.debug = options.debug
         self.execute = options.execute
@@ -51,8 +55,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         if self.debug:
             logger.setLevel("DEBUG")
 
+        cfg_file = None
         if not options.config:
-            cfg_file = None
             for f in defaults.CFG_PATHS:
                 if os.path.isfile(f) and os.access(f, os.R_OK):
                     # found a valid config file
@@ -75,7 +79,8 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
         else:
             instance = options.instance
         cfg.set_instance(instance)
-        cfg.set_custom_options(options.extra_options)
+        if options:
+            cfg.set_custom_options(options.extra_options)
 
         if not self.execute:
             # __init__ of cmd.Cmd module
@@ -250,7 +255,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
             return ret
         while True:
             try:
-                super(OpenSIPSCLIShell, self).cmdloop(intro='')
+                super(OpenSIPSCLI, self).cmdloop(intro='')
                 break
             except KeyboardInterrupt:
                 print('^C')
@@ -457,3 +462,7 @@ class OpenSIPSCLIShell(cmd.Cmd, object):
 
     def do_exit(self, line):
         return True
+
+    def mi(self, cmd, params = [], silent = False):
+        """helper for running MI commands"""
+        return comm.execute(cmd, params, silent)

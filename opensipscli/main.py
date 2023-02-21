@@ -74,7 +74,7 @@ def main():
     args = parser.parse_args()
 
     # Open the CLI
-    shell = cli.OpenSIPSCLIShell(args)
+    shell = cli.OpenSIPSCLI(args)
     sys.exit(shell.cmdloop())
 
 if __name__ == '__main__':

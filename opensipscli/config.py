@@ -25,13 +25,13 @@ from opensipscli.logger import logger
 class OpenSIPSCLIConfig:
 
     current_instance = defaults.DEFAULT_SECTION
-    custom_options = None
 
     def __init__(self):
         self.config = configparser.ConfigParser(
                     defaults=defaults.DEFAULT_VALUES,
                     default_section=defaults.DEFAULT_SECTION)
         self.dynamic_options = {}
+        self.custom_options = {}
 
     # Read the file given as parameter in order to parse it
     def parse(self, in_file):
@@ -42,15 +42,24 @@ class OpenSIPSCLIConfig:
         else:
             logger.error("Either file is missing or is not readable.")
 
+    def set_option(self, option, value = None):
+        if value:
+            self.custom_options[option] = value
+        else:
+            del self.custom_options[option]
+
     def set_custom_options(self, options):
-        self.custom_options = {}
         if options is None:
             return
-        for arg in options:
-            parsed = arg.split('=')
-            key = parsed[0]
-            val = '='.join(parsed[1:])
-            self.custom_options[key] = val
+        if isinstance(options, dict):
+            for k in options.keys():
+                self.set_option(k, options[k])
+        else:
+            for arg in options:
+                parsed = arg.split('=')
+                key = parsed[0]
+                val = '='.join(parsed[1:])
+                self.set_option(key, val)
 
     # Function to get the value from a section.value
     def get(self, key):

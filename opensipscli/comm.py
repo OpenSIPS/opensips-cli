@@ -22,6 +22,7 @@ from opensipscli.config import cfg
 from opensipscli import communication
 
 comm_handler = None
+comm_handler_valid = None
 
 def initialize():
     global comm_handler
@@ -33,6 +34,7 @@ def initialize():
         comm_handler = None
         logger.error("cannot import '{}' handler: {}"
             .format(comm_type, ie))
+    valid()
 
 def execute(cmd, params=[], silent=False):
     global comm_handler
@@ -51,11 +53,16 @@ def execute(cmd, params=[], silent=False):
 
 def valid():
     global comm_handler
+    global comm_handler_valid
+    if comm_handler_valid:
+        return comm_handler_valid
     if not comm_handler:
-        return (False, None)
+        comm_handler_valid = (False, None)
     try:
         if hasattr(comm_handler, "valid"):
-            return comm_handler.valid()
-        return (True, None)
+            comm_handler_valid = comm_handler.valid()
+        else:
+            comm_handler_valid = (True, None)
     except:
-        return (False, None)
+        comm_handler_valid = (False, None)
+    return comm_handler_valid
