@@ -27,12 +27,184 @@ from os import makedirs
 from opensipscli.config import cfg, OpenSIPSCLIConfig
 from random import randrange
 
+openssl_version = None
+
 try:
-    from OpenSSL import crypto, SSL
-    openssl_available = True
+    from cryptography import x509
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+    import datetime
+    openssl_version = 'cryptography'
 except ImportError:
-    logger.info("OpenSSL library not available!")
-    openssl_available = False
+    logger.info("cryptography library not available!")
+    try:
+        from OpenSSL import crypto, SSL
+        openssl_version = 'openssl'
+    except (TypeError, ImportError):
+        logger.info("OpenSSL library not available!")
+
+class tlsCert:
+
+    def __init__(self, prefix, cfg=None):
+
+        if not cfg:
+            self.load(prefix)
+            return
+        self.CN = cfg.read_param("tls_{prefix}_common_name", "Website address (CN)", "opensips.org")
+        self.C = cfg.read_param(f"tls_{prefix}_country", "Country (C)", "RO")
+        self.ST = cfg.read_param(f"tls_{prefix}_state", "State (ST)", "Bucharest")
+        self.L = cfg.read_param(f"tls_{prefix}_locality", "Locality (L)", "Bucharest")
+        self.O = cfg.read_param(f"tls_{prefix}_organisation", "Organization (O)", "OpenSIPS")
+        self.OU = cfg.read_param(f"tls_{prefix}_organisational_unit", "Organisational Unit (OU)", "Project")
+        self.notafter = int(cfg.read_param(f"tls_{prefix}_notafter", "Certificate validity (seconds)", 315360000))
+        self.md = cfg.read_param(f"tls_{prefix}_md", "Digest Algorithm", "SHA256")
+
+class tlsKey:
+
+    def __init__(self, prefix, cfg=None):
+
+        if not cfg:
+            self.load(prefix)
+            return
+        self.key_size = int(cfg.read_param(f"tls_{prefix}_key_size", "RSA key size (bits)", 4096))
+
+
+class tlsOpenSSLCert(tlsCert):
+
+    def __init__(self, prefix, cfg=None):
+        super().__init__(prefix, cfg)
+        if not cfg:
+            return
+        cert = crypto.X509()
+        cert.set_version(2)
+        cert.get_subject().CN = self.CN
+        cert.get_subject().C = self.C
+        cert.get_subject().ST = self.ST
+        cert.get_subject().L = self.L
+        cert.get_subject().O = self.O
+        cert.get_subject().OU = self.OU
+        cert.set_serial_number(randrange(100000))
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(self.notafter)
+
+        extensions = [
+            crypto.X509Extension(b'basicConstraints', False, b'CA:TRUE'),
+            crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth')
+        ]
+
+        cert.add_extensions(extensions)
+
+        self.cert = cert
+
+    def load(self, cacert):
+        self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert, 'rt').read())
+
+    def sign(self, key):
+        self.cert.set_pubkey(key)
+        self.cert.sign(key.key, self.md)
+
+    def set_issuer(self, issuer):
+        self.cert.set_issuer(issuer)
+
+    def get_subject(self):
+        return self.cert.get_subject()
+
+    def dump(self):
+        return crypto.dump_certificate(crypto.FILETYPE_PEM, self.cert).decode('utf-8')
+
+class tlsCryptographyCert(tlsCert):
+
+    def __init__(self, prefix, cfg=None):
+        super().__init__(prefix, cfg)
+        if not cfg:
+            return
+        builder = x509.CertificateBuilder()
+        builder = builder.subject_name(x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, self.CN),
+            x509.NameAttribute(NameOID.COUNTRY_NAME, self.C),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.ST),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, self.L),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.O),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, self.OU),
+        ]))
+        builder = builder.serial_number(x509.random_serial_number())
+        builder = builder.not_valid_before(datetime.datetime.today() -
+                                          datetime.timedelta(1))
+        builder = builder.not_valid_after(datetime.datetime.today() +
+                                          datetime.timedelta(0, self.notafter))
+        builder = builder.add_extension(
+                x509.BasicConstraints(ca=False, path_length=None),
+                critical=False
+        )
+        builder = builder.add_extension(
+                x509.ExtendedKeyUsage([
+                    x509.ExtendedKeyUsageOID.CLIENT_AUTH,
+                    x509.ExtendedKeyUsageOID.SERVER_AUTH]),
+                critical=False
+        )
+        self.builder = builder
+        self.cert = None
+
+    def load(self, cacert):
+        self.cert = x509.load_pem_x509_certificate(open(cacert, 'rb').read())
+
+    def sign(self, key):
+        self.builder = self.builder.public_key(key.key.public_key())
+        self.cert = self.builder.sign(private_key = key.key,
+                                      algorithm=getattr(hashes, self.md)(),
+                                      backend=default_backend())
+
+    def set_issuer(self, issuer):
+        self.builder = self.builder.issuer_name(issuer)
+
+    def get_subject(self):
+        if self.cert:
+            return self.cert.subject
+        return self.builder._subject_name
+
+    def dump(self):
+        return self.cert.public_bytes(encoding=serialization.Encoding.PEM).decode('utf-8')
+
+
+class tlsOpenSSLKey(tlsKey):
+
+    def __init__(self, prefix, cfg=None):
+        super().__init__(prefix, cfg)
+        if not cfg:
+            return
+        key = crypto.PKey()
+        key.generate_key(crypto.TYPE_RSA, self.key_size)
+        self.key = key
+
+    def dump(self):
+        return crypto.dump_privatekey(crypto.FILETYPE_PEM, self.key).decode('utf-8')
+
+    def load(self, key):
+        self.key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(key, 'rt').read())
+
+class tlsCryptographyKey(tlsKey):
+
+    def __init__(self, prefix, cfg=None):
+        super().__init__(prefix, cfg)
+        if not cfg:
+            return
+        self.key = rsa.generate_private_key(
+                key_size=self.key_size,
+                public_exponent=65537,
+                backend=default_backend()
+        )
+
+    def dump(self):
+        return self.key.private_bytes(encoding=serialization.Encoding.PEM,
+                                      format=serialization.PrivateFormat.TraditionalOpenSSL,
+                                      encryption_algorithm=serialization.NoEncryption()
+                                      ).decode('utf-8')
+
+    def load(self, key):
+        self.key = serialization.load_pem_private_key(open(key, 'rb').read(),
+                                                      password=None)
 
 class tls(Module):
     def do_rootCA(self, params, modifiers=None):
@@ -57,42 +229,20 @@ class tls(Module):
                 "CA certificate or key already exists, overwrite?", "yes", True):
             return
 
-        # create a self-signed cert
-        cert = crypto.X509()
+        if openssl_version == 'openssl':
+            cert = tlsOpenSSLCert("ca", cfg)
+            key = tlsOpenSSLKey("ca", cfg)
+        else:
+            cert = tlsCryptographyCert("ca", cfg)
+            key = tlsCryptographyKey("ca", cfg)
 
-        cert.set_version(2)
-        cert.get_subject().CN = cfg.read_param("tls_ca_common_name", "Website address (CN)", "opensips.org")
-        cert.get_subject().C = cfg.read_param("tls_ca_country", "Country (C)", "RO")
-        cert.get_subject().ST = cfg.read_param("tls_ca_state", "State (ST)", "Bucharest")
-        cert.get_subject().L = cfg.read_param("tls_ca_locality", "Locality (L)", "Bucharest")
-        cert.get_subject().O = cfg.read_param("tls_ca_organisation", "Organization (O)", "OpenSIPS")
-        cert.get_subject().OU = cfg.read_param("tls_ca_organisational_unit", "Organisational Unit (OU)", "Project")
-        cert.set_serial_number(randrange(100000))
-        cert.gmtime_adj_notBefore(0)
-        notafter = int(cfg.read_param("tls_ca_notafter", "Certificate validity (seconds)", 315360000))
-        cert.gmtime_adj_notAfter(notafter)
         cert.set_issuer(cert.get_subject())
-
-        extensions = [
-            crypto.X509Extension(b'basicConstraints', False, b'CA:TRUE'),
-            crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth')
-        ]
-
-        cert.add_extensions(extensions)
-
-        # create a key pair
-        key = crypto.PKey()
-        key_size = int(cfg.read_param("tls_ca_key_size", "RSA key size (bits)", 4096))
-        key.generate_key(crypto.TYPE_RSA, key_size)
-
-        cert.set_pubkey(key)
-        md = cfg.read_param("tls_ca_md", "Digest Algorithm", "SHA256")
-        cert.sign(key, md)
+        cert.sign(key)
 
         try:
             if not exists(dirname(c_f)):
                 makedirs(dirname(c_f))
-            open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
+            open(c_f, "wt").write(cert.dump())
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to write to %s", c_f)
@@ -101,7 +251,7 @@ class tls(Module):
         try:
             if not exists(dirname(k_f)):
                 makedirs(dirname(k_f))
-            open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
+            open(k_f, "wt").write(key.dump())
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to write to %s", k_f)
@@ -139,56 +289,39 @@ class tls(Module):
         cakey = cfg.read_param("tls_user_cakey", "CA key file", "/etc/opensips/tls/rootCA/private/cakey.pem")
 
         try:
-            ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert, 'rt').read())
+            if openssl_version == 'openssl':
+                ca_cert = tlsOpenSSLCert(cacert)
+            else:
+                ca_cert = tlsCryptographyCert(cacert)
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to load %s", cacert)
             return
 
         try:
-            ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(cakey, 'rt').read())
+            if openssl_version == 'openssl':
+                ca_key = tlsOpenSSLLey(cakey)
+            else:
+                ca_key = tlsCryptographyKey(cakey)
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to load %s", cakey)
             return
 
         # create a self-signed cert
-        cert = crypto.X509()
+        if openssl_version == 'openssl':
+            cert = tlsOpenSSLCert("user", cfg)
+            key = tlsOpenSSLKey("user", cfg)
+        else:
+            cert = tlsCryptographyCert("user", cfg)
+            key = tlsCryptographyKey("user", cfg)
 
-        cert.set_version(2)
-        cert.get_subject().CN = cfg.read_param("tls_user_common_name", "Website address (CN)", "www.opensips.org")
-        cert.get_subject().C = cfg.read_param("tls_user_country", "Country (C)", "RO")
-        cert.get_subject().ST = cfg.read_param("tls_user_state", "State (ST)", "Bucharest")
-        cert.get_subject().L = cfg.read_param("tls_user_locality", "Locality (L)", "Bucharest")
-        cert.get_subject().O = cfg.read_param("tls_user_organisation", "Organization (O)", "OpenSIPS")
-        cert.get_subject().OU = cfg.read_param("tls_user_organisational_unit", "Organisational Unit (OU)", "Project")
-
-        cert.set_serial_number(randrange(100000))
-        cert.gmtime_adj_notBefore(0)
-        notafter = int(cfg.read_param("tls_user_notafter", "Certificate validity (seconds)", 315360000))
-        cert.gmtime_adj_notAfter(notafter)
         cert.set_issuer(ca_cert.get_subject())
-
-        extensions = [
-            crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'),
-            crypto.X509Extension(b'extendedKeyUsage', False, b'clientAuth,serverAuth')
-        ]
-
-        cert.add_extensions(extensions)
-
-        # create a key pair
-        key = crypto.PKey()
-        key_size = int(cfg.read_param("tls_user_key_size", "RSA key size (bits)", 4096))
-        key.generate_key(crypto.TYPE_RSA, key_size)
-
-        cert.set_pubkey(key)
-        md = cfg.read_param("tls_user_md", "Digest Algorithm", "SHA256")
-        cert.sign(ca_key, md)
-
+        cert.sign(ca_key)
         try:
             if not exists(dirname(c_f)):
                 makedirs(dirname(c_f))
-            open(c_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
+            open(c_f, "wt").write(cert.dump())
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to write to %s", c_f)
@@ -197,7 +330,7 @@ class tls(Module):
         try:
             if not exists(dirname(k_f)):
                 makedirs(dirname(k_f))
-            open(k_f, "wt").write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode('utf-8'))
+            open(k_f, "wt").write(key.dump())
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to write to %s", k_f)
@@ -206,7 +339,7 @@ class tls(Module):
         try:
             if not exists(dirname(ca_f)):
                 makedirs(dirname(ca_f))
-            open(ca_f, "wt").write(crypto.dump_certificate(crypto.FILETYPE_PEM, ca_cert).decode('utf-8'))
+            open(ca_f, "wt").write(ca_cert.dump())
         except Exception as e:
             logger.exception(e)
             logger.error("Failed to write to %s", ca_f)
@@ -218,4 +351,4 @@ class tls(Module):
 
 
     def __exclude__(self):
-        return (not openssl_available, None)
+        return (not openssl_version, None)
