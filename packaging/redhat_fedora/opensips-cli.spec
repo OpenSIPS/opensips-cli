@@ -1,7 +1,7 @@
 Summary:  Interactive command-line tool for OpenSIPS 3.0+
 Name:     opensips-cli
-Version:  0.1
-Release:  2%{?dist}
+Version:  0.2
+Release:  0%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
 Source0:  Source0:  http://download.opensips.org/cli/%{name}-%{version}.tar.gz

@@ -1,6 +1,6 @@
-opensips-cli (0.1.0-1) stable; urgency=low
+opensips-cli (0.2.0-1) stable; urgency=low
 
   * Minor Public Release.
 
- -- Razvan Crainea <razvan@opensips.org>  Thu, 02 May 2019 11:15:04 +0300
+ -- Razvan Crainea <razvan@opensips.org>  Fri, 24 Feb 2023 11:15:04 +0300
 
