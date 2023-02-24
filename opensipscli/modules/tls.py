@@ -52,14 +52,14 @@ class tlsCert:
         if not cfg:
             self.load(prefix)
             return
-        self.CN = cfg.read_param("tls_{prefix}_common_name", "Website address (CN)", "opensips.org")
-        self.C = cfg.read_param(f"tls_{prefix}_country", "Country (C)", "RO")
-        self.ST = cfg.read_param(f"tls_{prefix}_state", "State (ST)", "Bucharest")
-        self.L = cfg.read_param(f"tls_{prefix}_locality", "Locality (L)", "Bucharest")
-        self.O = cfg.read_param(f"tls_{prefix}_organisation", "Organization (O)", "OpenSIPS")
-        self.OU = cfg.read_param(f"tls_{prefix}_organisational_unit", "Organisational Unit (OU)", "Project")
-        self.notafter = int(cfg.read_param(f"tls_{prefix}_notafter", "Certificate validity (seconds)", 315360000))
-        self.md = cfg.read_param(f"tls_{prefix}_md", "Digest Algorithm", "SHA256")
+        self.CN = cfg.read_param("tls_"+prefix+"_common_name", "Website address (CN)", "opensips.org")
+        self.C = cfg.read_param("tls_"+prefix+"_country", "Country (C)", "RO")
+        self.ST = cfg.read_param("tls_"+prefix+"_state", "State (ST)", "Bucharest")
+        self.L = cfg.read_param("tls_"+prefix+"_locality", "Locality (L)", "Bucharest")
+        self.O = cfg.read_param("tls_"+prefix+"_organisation", "Organization (O)", "OpenSIPS")
+        self.OU = cfg.read_param("tls_"+prefix+"_organisational_unit", "Organisational Unit (OU)", "Project")
+        self.notafter = int(cfg.read_param("tls_"+prefix+"_notafter", "Certificate validity (seconds)", 315360000))
+        self.md = cfg.read_param("tls_"+prefix+"_md", "Digest Algorithm", "SHA256")
 
 class tlsKey:
 
@@ -68,7 +68,7 @@ class tlsKey:
         if not cfg:
             self.load(prefix)
             return
-        self.key_size = int(cfg.read_param(f"tls_{prefix}_key_size", "RSA key size (bits)", 4096))
+        self.key_size = int(cfg.read_param("tls_"+prefix+"_key_size", "RSA key size (bits)", 4096))
 
 
 class tlsOpenSSLCert(tlsCert):
