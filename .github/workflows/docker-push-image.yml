@@ -1,0 +1,20 @@
+name: Trigger OpenSIPS CLI Images build and publish
+
+on:
+  push:
+  repository_dispatch:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repository Dispatch
+      uses: myrotvorets/trigger-repository-dispatch-action@1.1.0
+      with:
+        token: ${{ secrets.DOCKER_OPENSIPS_CLI_PAT }}
+        repo: OpenSIPS/docker-opensips-cli
+        type: OpenSIPS CLI Trigger
