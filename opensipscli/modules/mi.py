@@ -45,6 +45,7 @@ MI_ARRAY_PARAMS_COMMANDS = {
     "trace_start": (0, "filter"),
     "raise_event": (1, "params"),
     "dfks_set_feature": (4, "values"),
+    "cluster_broadcast_mi": (2, "cmd_params"),
 }
 
 
