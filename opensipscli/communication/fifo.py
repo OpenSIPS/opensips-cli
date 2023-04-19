@@ -26,7 +26,7 @@ from opensipscli.config import cfg
 from opensipscli.logger import logger
 from opensipscli.communication import jsonrpc_helper
 
-REPLY_FIFO_FILE_TEMPLATE='opensips_fifo_reply_{}'
+REPLY_FIFO_FILE_TEMPLATE='opensips_fifo_reply_{}_{}'
 fifo_file = None
 
 def get_sticky(path):
@@ -42,11 +42,11 @@ def execute(method, params):
     jsoncmd = jsonrpc_helper.get_command(method, params)
 
     # the "_" replacement is necessary, as OpenSIPS rejects "." in file names
-    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(
+    reply_fifo_file_name = REPLY_FIFO_FILE_TEMPLATE.format(str(os.getpid()),
             str(time.time()).replace('.', '_'))
 
     reply_dir = cfg.get('fifo_reply_dir')
-    reply_fifo_file = "{}/{}".format(reply_dir, reply_fifo_file_name)
+    reply_fifo_file = os.path.join(reply_dir, reply_fifo_file_name)
 
     # make sure fifo file does not exist
     try:
@@ -59,8 +59,7 @@ def execute(method, params):
                     format(reply_fifo_file, ex))
 
     try:
-        os.mkfifo(reply_fifo_file)
-        os.chmod(reply_fifo_file, 0o666)
+        os.mkfifo(reply_fifo_file, 0o666)
     except OSError as ex:
         raise jsonrpc_helper.JSONRPCException(
                 "cannot create reply file {}: {}!".
