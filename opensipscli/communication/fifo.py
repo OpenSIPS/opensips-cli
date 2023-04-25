@@ -59,7 +59,8 @@ def execute(method, params):
                     format(reply_fifo_file, ex))
 
     try:
-        os.mkfifo(reply_fifo_file, 0o666)
+        os.mkfifo(reply_fifo_file)
+        os.chmod(reply_fifo_file, 0o666)
     except OSError as ex:
         raise jsonrpc_helper.JSONRPCException(
                 "cannot create reply file {}: {}!".
