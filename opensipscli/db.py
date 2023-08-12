@@ -716,7 +716,7 @@ class osdb(object):
             print (key + ": " + dict[key])
         logger.debug("role_elements: %s", dict)
 
-    def grant_db_options(self, role_name="opensips", role_options="ALL PRIVILEGES"):
+    def grant_db_options(self, role_name, on_statement, privs="ALL PRIVILEGES"):
         """
         assign attibutes to a role object (PostgreSQL specific)
         """
@@ -727,28 +727,21 @@ class osdb(object):
         # TODO: do this only for SQLAlchemy
         if not self.__conn:
             raise osdbError("connection not available")
+        
+        sqlcmd = "GRANT {} {} TO {}".format(privs, on_statement, role_name)
+        logger.info(sqlcmd)
+
+        try:
+            self.__conn.execute(sqlcmd)
+        except Exception as e:
+            logger.exception(e)
+            logger.error("failed to grant '%s' '%s' to '%s'", privs, on_statement, role_name)
+            return False
 
         return True
 
     def grant_table_options(self, role, table, privs="ALL PRIVILEGES"):
-        if self.dialect != "postgresql":
-            return False
-
-        if not self.__conn:
-            raise osdbError("connection not available")
-
-        sqlcmd = "GRANT {} ON TABLE {} TO {}".format(privs, table, role)
-        logger.info(sqlcmd)
-
-        try:
-            result = self.__conn.execute(sqlcmd)
-        except Exception as e:
-            logger.exception(e)
-            logger.error("failed to grant '%s' to '%s' on table '%s'",
-                         privs, role, table)
-            return False
-
-        return True
+        self.grant_db_options(role, "ON TABLE {}".format(table))
 
     def has_sqlalchemy():
         """
