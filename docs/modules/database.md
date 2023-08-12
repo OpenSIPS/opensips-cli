@@ -67,7 +67,7 @@ Consider the following configuration file:
 #database_modules: acc clusterer dialog dialplan dispatcher domain rtpproxy usrloc
 database_modules: ALL
 
-#database_admin_url: postgres://root@localhost
+#database_admin_url: postgresql://root@localhost
 database_admin_url: mysql://root@localhost
 ```
 
