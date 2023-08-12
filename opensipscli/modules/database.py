@@ -499,12 +499,12 @@ class database(Module):
 
         if cfg.exists('database_admin_url'):
             admin_url = cfg.get("database_admin_url")
-            if engine == "postgres":
+            if engine == "postgresql":
                 admin_url = osdb.set_url_db(admin_url, 'postgres')
             else:
                 admin_url = osdb.set_url_db(admin_url, None)
         else:
-            if engine == 'postgres':
+            if engine == 'postgresql':
                 if getuser() != "postgres":
                     logger.error("Command must be run as 'postgres' user: "
                                  "sudo -u postgres opensips-cli ...")
@@ -513,7 +513,7 @@ class database(Module):
                 """
                 For PG, do the initial setup using 'postgres' as role + DB
                 """
-                admin_url = "postgres://postgres@localhost/postgres"
+                admin_url = "postgresql://postgres@localhost/postgres"
             else:
                 admin_url = "{}://root@localhost".format(engine)
 
@@ -712,7 +712,7 @@ class database(Module):
             logger.info("Running {}...".format(os.path.basename(table_file)))
             try:
                 db.create_module(table_file)
-                if db.dialect == "postgres":
+                if db.dialect == "postgresql":
                     self.pg_grant_table_access(table_file, username, admin_db)
             except osdbModuleAlreadyExistsError:
                 logger.error("{} table(s) are already created!".format(module))
@@ -772,7 +772,7 @@ class database(Module):
             if db_url is None:
                 return -1
 
-            if db_url.lower().startswith("postgres"):
+            if db_url.lower().startswith("postgresql"):
                 db_url = osdb.set_url_db(db_url, 'postgres')
         else:
             db_url = self.get_db_url(db_name)

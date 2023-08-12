@@ -45,7 +45,7 @@ except ImportError:
 
 SUPPORTED_BACKENDS = [
     "mysql",
-    "postgres",
+    "postgresql",
     "sqlite",
     "oracle",
 ]
@@ -225,7 +225,7 @@ class osdb(object):
                     raise
                 except:
                     logger.error("unexpected parsing exception")
-            elif self.dialect == "postgres" and \
+            elif self.dialect == "postgresql" and \
                     (("authentication" in se.args[0] and "failed" in se.args[0]) or \
                      ("no password supplied" in se.args[0])):
                 raise osdbAccessDeniedError
@@ -243,7 +243,7 @@ class osdb(object):
         alter attributes of a role object
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -277,7 +277,7 @@ class osdb(object):
             # TODO: do this only for SQLAlchemy
 
         try:
-            if self.dialect == "postgres":
+            if self.dialect == "postgresql":
                 self.db_url = self.set_url_db(self.db_url, self.db_name)
                 if sqlalchemy_utils.database_exists(self.db_url) is True:
                     engine = sqlalchemy.create_engine(self.db_url, isolation_level='AUTOCOMMIT')
@@ -312,7 +312,7 @@ class osdb(object):
                      self.db_name, self.dialect)
 
         # all good - it's time to create the database
-        if self.dialect == "postgres":
+        if self.dialect == "postgresql":
             self.__conn.connection.connection.set_isolation_level(0)
             try:
                 self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
@@ -408,7 +408,7 @@ class osdb(object):
                 logger.exception("failed to flush privileges")
                 return False
 
-        elif url.drivername.lower() == "postgres":
+        elif url.drivername.lower() == "postgresql":
             if not self.exists_role(url.username):
                 logger.info("creating role %s", url.username)
                 if not self.create_role(url.username, url.password):
@@ -437,7 +437,7 @@ class osdb(object):
         create a role object (PostgreSQL secific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -517,7 +517,7 @@ class osdb(object):
         drop a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -615,7 +615,7 @@ class osdb(object):
         check for existence of a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -696,7 +696,7 @@ class osdb(object):
         get attibutes of a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -721,7 +721,7 @@ class osdb(object):
         assign attibutes to a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         # TODO: do this only for SQLAlchemy
@@ -731,7 +731,7 @@ class osdb(object):
         return True
 
     def grant_table_options(self, role, table, privs="ALL PRIVILEGES"):
-        if self.dialect != "postgres":
+        if self.dialect != "postgresql":
             return False
 
         if not self.__conn:
@@ -963,7 +963,7 @@ class osdb(object):
             driver = make_url(url).drivername.lower()
             capitalized = {
                 'mysql': 'MySQL',
-                'postgres': 'PostgreSQL',
+                'postgresql': 'PostgreSQL',
                 'sqlite': 'SQLite',
                 'oracle': 'Oracle',
                 }
