@@ -739,6 +739,9 @@ class osdb(object):
             return False
 
         return True
+    
+    def grant_public_schema(self, role_name):
+        self.grant_db_options(role_name, "ON SCHEMA public")
 
     def grant_table_options(self, role, table, privs="ALL PRIVILEGES"):
         self.grant_db_options(role, "ON TABLE {}".format(table))

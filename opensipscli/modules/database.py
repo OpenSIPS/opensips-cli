@@ -707,6 +707,9 @@ class database(Module):
         username = osdb.get_url_user(db_url)
         admin_db.connect(db_name)
 
+        if db.dialect == "postgresql":
+            self.pg_grant_schema(username, admin_db)
+
         # create tables from SQL schemas
         for module, table_file in table_files.items():
             logger.info("Running {}...".format(os.path.basename(table_file)))
@@ -974,3 +977,9 @@ class database(Module):
                 if res:
                     seq = res.group(1)
                     admin_db.grant_table_options(username, seq)
+                    
+    def pg_grant_schema(self, username, admin_db):
+        """
+        Grant access to public schema of DB
+        """
+        admin_db.grant_public_schema(username)
