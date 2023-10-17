@@ -21,7 +21,7 @@ CLI_CFG=/tmp/.__cli.cfg
 DB_NAME=_opensips_cli_test
 
 MYSQL_URL=mysql://opensips:opensipsrw@localhost
-PGSQL_URL=postgres://opensips:opensipsrw@localhost
+PGSQL_URL=postgresql://opensips:opensipsrw@localhost
 
 TESTS=(
   test_mysql_drop_1_prompt

@@ -499,12 +499,12 @@ class database(Module):
 
         if cfg.exists('database_admin_url'):
             admin_url = cfg.get("database_admin_url")
-            if engine == "postgres":
+            if engine == "postgresql":
                 admin_url = osdb.set_url_db(admin_url, 'postgres')
             else:
                 admin_url = osdb.set_url_db(admin_url, None)
         else:
-            if engine == 'postgres':
+            if engine == 'postgresql':
                 if getuser() != "postgres":
                     logger.error("Command must be run as 'postgres' user: "
                                  "sudo -u postgres opensips-cli ...")
@@ -513,7 +513,7 @@ class database(Module):
                 """
                 For PG, do the initial setup using 'postgres' as role + DB
                 """
-                admin_url = "postgres://postgres@localhost/postgres"
+                admin_url = "postgresql://postgres@localhost/postgres"
             else:
                 admin_url = "{}://root@localhost".format(engine)
 
@@ -707,12 +707,15 @@ class database(Module):
         username = osdb.get_url_user(db_url)
         admin_db.connect(db_name)
 
+        if db.dialect == "postgresql":
+            self.pg_grant_schema(username, admin_db)
+
         # create tables from SQL schemas
         for module, table_file in table_files.items():
             logger.info("Running {}...".format(os.path.basename(table_file)))
             try:
                 db.create_module(table_file)
-                if db.dialect == "postgres":
+                if db.dialect == "postgresql":
                     self.pg_grant_table_access(table_file, username, admin_db)
             except osdbModuleAlreadyExistsError:
                 logger.error("{} table(s) are already created!".format(module))
@@ -772,7 +775,7 @@ class database(Module):
             if db_url is None:
                 return -1
 
-            if db_url.lower().startswith("postgres"):
+            if db_url.lower().startswith("postgresql"):
                 db_url = osdb.set_url_db(db_url, 'postgres')
         else:
             db_url = self.get_db_url(db_name)
@@ -931,8 +934,20 @@ class database(Module):
             logger.error("path '{}' to OpenSIPS DB scripts is not a directory!".
                     format(db_path))
             return None
-
-        schema_path = os.path.join(db_path, backend)
+        
+        def build_schema_path(db_path, backend):
+            """
+            Replaces schema path of postgresql to old postgre schema path if exists.
+            Should be deleted after opensips main repo refactors folder name to the new backend name.
+            """
+            if backend == "postgresql":
+                old_postgre_path = os.path.join(db_path, "postgres")
+                if os.path.isdir(old_postgre_path):
+                    return old_postgre_path
+            schema_path = os.path.join(db_path, backend)
+            return schema_path
+        
+        schema_path = build_schema_path(db_path, backend)
         if not os.path.isdir(schema_path):
             logger.error("invalid OpenSIPS DB scripts dir: '{}'!".
                     format(schema_path))
@@ -962,3 +977,9 @@ class database(Module):
                 if res:
                     seq = res.group(1)
                     admin_db.grant_table_options(username, seq)
+                    
+    def pg_grant_schema(self, username, admin_db):
+        """
+        Grant access to public schema of DB
+        """
+        admin_db.grant_public_schema(username)
