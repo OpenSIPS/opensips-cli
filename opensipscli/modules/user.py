@@ -116,7 +116,18 @@ class user(Module):
 
     def user_get_ha1_sha512t256(self, user, domain, password):
         string = "{}:{}:{}".format(user, domain, password)
-        o = hashlib.new("sha512-256")
+        try:
+            o = hashlib.new("sha512-256")
+        except ValueError:
+            # SHA-512/256 is only available w/ OpenSSL 1.1.1 (Sep 2018) or
+            # newer, so let's just leave the field blank if we get an exception
+            logger.error(("The SHA-512/256 hashing algorithm is "
+                            "apparently not available!?"))
+            logger.error("Adding user, but with a blank '{}' column!".format(
+                    USER_HA1_SHA512T256_COL))
+            logger.error("Tip: installing OpenSSL 1.1.1+ should fix this")
+            return ""
+
         o.update(string.encode('utf-8'))
         return o.hexdigest()
 
