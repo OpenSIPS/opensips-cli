@@ -25,7 +25,7 @@ their corresponding OpenSIPS client module package.  For example (only install m
 
 ```
 apt install opensips-mysql-module opensips-postgres-module opensips-sqlite-module opensips-berkeley-module
-yum install opensips-db_mysql opensips-db_postgresql opensips-db_sqlite opensips-db_berkeley
+yum install opensips-mysql-module opensips-postgres-module opensips-sqlite-module opensips-berkeley-module
 ```
 
 Once installed, the schema files will be auto-detected by `opensips-cli`.
