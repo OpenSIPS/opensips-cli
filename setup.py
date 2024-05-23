@@ -67,7 +67,7 @@ setup(
     ],
     install_requires=[
         'mysqlclient<1.4.0rc1',
-        'sqlalchemy==1.3.3',
+        'sqlalchemy>=1.3.3',
         'sqlalchemy-utils'
     ],
     classifiers = [
