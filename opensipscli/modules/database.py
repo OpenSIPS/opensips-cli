@@ -32,6 +32,7 @@ from getpass import getpass, getuser
 from collections import OrderedDict
 
 DEFAULT_DB_TEMPLATE = "template1"
+OPENSIPS_SCHEMA_SRC_PATH = "/usr/local/share/opensips"
 
 STANDARD_DB_MODULES = [
     "acc",
@@ -927,9 +928,15 @@ class database(Module):
             db_path = os.path.dirname(db_path)
 
         if not os.path.exists(db_path):
-            logger.error("path '{}' to OpenSIPS DB scripts does not exist!".
-                    format(db_path))
-            return None
+            if not os.path.exists(OPENSIPS_SCHEMA_SRC_PATH):
+                logger.error("path '{}' to OpenSIPS DB scripts does not exist!".
+                        format(db_path))
+                return None
+
+            logger.info("schema path '{}' not found, using '{}' instead (detected on system)".
+                    format(db_path, OPENSIPS_SCHEMA_SRC_PATH))
+            db_path = OPENSIPS_SCHEMA_SRC_PATH
+
         if not os.path.isdir(db_path):
             logger.error("path '{}' to OpenSIPS DB scripts is not a directory!".
                     format(db_path))
