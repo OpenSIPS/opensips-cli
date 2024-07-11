@@ -119,6 +119,12 @@ class osdbAccessDeniedError(osdbError):
     pass
 
 class DBURL(object):
+    @staticmethod
+    def escape_pass(pwd):
+        for sym in ('@', '/'): # special symbols accepted in password
+            pwd = pwd.replace(sym, '%'+hex(ord('@'))[2:])
+        return pwd
+
     def __init__(self, url):
         arr = url.split('://')
         self.drivername = arr[0].strip()
@@ -144,11 +150,11 @@ class DBURL(object):
         arr = url.split('@')
         if len(arr) > 1:
             # handle user + password
-            upass = arr[0].strip().split(':')
+            upass = '@'.join(arr[:-1]).strip().split(':')
             self.username = upass[0].strip()
             if len(upass) > 1:
-                self.password = ":".join(upass[1:]).strip()
-            url = arr[1].strip()
+                self.password = self.escape_pass(":".join(upass[1:]).strip())
+            url = arr[-1].strip()
         else:
             url = arr[0].strip()
 
@@ -942,7 +948,7 @@ class osdb(object):
     @staticmethod
     def set_url_password(url, password):
         url = make_url(url)
-        url.password = password
+        url.password = DBURL.escape_pass(password)
         return str(url)
 
 
