@@ -124,6 +124,8 @@ is not found - this has been introduces for backwards compatibility when the def
 fifo used for the reply from OpenSIPS (Default: `/tmp`)
 * `url`: The default URL used when `http` `communication_type` is used
 (Default: `http://127.0.0.1:8888/mi`).
+* `datagram_ip`: The default IP used when `datagram` `communication_type` is used (Default: `127.0.0.1`)
+* `datagram_port`: The default port used when `datagram` `communication_type` is used (Default: `8080`)
 
 Each module can use each of the parameters above, but can also declare their
 own. You can find in each module's documentation page the parameters that they
@@ -156,6 +158,7 @@ OpenSIPS CLI can communicate with an OpenSIPS instance through MI using
 different transports. Supported transports at the moment are:
 * `FIFO` - communicate over the `mi_fifo` module
 * `HTTP` - use JSONRPC over HTTP through the `mi_http` module
+* `DATAGRAM` - communicate over UDP using the `mi_datagram` module
 
 ## Installation
 

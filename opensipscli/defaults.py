@@ -65,6 +65,8 @@ DEFAULT_VALUES = {
     "fifo_file": "/var/run/opensips/opensips_fifo",
     "fifo_file_fallback": "/tmp/opensips_fifo",
     "url": "http://127.0.0.1:8888/mi",
+    "datagram_ip": "127.0.0.1",
+    "datagram_port": "8080",
 
     # database module
     "database_url": "mysql://opensips:opensipsrw@localhost",

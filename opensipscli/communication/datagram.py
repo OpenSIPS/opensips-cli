@@ -17,6 +17,26 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-from opensipscli.communication import fifo
-from opensipscli.communication import http
-from opensipscli.communication import datagram
+import urllib.request
+from opensipscli.logger import logger
+from opensipscli.config import cfg
+from opensipscli.communication import jsonrpc_helper
+import socket
+
+def execute(method, params):
+    ip = cfg.get('datagram_ip')
+    port = int(cfg.get('datagram_port'))
+    jsoncmd = jsonrpc_helper.get_command(method, params)
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        udp_socket.sendto(jsoncmd.encode(), (ip, port))
+        udp_socket.settimeout(5.0)
+        replycmd = udp_socket.recv(1024)
+    except Exception as e:
+        raise jsonrpc_helper.JSONRPCException(e)
+    finally:
+        udp_socket.close()
+    return jsonrpc_helper.get_reply(replycmd)
+
+def valid():
+    return (True, None)
