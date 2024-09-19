@@ -738,7 +738,7 @@ class diagnose(Module):
                 if have_psutil:
                     try:
                         tot_cpu += proc['cpumon'].cpu_percent(interval=None)
-                    except psutil._exceptions.NoSuchProcess:
+                    except psutil.NoSuchProcess:
                         """opensips may be restarted in the meantime!"""
 
             avg_cpu = round(tot_cpu / len(procs))
