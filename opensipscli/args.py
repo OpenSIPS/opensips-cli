@@ -29,6 +29,7 @@ class OpenSIPSCLIArgs:
     Class that contains the default values of CLI Arguments
     """
     debug = False
+    print = False
     execute = True
     command = []
     config = None
@@ -36,6 +37,7 @@ class OpenSIPSCLIArgs:
     extra_options = {}
 
     __fields__ = ['debug',
+                  'print',
                   'execute',
                   'command',
                   'config',
