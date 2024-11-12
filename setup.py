@@ -65,6 +65,7 @@ setup(
         "opensipscli.libs"
     ],
     install_requires=[
+        'opensips',
         'mysqlclient<1.4.0rc1',
         'sqlalchemy>=1.3.3,<2',
         'sqlalchemy-utils'
