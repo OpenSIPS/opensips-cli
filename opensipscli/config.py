@@ -142,5 +142,16 @@ class OpenSIPSCLIConfig:
             else:
                 return val
 
+    def to_dict(self):
+        if not self.config.has_section(self.current_instance):
+            return defaults.DEFAULT_VALUES | self.custom_options | self.dynamic_options
+        
+        temp = {}
+        for option in self.config.options(self.current_instance):
+            temp[option] = self.config.get(self.current_instance, option)
+
+        temp = temp | self.custom_options | self.dynamic_options
+        return temp
+
 
 cfg = OpenSIPSCLIConfig()

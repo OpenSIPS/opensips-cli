@@ -48,6 +48,7 @@ class OpenSIPSCLI(cmd.Cmd, object):
             options = args.OpenSIPSCLIArgs()
 
         self.debug = options.debug
+        self.print = options.print
         self.execute = options.execute
         self.command = options.command
         self.modules_dir_inserted = None
@@ -88,6 +89,9 @@ class OpenSIPSCLI(cmd.Cmd, object):
 
         # Opening the current working instance
         self.update_instance(cfg.current_instance)
+
+        if self.print:
+            logger.info(f"Config:\n" + "\n".join([f"{k}: {v}" for k, v in cfg.to_dict().items()]))
 
     def update_logger(self):
         """

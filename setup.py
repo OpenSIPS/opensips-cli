@@ -62,7 +62,6 @@ setup(
     packages = [
         "opensipscli",
         "opensipscli.modules",
-        "opensipscli.communication",
         "opensipscli.libs"
     ],
     install_requires=[

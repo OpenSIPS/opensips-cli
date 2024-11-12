@@ -57,6 +57,11 @@ parser.add_argument('-o', '--option',
                     dest="extra_options",
                     default=None,
                     help='overwrite certain values in the config')
+# Argument used to dump the configuration
+parser.add_argument('-p', '--print',
+                    action='store_true',
+                    default=False,
+                    help='dump the configuration')
 # Argument used to run the command in non-interactive mode
 parser.add_argument('-x', '--execute',
                     action='store_true',

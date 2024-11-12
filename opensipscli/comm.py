@@ -19,7 +19,7 @@
 
 from opensipscli.logger import logger
 from opensipscli.config import cfg
-from opensipscli import communication
+from opensips.mi import OpenSIPSMI, OpenSIPSMIException
 
 comm_handler = None
 comm_handler_valid = None
@@ -27,27 +27,16 @@ comm_handler_valid = None
 def initialize():
     global comm_handler
     comm_type = cfg.get('communication_type')
-    comm_func = 'opensipscli.communication.{}'.format(comm_type)
-    try:
-        comm_handler = __import__(comm_func, fromlist=[comm_type])
-    except ImportError as ie:
-        comm_handler = None
-        logger.error("cannot import '{}' handler: {}"
-            .format(comm_type, ie))
+    comm_handler = OpenSIPSMI(comm_type, **cfg.to_dict())
     valid()
 
 def execute(cmd, params=[], silent=False):
     global comm_handler
     try:
         ret = comm_handler.execute(cmd, params)
-    except communication.jsonrpc_helper.JSONRPCError as ex:
+    except OpenSIPSMIException as ex:
         if not silent:
             logger.error("command '{}' returned: {}".format(cmd, ex))
-        return None
-    except communication.jsonrpc_helper.JSONRPCException as ex:
-        if not silent:
-            logger.error("communication exception for '{}' returned: {}".format(cmd, ex))
-            logger.error("Is OpenSIPS running?")
         return None
     return ret
 
