@@ -83,6 +83,13 @@ args = OpenSIPSCLIArgs(communcation_type = "http",
 ...
 ```
 
+### Docker Image
+
+The OpenSIPS CLI tool can be run in a Docker container. The image is available
+on Docker Hub at [opensips/opensips-cli](https://hub.docker.com/r/opensips/opensips-cli).
+For more information on how to run the tool in a Docker container, please refer to the
+[OpenSIPS CLI Docker Image](docker/docker.md) documentation.
+
 ## Configuration
 
 OpenSIPS CLI accepts a configuration file, formatted as an `ini` or `cfg`
