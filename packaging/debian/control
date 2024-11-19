@@ -2,14 +2,14 @@ Source: opensips-cli
 Section: python
 Priority: optional
 Maintainer: Razvan Crainea <razvan@opensips.org>
-Build-Depends: debhelper (>= 9), dh-python, python3-dev, default-libmysqlclient-dev | libmysqlclient-dev, python3-sqlalchemy
+Build-Depends: debhelper (>= 9), dh-python, python3-dev, default-libmysqlclient-dev | libmysqlclient-dev, python3-sqlalchemy, python3-opensips
 Standards-Version: 3.9.8
 Homepage: https://github.com/OpenSIPS/opensips-cli
 
 Package: opensips-cli
 Architecture: all
 Multi-Arch: foreign
-Depends: python3, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysqldb, python3-pymysql
+Depends: python3, ${misc:Depends}, ${python3:Depends}, python3-sqlalchemy, python3-sqlalchemy-utils, python3-openssl, python3-mysqldb, python3-pymysql, python3-opensips
 Description: Interactive command-line tool for OpenSIPS 3.0+
  This package contains the OpenSIPS CLI tool, an interactive command line tool
  that can be used to control and monitor OpenSIPS 3.0+ servers.
