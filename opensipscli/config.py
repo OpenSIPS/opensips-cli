@@ -144,15 +144,18 @@ class OpenSIPSCLIConfig:
 
     def to_dict(self):
         temp = defaults.DEFAULT_VALUES.copy()
-        temp = temp | self.config.defaults()
+        temp.update(self.config.defaults())
 
         if not self.config.has_section(self.current_instance):
-            return temp | self.custom_options | self.dynamic_options
+            temp.update(self.custom_options)
+            temp.update(self.dynamic_options)
+            return temp
 
         for option in self.config.options(self.current_instance):
             temp[option] = self.config.get(self.current_instance, option)
 
-        temp = temp | self.custom_options | self.dynamic_options
+        temp.update(self.custom_options)
+        temp.update(self.dynamic_options)
         return temp
 
 
