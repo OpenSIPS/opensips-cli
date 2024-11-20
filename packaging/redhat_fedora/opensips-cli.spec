@@ -27,6 +27,7 @@ Requires: python3-sqlalchemy
 Requires: python3-mysqlclient
 Requires: python3-pyOpenSSL
 %endif
+Requires: python3-opensips
 
 %description
 This package contains the OpenSIPS CLI tool, an interactive command line tool
