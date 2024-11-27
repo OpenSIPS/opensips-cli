@@ -44,12 +44,12 @@ used multiple times, for different options
 * `-x|--execute` - executes the command specified and exits
 
 In order to run `opensips-cli` without installing it, you have to export the
-`PYTHONPATH` variable to the root of the `opensipscli` package. If you are in
-the root of the project, simply do:
+`PYTHONPATH` variable to the root of the `opensips-cli` and `python-opensips`
+packages. If you installed the two packages under `/usr/local/src`, simply do:
 
 ```
-export PYTHONPATH=.
-bin/opensips-cli
+export PYTHONPATH=/usr/local/src/opensips-cli:/usr/local/src/python-opensips
+/usr/local/src/opensips-cli/bin/opensips-cli
 ```
 
 ### Python Module
