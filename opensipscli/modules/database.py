@@ -76,7 +76,14 @@ EXTRA_DB_MODULES = [
 ]
 
 DB_MIGRATIONS = {
-    '3.4_to_3.5': [
+    '3.5_to_3.6': [
+        'config',           # new
+        'janus',            # new
+        'sockets',          # new
+        'trie_partitions',  # new
+        'trie_table',       # new
+        'domain',           # changed (accept_subdomain added)
+        'subscriber',       # changed (email_address/rpid dropped)
         'acc',
         'active_watchers',
         'address',
@@ -97,6 +104,74 @@ DB_MIGRATIONS = {
         'dialog',
         'dialplan',
         'dispatcher',
+        'domainpolicy',
+        'dr_carriers',
+        'dr_gateways',
+        'dr_groups',
+        'dr_partitions',
+        'dr_rules',
+        'emergency_report',
+        'emergency_routing',
+        'emergency_service_provider',
+        'fraud_detection',
+        'freeswitch',
+        'globalblacklist',
+        'grp',
+        'imc_members',
+        'imc_rooms',
+        'jwt_profiles',
+        'jwt_secrets',
+        'load_balancer',
+        'location',
+        'missed_calls',
+        'presentity',
+        'pua',
+        'qr_profiles',
+        'rc_clients',
+        'rc_demo_ratesheet',
+        'rc_ratesheets',
+        'rc_vendors',
+        're_grp',
+        'registrant',
+        'rls_presentity',
+        'rls_watchers',
+        'route_tree',
+        'rtpengine',
+        'rtpproxy_sockets',
+        'silo',
+        'sip_trace',
+        'smpp',
+        'speed_dial',
+        'tcp_mgm',
+        'tls_mgm',
+        'uri',
+        'userblacklist',
+        'usr_preferences',
+        'watchers',
+        'xcap',
+    ],
+
+    '3.4_to_3.5': [
+        'dialog',          # changed (mangled_from/to_uri cols extended)
+        'dispatcher',      # changed (attrs/description DEFAULT NULL)
+        'acc',
+        'active_watchers',
+        'address',
+        'b2b_entities',
+        'b2b_logic',
+        'b2b_sca',
+        'cachedb',
+        'carrierfailureroute',
+        'carrierroute',
+        'cc_agents',
+        'cc_calls',
+        'cc_cdrs',
+        'cc_flows',
+        'closeddial',
+        'clusterer',
+        'cpl',
+        'dbaliases',
+        'dialplan',
         'domain',
         'domainpolicy',
         'dr_carriers',
