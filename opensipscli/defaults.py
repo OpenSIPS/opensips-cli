@@ -67,6 +67,7 @@ DEFAULT_VALUES = {
     "url": "http://127.0.0.1:8888/mi",
     "datagram_ip": "127.0.0.1",
     "datagram_port": "8080",
+    "datagram_unix_socket": "/tmp/opensips.sock",
 
     # database module
     "database_url": "mysql://opensips:opensipsrw@localhost",
