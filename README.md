@@ -133,7 +133,9 @@ fifo used for the reply from OpenSIPS (Default: `/tmp`)
 (Default: `http://127.0.0.1:8888/mi`).
 * `datagram_ip`: The default IP used when `datagram` `communication_type` is used (Default: `127.0.0.1`)
 * `datagram_port`: The default port used when `datagram` `communication_type` is used (Default: `8080`)
-* `datagram_unix_socket`: The default unix socket used when `datagram` `communication_type` is used (Default: `/tmp/opensips.sock`)
+* `datagram_timeout`: Timeout for Datagram Socket.
+* `datagram_buffer_size`: Buffer size for Datagram Socket.
+* `datagram_unix_socket`: Unix Domain Socket to use instead of UDP.
 
 Each module can use each of the parameters above, but can also declare their
 own. You can find in each module's documentation page the parameters that they
