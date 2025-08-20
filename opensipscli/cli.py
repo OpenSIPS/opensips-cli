@@ -355,7 +355,8 @@ class OpenSIPSCLI(cmd.Cmd, object):
     # Parse parameters
     def parse_command(self, line):
 
-        module = line[0]
+        logger.debug("input line: '{}'".format(line))
+        module = line[0] if line else None
         if len(line) < 2:
             return module, None, [], []
         paramIndex = 1
@@ -391,7 +392,11 @@ class OpenSIPSCLI(cmd.Cmd, object):
                     logger.error(err_msg)
                 return -1
             else:
-                logger.error("no module '{}' loaded".format(module))
+                if module:
+                    logger.error("module '{}' is not available, type <Tab><Tab> to list all modules.".format(module))
+                else:
+                    logger.error("no module specified!  Type <Tab><Tab> to list all modules.")
+
                 return -1
         # if the module does not return any methods (returned None)
         # we simply call the module's name method
