@@ -84,7 +84,7 @@ class mi(Module):
     def get_params_set(self, cmds):
         l = set()
         for p in cmds:
-            m = re.match('([a-zA-Z\.\-_]+)=', p)
+            m = re.match(r'([a-zA-Z._-]+)=', p)
             # if it's not a parameter name, skip
             if m:
                 l.add(m.group(1))
