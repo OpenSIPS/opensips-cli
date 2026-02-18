@@ -41,7 +41,7 @@ class OpenSIPSCLI(cmd.Cmd, object):
 
     def __init__(self, options = None):
         """
-        contructor for OpenSIPS-Cli
+        constructor for OpenSIPS-Cli
         """
 
         if not options:
@@ -125,7 +125,7 @@ class OpenSIPSCLI(cmd.Cmd, object):
         self.intro = cfg.get('prompt_intro')
         self.prompt = '(%s): ' % cfg.get('prompt_name')
 
-        # initialize communcation handler
+        # initialize communication handler
         self.handler = comm.initialize()
 
         # remove all loaded modules

@@ -23,7 +23,7 @@ logger.py - implements coloured logging for the opensips-cli project
 
 import logging
 
-#These are the sequences need to get colored ouput
+#These are the sequences needed to get colored output
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 BOLD_SEQ = "\033[1m"

@@ -219,7 +219,7 @@ class user(Module):
             password = self.user_get_password()
             if password is None:
                 logger.error("Password not specified: " +
-                        "cannot change passowrd for user {}@{}".
+                        "cannot change password for user {}@{}".
                         format(user, domain))
                 return -1
         plain_text_pw = cfg.getBool("plain_text_passwords")
@@ -278,4 +278,3 @@ class user(Module):
         else:
             return (not osdb.has_sqlalchemy(), None)
         return (not osdb.has_dialect(osdb.get_dialect(db_url)), None)
-

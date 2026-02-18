@@ -816,7 +816,7 @@ class diagnose(Module):
         for proc in ps['Processes']:
             if have_psutil:
                 proc['cpumon'] = psutil.Process(proc['PID'])
-                proc['cpumon'].cpu_percent(interval=None) # begin cyle count
+                proc['cpumon'].cpu_percent(interval=None) # begin cycle count
 
             if proc['Type'].startswith("TCP "):
                 """ OpenSIPS TCP is simplified, but normalize the format"""
@@ -1084,6 +1084,6 @@ def desc_sip_msg(sip_msg):
     return "{}{}{}".format(desc, ", " if desc and callid else "", callid)
 
 def human_size(bytes, units=[' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']):
-    """ Returns a human readable string reprentation of bytes"""
+    """ Returns a human readable string representation of bytes"""
     return "{:.1f}".format(bytes) + units[0] \
             if bytes < 1024 else human_size(bytes / 1024, units[1:])

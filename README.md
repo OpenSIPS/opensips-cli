@@ -75,10 +75,10 @@ opensipscli = cli.OpenSIPSCLI(args)
 ...
 ```
 
-Custom settings can be provided thourgh the arguments, i.e.:
+Custom settings can be provided through the arguments, i.e.:
 ```
 # run commands over http
-args = OpenSIPSCLIArgs(communcation_type = "http",
+args = OpenSIPSCLIArgs(communication_type = "http",
                        url="http://127.0.0.1:8080/mi")
 ...
 ```

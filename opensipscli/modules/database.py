@@ -607,7 +607,7 @@ class database(Module):
 
     def __exclude__(self):
         """
-        method exlusion list
+        method exclusion list
         """
         if cfg.exists("database_url"):
             db_url = cfg.get("database_url")
@@ -719,7 +719,7 @@ class database(Module):
 
     def do_create(self, params=None, modifiers=None):
         """
-        create database with role-assigment and tables
+        create database with role-assignment and tables
         """
         if len(params) >= 1:
             db_name = params[0]
@@ -811,7 +811,7 @@ class database(Module):
         if create_std:
             standard_file_path = os.path.join(schema_path, "standard-create.sql")
             if not os.path.isfile(standard_file_path):
-                logger.error("cannot find stardard OpenSIPS DB file: '{}'!".
+                logger.error("cannot find standard OpenSIPS DB file: '{}'!".
                         format(standard_file_path))
                 return -1
             table_files['standard'] = standard_file_path
@@ -820,7 +820,7 @@ class database(Module):
         if tables:
             pass
         elif cfg.exists("database_modules"):
-            # we know exactly what modules we want to instsall
+            # we know exactly what modules we want to install
             tables_line = cfg.get("database_modules").strip().lower()
             if tables_line == "all":
                 logger.debug("Creating all tables")

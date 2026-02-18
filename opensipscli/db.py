@@ -90,7 +90,7 @@ class osdbError(Exception):
 
 class osdbConnectError(osdbError):
     """
-    OSDB: connecton error handler
+    OSDB: connection error handler
     """
     pass
 
@@ -215,7 +215,7 @@ class osdb(object):
                     execution_options(autocommit=True)
             # connect the Session object to our engine
             self.Session.configure(bind=self.__engine)
-            # instanciate the Session object
+            # instantiate the Session object
             self.__session = self.Session()
         except sqlalchemy.exc.OperationalError as se:
             if self.dialect == "mysql":
@@ -268,7 +268,7 @@ class osdb(object):
         try:
             result = self.__conn.execute(sqlcmd)
             if result:
-                logger.info( "{} was successfull".format(msg))
+                logger.info( "{} was successful".format(msg))
         except:
             logger.error("%s failed", msg)
             return False
@@ -292,7 +292,7 @@ class osdb(object):
                     self.__conn = engine.connect()
                     # connect the Session object to our engine
                     self.Session.configure(bind=self.__engine)
-                    # instanciate the Session object
+                    # instantiate the Session object
                     self.session = self.Session()
                     logger.debug("connected to database URL '%s'", self.db_url)
             elif self.dialect != "sqlite":
@@ -440,7 +440,7 @@ class osdb(object):
     def create_role(self, role_name, role_password, update=False,
                     role_options="NOCREATEDB NOCREATEROLE LOGIN"):
         """
-        create a role object (PostgreSQL secific)
+        create a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
         if self.dialect != "postgresql":
@@ -490,7 +490,7 @@ class osdb(object):
 
     def destroy(self):
        """
-       decontructor of a database object
+       destructor of a database object
        """
        # TODO: do this only for SQLAlchemy
        if not self.__conn:
@@ -699,7 +699,7 @@ class osdb(object):
 
     def get_role(self, role_name="opensips"):
         """
-        get attibutes of a role object (PostgreSQL specific)
+        get attributes of a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
         if self.dialect != "postgresql":
@@ -724,7 +724,7 @@ class osdb(object):
 
     def grant_db_options(self, role_name, on_statement, privs="ALL PRIVILEGES"):
         """
-        assign attibutes to a role object (PostgreSQL specific)
+        assign attributes to a role object (PostgreSQL specific)
         """
         # TODO: is any other dialect using the "role" concept?
         if self.dialect != "postgresql":

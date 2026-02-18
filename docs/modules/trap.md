@@ -35,4 +35,4 @@ OpenSIPS, since it needs direct access to OpenSIPS processes.
 * This module requires to have the `gdb` command in system's `PATH`. At
 startup, it checks if `gdb` can be located (using `which`), and if it cannot,
 the module becomes unavailable.
-* You need administrative priviledges to run the `trap`.
+* You need administrative privileges to run the `trap`.
