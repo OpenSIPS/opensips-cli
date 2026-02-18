@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:slim-trixie
 LABEL maintainer="Razvan Crainea <razvan@opensips.org>"
 
 USER root
@@ -13,7 +13,7 @@ RUN apt-get -y update -qq && \
 #add keyserver, repository
 RUN git clone https://github.com/OpenSIPS/opensips-cli.git /usr/src/opensips-cli && \
     cd /usr/src/opensips-cli && \
-    python3 setup.py install clean --all && \
+    python3 -m pip install . && \
     cd / && rm -rf /usr/src/opensips-cli
 
 RUN apt-get purge -y git gcc && \

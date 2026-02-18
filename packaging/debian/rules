@@ -2,6 +2,7 @@
 
 VERSION=$(shell python -Bc 'import sys; sys.path.append("."); from opensipscli.version import __version__; print(__version__)')
 NAME=opensips-cli
+export PYBUILD_SYSTEM=pyproject
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild

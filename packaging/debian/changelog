@@ -1,6 +1,12 @@
+opensips-cli (0.3.4-1) stable; urgency=low
+
+  * Migrate packaging to pyproject.toml and hatchling.
+  * Drop legacy setup.py/distutils build flow.
+
+ -- Razvan Crainea <razvan@opensips.org>  Wed, 18 Feb 2026 12:40:00 +0000
+
 opensips-cli (0.3.1-1) stable; urgency=low
 
   * Minor Public Release.
 
  -- Razvan Crainea <razvan@opensips.org>  Fri, 24 Feb 2023 11:15:04 +0300
-

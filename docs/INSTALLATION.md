@@ -89,19 +89,18 @@ git clone https://github.com/opensips/opensips-cli ~/src/opensips-cli
 cd ~/src/opensips-cli
 
 # local install (only visible to your user)
-python3 setup.py install --user clean
+python3 -m pip install --user .
 
 # system-wide install
-sudo python3 setup.py install clean
+sudo python3 -m pip install .
 ```
 
 ### Cleaning up the install
 
-To clean up the manually built and installed `opensips-cli` binary and package
-files, run a command similar to:
+To clean up the manually built and installed `opensips-cli` package, run:
 
 ```
-sudo rm -fr /usr/local/bin/opensips-cli /usr/local/lib/python3.6/dist-packages/opensipscli*
+python3 -m pip uninstall opensipscli
 ```
 
 ## Database Installation
