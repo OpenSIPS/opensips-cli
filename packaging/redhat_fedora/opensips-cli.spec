@@ -1,6 +1,6 @@
 Summary:  Interactive command-line tool for OpenSIPS 3.0+
 Name:     opensips-cli
-Version:  0.3.4
+Version:  0.3.5
 Release:  0%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
@@ -10,8 +10,7 @@ URL:      http://opensips.org
 BuildArch: noarch
 
 BuildRequires:  python3-devel
-BuildRequires:  pyproject-rpm-macros
-BuildRequires:  python3-hatchling
+BuildRequires:  python3-setuptools
 BuildRequires:  python3-rpm-macros
 BuildRequires:  mysql-devel
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -52,17 +51,18 @@ XMLRPC Interface.
 %autosetup -n %{name}-%{version}
 
 %build
-%pyproject_wheel
+%py3_build
 
 %install
-%pyproject_install
-%pyproject_save_files opensipscli
+%py3_install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files -f %{pyproject_files}
+%files
 %{_bindir}/opensips-cli
+%{python3_sitelib}/opensipscli/*
+%{python3_sitelib}/opensipscli-*.egg-info
 %doc README.md
 %doc docs/*
 %doc etc/default.cfg

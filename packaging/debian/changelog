@@ -1,3 +1,12 @@
+opensips-cli (0.3.5-1) stable; urgency=low
+
+  * Keep hatchling pyproject build path.
+  * Add setup.py fallback for older distro build environments.
+  * Switch Debian Build-Depends to setuptools.
+  * Revert RedHat packaging to legacy py3 build/install macros.
+
+ -- Razvan Crainea <razvan@opensips.org>  Thu, 19 Feb 2026 12:55:00 +0000
+
 opensips-cli (0.3.4-1) stable; urgency=low
 
   * Migrate packaging to pyproject.toml and hatchling.
