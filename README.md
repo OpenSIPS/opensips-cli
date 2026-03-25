@@ -70,7 +70,7 @@ The OpenSIPSCLI object can receive a set of arguments/modifiers through the
 ```
 from opensipscli import args
 ...
-args = OpenSIPSCLIArgs(debug=True)
+args = args.OpenSIPSCLIArgs(debug=True)
 opensipscli = cli.OpenSIPSCLI(args)
 ...
 ```
@@ -78,7 +78,7 @@ opensipscli = cli.OpenSIPSCLI(args)
 Custom settings can be provided through the arguments, i.e.:
 ```
 # run commands over http
-args = OpenSIPSCLIArgs(communication_type = "http",
+args = args.OpenSIPSCLIArgs(communication_type = "http",
                        url="http://127.0.0.1:8080/mi")
 ...
 ```
