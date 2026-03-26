@@ -195,6 +195,7 @@ class OpenSIPSCLI(cmd.Cmd, object):
         """
         preload a history file
         """
+        self.configure_completion_delims()
         history_file = cfg.get('history_file')
         logger.debug("using history file {}".format(history_file))
         try:
@@ -209,6 +210,14 @@ class OpenSIPSCLI(cmd.Cmd, object):
         readline.set_history_length(int(cfg.get('history_file_size')))
         if not self.registered_atexit:
             atexit.register(self.history_write)
+
+    def configure_completion_delims(self):
+        """
+        keep ':' inside tokens for command completion (e.g. "mi evi:")
+        """
+        delims = readline.get_completer_delims()
+        if ':' in delims:
+            readline.set_completer_delims(delims.replace(':', ''))
 
     def postcmd(self, stop, line):
         """
