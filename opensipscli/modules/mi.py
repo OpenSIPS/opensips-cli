@@ -36,16 +36,27 @@ except ImportError:
 # format is: command: (idx, name)
 MI_ARRAY_PARAMS_COMMANDS = {
     "fs_subscribe": (1, "events"),
+    "freeswitch_scripting:subscribe": (1, "events"),
     "fs_unsubscribe": (1, "events"),
+    "freeswitch_scripting:unsubscribe": (1, "events"),
     "b2b_trigger_scenario": (3, "scenario_params"),
+    "b2b_logic:trigger_scenario": (3, "scenario_params"),
     "dlg_push_var": (2, "DID"),
+    "dialog:push_var": (2, "DID"),
     "get_statistics": (0, "statistics"),
+    "statistics:get": (0, "statistics"),
     "list_statistics": (0, "statistics"),
+    "statistics:list": (0, "statistics"),
     "reset_statistics": (0, "statistics"),
+    "statistics:reset": (0, "statistics"),
     "trace_start": (0, "filter"),
+    "tracer:start": (0, "filter"),
     "raise_event": (1, "params"),
+    "evi:raise": (1, "params"),
     "dfks_set_feature": (4, "values"),
+    "presence_dfks:set_feature": (4, "values"),
     "cluster_broadcast_mi": (2, "cmd_params"),
+    "clusterer:broadcast_mi": (2, "cmd_params"),
 }
 
 
