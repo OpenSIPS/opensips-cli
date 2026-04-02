@@ -44,7 +44,7 @@ loaded.
 Among others, the following modules are available: Digest Authentication, CPL
 scripts, Instant Messaging, MySQL support, Presence Agent, Radius
 Authentication, Record Routing, SMS Gateway, Jabber/XMPP Gateway, Transaction
-Module, Registrar and User Location, Load Balaning/Dispatching/LCR,
+Module, Registrar and User Location, Load Balancing/Dispatching/LCR,
 XMLRPC Interface.
 
 %prep
