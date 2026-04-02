@@ -17,8 +17,8 @@ to your system using the instructions provided, then install the
 
 Supported Operating Systems (at the time of writing):
 
-* Debian 8-10
-* Ubuntu 14.04, 16.04, 18.04, 19.04
+* Debian 10-12
+* Ubuntu 18.04, 20.04, 22.04, 24.04
 
 ### RPM packages (.rpm)
 
@@ -57,8 +57,8 @@ will vary on every supported operating system.
 ```
 # required OS packages
 sudo apt install python3 python3-pip python3-dev gcc default-libmysqlclient-dev \
-                 python3-mysqldb python3-sqlalchemy python3-sqlalchemy-utils \
-                 python3-openssl
+                 python3-mysqldb python3-pymysql python3-sqlalchemy \
+                 python3-sqlalchemy-utils python3-openssl
 
 # alternatively, you can build the requirements from source
 sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
