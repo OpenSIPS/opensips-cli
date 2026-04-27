@@ -9,8 +9,8 @@ You can build the docker image by running:
 make build
 ```
 
-This command will build a docker image with OpenSIPS CLI master version taken from
-the git repository
+This command will build a docker image with OpenSIPS CLI code taken from
+the parent directory.
 
 ## Parameters
 
