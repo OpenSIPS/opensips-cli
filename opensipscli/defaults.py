@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ##
 ## This file is part of OpenSIPS CLI
 ## (see https://github.com/OpenSIPS/opensips-cli).
@@ -71,7 +71,7 @@ DEFAULT_VALUES = {
     "datagram_buffer_size": "65535",
 
     # database module
-    "database_url": "mysql://opensips:opensipsrw@localhost",
+    "database_url": "mysql+pymysql://opensips:opensipsrw@localhost",
     "database_name": "opensips",
     "database_schema_path": "/usr/share/opensips",
 

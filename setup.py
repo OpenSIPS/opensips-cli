@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ##
 ## This file is part of OpenSIPS CLI
 ## (see https://github.com/OpenSIPS/opensips-cli).
@@ -46,7 +46,7 @@ setup(
     packages=find_packages(include=("opensipscli", "opensipscli.*")),
     install_requires=[
         "opensips",
-        "mysqlclient<1.4.0rc1",
+        "pymysql",
         "sqlalchemy>=1.3.3,<2",
         "sqlalchemy-utils",
     ],

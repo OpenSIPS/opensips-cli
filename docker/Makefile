@@ -5,7 +5,8 @@ all: build start
 
 .PHONY: build start
 build:
-	docker build \
+	cd .. ; \
+	docker build -f docker/Dockerfile \
 		--tag="opensips/opensips-cli:$(OPENSIPS_DOCKER_TAG)" \
 		.
 

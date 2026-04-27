@@ -20,7 +20,7 @@
 CLI_CFG=/tmp/.__cli.cfg
 DB_NAME=_opensips_cli_test
 
-MYSQL_URL=mysql://opensips:opensipsrw@localhost
+MYSQL_URL=mysql+pymysql://opensips:opensipsrw@localhost
 PGSQL_URL=postgresql://opensips:opensipsrw@localhost
 
 TESTS=(
