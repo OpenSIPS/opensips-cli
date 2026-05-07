@@ -631,8 +631,14 @@ class database(Module):
         if not engine:
             return None
 
-        # make sure to inherit the 'database_admin_url' engine + host
-        db_url = osdb.set_url_driver(cfg.get("database_url"), engine)
+        # inherit the full driver spec (e.g. mysql+pymysql) from the admin URL
+        # so that a +driver suffix set by the user is not silently dropped
+        if cfg.exists('database_admin_url'):
+            full_driver = cfg.get('database_admin_url').split('://')[0]
+        else:
+            full_driver = cfg.get('database_url').split('://')[0]
+
+        db_url = osdb.set_url_driver(cfg.get("database_url"), full_driver)
         db_url = osdb.set_url_host(db_url, osdb.get_db_host())
 
         logger.debug("DB URL: '{}'".format(db_url))

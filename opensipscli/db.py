@@ -23,16 +23,15 @@ import re
 
 try:
     import sqlalchemy
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy import Column, Date, Integer, String, Boolean
-    from sqlalchemy.orm import sessionmaker, deferred
+    from sqlalchemy import Column, Date, Integer, String, Boolean, text
+    from sqlalchemy.orm import declarative_base, sessionmaker, deferred
 
     # for now, we use our own make_url(), since Alchemy API is highly unstable
     #  (https://github.com/OpenSIPS/opensips-cli/issues/85)
     #from sqlalchemy.engine.url import make_url
 
     sqlalchemy_available = True
-    logger.debug("SQLAlchemy version: ", sqlalchemy.__version__)
+    logger.debug("SQLAlchemy version: %s", sqlalchemy.__version__)
     try:
         import sqlalchemy_utils
     except ImportError:
@@ -205,14 +204,10 @@ class osdb(object):
 
 	    # TODO: do this only for SQLAlchemy
         try:
-            if self.dialect == "postgresql":
-                self.__engine = sqlalchemy.create_engine(db_url, isolation_level='AUTOCOMMIT')
-            else:
-                self.__engine = sqlalchemy.create_engine(db_url)
+            self.__engine = sqlalchemy.create_engine(db_url, isolation_level='AUTOCOMMIT')
 
             logger.debug("connecting to %s", db_url)
-            self.__conn = self.__engine.connect().\
-                    execution_options(autocommit=True)
+            self.__conn = self.__engine.connect()
             # connect the Session object to our engine
             self.Session.configure(bind=self.__engine)
             # instantiate the Session object
@@ -266,7 +261,7 @@ class osdb(object):
             msg += " and password '********'"
         msg += " on database '{}'".format(self.db_name)
         try:
-            result = self.__conn.execute(sqlcmd)
+            result = self.__conn.execute(text(sqlcmd))
             if result:
                 logger.info( "{} was successful".format(msg))
         except:
@@ -296,7 +291,7 @@ class osdb(object):
                     self.session = self.Session()
                     logger.debug("connected to database URL '%s'", self.db_url)
             elif self.dialect != "sqlite":
-                self.__conn.execute("USE {}".format(self.db_name))
+                self.__conn.execute(text("USE {}".format(self.db_name)))
         except Exception as e:
             logger.error("failed to connect to %s", self.db_url)
             logger.error(e)
@@ -319,15 +314,13 @@ class osdb(object):
 
         # all good - it's time to create the database
         if self.dialect == "postgresql":
-            self.__conn.connection.connection.set_isolation_level(0)
             try:
-                self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
-                self.__conn.connection.connection.set_isolation_level(1)
+                self.__conn.execute(text("CREATE DATABASE {}".format(self.db_name)))
             except sqlalchemy.exc.OperationalError as se:
                 logger.error("cannot create database: {}!".format(se))
                 return False
         elif self.dialect != "sqlite":
-            self.__conn.execute("CREATE DATABASE {}".format(self.db_name))
+            self.__conn.execute(text("CREATE DATABASE {}".format(self.db_name)))
 
         logger.debug("success")
         return True
@@ -344,11 +337,11 @@ class osdb(object):
             logger.error("database URL does not include a password")
             return False
 
-        if url.drivername.lower() == "mysql":
+        if url.drivername.lower().split('+')[0] == "mysql":
             sqlcmd = "CREATE USER IF NOT EXISTS '{}' IDENTIFIED BY '{}'".format(
                         url.username, url.password)
             try:
-                result = self.__conn.execute(sqlcmd)
+                result = self.__conn.execute(text(sqlcmd))
                 if result:
                     logger.info("created user '%s'", url.username)
             except:
@@ -368,7 +361,7 @@ class osdb(object):
                 sqlcmd = "SET PASSWORD FOR '{}' = PASSWORD('{}')".format(
                             url.username, url.password)
                 try:
-                    result = self.__conn.execute(sqlcmd)
+                    result = self.__conn.execute(text(sqlcmd))
                     if result:
                         logger.info("set password '%s%s%s' for '%s' (MariaDB)",
                             url.password[0] if len(url.password) >= 1 else '',
@@ -381,7 +374,7 @@ class osdb(object):
                             # syntax error!  OK, now try Oracle MySQL syntax
                             sqlcmd = "ALTER USER '{}' IDENTIFIED BY '{}'".format(
                                         url.username, url.password)
-                            result = self.__conn.execute(sqlcmd)
+                            result = self.__conn.execute(text(sqlcmd))
                             if result:
                                 logger.info("set password '%s%s%s' for '%s' (MySQL)",
                                     url.password[0] if len(url.password) >= 1 else '',
@@ -397,7 +390,7 @@ class osdb(object):
 
             sqlcmd = "GRANT ALL ON {}.* TO '{}'".format(self.db_name, url.username)
             try:
-                result = self.__conn.execute(sqlcmd)
+                result = self.__conn.execute(text(sqlcmd))
                 if result:
                     logger.info("granted access to user '%s' on DB '%s'",
                                 url.username, self.db_name)
@@ -408,13 +401,13 @@ class osdb(object):
 
             sqlcmd = "FLUSH PRIVILEGES"
             try:
-                result = self.__conn.execute(sqlcmd)
+                result = self.__conn.execute(text(sqlcmd))
                 logger.info("flushed privileges")
             except:
                 logger.exception("failed to flush privileges")
                 return False
 
-        elif url.drivername.lower() == "postgresql":
+        elif url.drivername.lower().split('+')[0] == "postgresql":
             if not self.exists_role(url.username):
                 logger.info("creating role %s", url.username)
                 if not self.create_role(url.username, url.password):
@@ -427,7 +420,7 @@ class osdb(object):
             logger.info(sqlcmd)
 
             try:
-                result = self.__conn.execute(sqlcmd)
+                result = self.__conn.execute(text(sqlcmd))
                 if result:
                     logger.debug("... OK")
             except:
@@ -459,7 +452,7 @@ class osdb(object):
         logger.info(sqlcmd)
 
         try:
-            result = self.__conn.execute(sqlcmd)
+            result = self.__conn.execute(text(sqlcmd))
             if result:
                 logger.info("role '{}' with options '{}' created".
                     format(role_name, role_options))
@@ -481,7 +474,7 @@ class osdb(object):
         where_str = self.get_where(filter_keys)
         statement = "DELETE FROM {}{}".format(table, where_str)
         try:
-            self.__conn.execute(statement)
+            self.__conn.execute(text(statement))
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -535,7 +528,7 @@ class osdb(object):
 
         sqlcmd = "DROP ROLE IF EXISTS {}".format(role_name)
         try:
-            result = self.__conn.execute(sqlcmd)
+            result = self.__conn.execute(text(sqlcmd))
             if result:
                 logger.debug("Role '%s' dropped", role_name)
         except:
@@ -572,7 +565,7 @@ class osdb(object):
                     # DROP/CREATE PROCEDURE statements seem to only work separately
                     sql = re.sub(r'DROP PROCEDURE .*\n', '', sql)
 
-                    self.__conn.execute(sql)
+                    self.__conn.execute(text(sql))
                 except sqlalchemy.exc.IntegrityError as ie:
                     raise osdbError("cannot deploy {} file: {}".
                             format(sql_file, ie)) from None
@@ -582,7 +575,7 @@ class osdb(object):
                     if not sql:
                         continue
                     try:
-                        self.__conn.execute(sql)
+                        self.__conn.execute(text(sql))
                     except sqlalchemy.exc.IntegrityError as ie:
                         raise osdbModuleAlreadyExistsError(
                             "cannot deploy {} file: {}".format(sql_file, ie)) from None
@@ -665,7 +658,7 @@ class osdb(object):
                 table,
                 where_str)
         try:
-            result = self.__conn.execute(statement)
+            result = self.__conn.execute(text(statement))
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -676,7 +669,7 @@ class osdb(object):
         """
         extract database dialect from an url
         """
-        return url.split('://')[0]
+        return url.split('://')[0].split('+')[0]
 
     def get_where(self, filter_keys):
         """
@@ -738,7 +731,7 @@ class osdb(object):
         logger.info(sqlcmd)
 
         try:
-            self.__conn.execute(sqlcmd)
+            self.__conn.execute(text(sqlcmd))
         except Exception as e:
             logger.exception(e)
             logger.error("failed to grant '%s' '%s' to '%s'", privs, on_statement, role_name)
@@ -767,6 +760,11 @@ class osdb(object):
             sqlalchemy.create_engine('{}://'.format(dialect))
         except sqlalchemy.exc.NoSuchModuleError:
             return False
+        except Exception:
+            # dialect is known to SQLAlchemy but its default DBAPI is not
+            # installed (e.g. MySQLdb when only PyMySQL is available);
+            # a compatible driver is still usable via the +driver URL syntax
+            pass
         return True
 
     def insert(self, table, keys):
@@ -781,14 +779,14 @@ class osdb(object):
         for v in keys.values():
             values += ", "
             if type(v) == int:
-                values += v
+                values += str(v)
             else:
                 values += "'{}'".format(
                         v.translate(str.maketrans({'\'': '\\\''})))
         statement = "INSERT INTO {} ({}) VALUES ({})".format(
                 table, ", ".join(keys.keys()), values[2:])
         try:
-            result = self.__conn.execute(statement)
+            result = self.__conn.execute(text(statement))
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -873,7 +871,7 @@ class osdb(object):
         for k, v in update_keys.items():
             update_str += ", {} = ".format(k)
             if type(v) == int:
-                update_str += v
+                update_str += str(v)
             else:
                 update_str += "'{}'".format(
                         v.translate(str.maketrans({'\'': '\\\''})))
@@ -881,7 +879,7 @@ class osdb(object):
         statement = "UPDATE {} SET {}{}".format(table,
                 update_str[2:], where_str)
         try:
-            result = self.__conn.execute(statement)
+            result = self.__conn.execute(text(statement))
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -961,8 +959,8 @@ class osdb(object):
 
     @staticmethod
     def get_url_driver(url, capitalize=False):
+        driver = make_url(url).drivername.lower().split('+')[0]
         if capitalize:
-            driver = make_url(url).drivername.lower()
             capitalized = {
                 'mysql': 'MySQL',
                 'postgresql': 'PostgreSQL',
@@ -971,7 +969,7 @@ class osdb(object):
                 }
             return capitalized.get(driver, driver.capitalize())
         else:
-            return make_url(url).drivername.lower()
+            return driver
 
 
     @staticmethod
