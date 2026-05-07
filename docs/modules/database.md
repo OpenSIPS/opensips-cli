@@ -132,8 +132,10 @@ opensips-cli -o database_schema_path=~/src/opensips-3.1/scripts \
 
 ## Dependencies
 
-* [sqlalchemy and sqlalchemy_utils](https://www.sqlalchemy.org/) - used to
-abstract the SQL database regardless of the backend used
+* [sqlalchemy](https://www.sqlalchemy.org/) - used to abstract the SQL
+database regardless of the backend used
+* [PyMySQL](https://github.com/PyMySQL/PyMySQL) - pure-Python MySQL/MariaDB
+driver used by SQLAlchemy when connecting to MySQL backends
 
 ## Limitations
 

@@ -48,7 +48,6 @@ setup(
         "opensips",
         "PyMySQL",
         "sqlalchemy>=1.4",
-        "sqlalchemy-utils",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
