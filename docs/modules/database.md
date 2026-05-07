@@ -41,10 +41,10 @@ are using the OpenSIPS source tree.  Default: `/usr/share/opensips`
 (administrator) access level which will be used to create/drop databases, as
 well as to create or ensure access for the non-privileged DB access user
 provided via `database_url`.  The URL combines schema, username, password, host
-and port.  Default: `mysql://root@localhost`.
+and port.  Default: `mysql+pymysql://root@localhost`.
 * `database_url` (optional) - the connection string to the database.  A good practice
 would be to use a non-administrator access user for this URL.  Default:
-`mysql://opensips:opensipsrw@localhost`.
+`mysql+pymysql://opensips:opensipsrw@localhost`.
 * `database_name` (optional) - the name of the database.  Modules may be separately added
 to this database if you choose not to install all of them.  Default: `opensips`.
 * `database_modules` (optional) - accepts the `ALL` keyword that indicates all the
@@ -68,7 +68,7 @@ Consider the following configuration file:
 database_modules: ALL
 
 #database_admin_url: postgresql://root@localhost
-database_admin_url: mysql://root@localhost
+database_admin_url: mysql+pymysql://root@localhost
 ```
 
 The following command will create the `opensips` database and all possible
