@@ -46,8 +46,8 @@ setup(
     packages=find_packages(include=("opensipscli", "opensipscli.*")),
     install_requires=[
         "opensips",
-        "mysqlclient<1.4.0rc1",
-        "sqlalchemy>=1.3.3,<2",
+        "PyMySQL",
+        "sqlalchemy>=1.4",
         "sqlalchemy-utils",
     ],
     classifiers=[
