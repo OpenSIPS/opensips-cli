@@ -73,6 +73,20 @@ def database_exists(url):
             return database == ':memory:' or sqlite_file_exists(database)
         return True
 
+    # connecting without a database is unreliable: psycopg2 always requires
+    # a target DB, and some PyMySQL versions ignore database=None — point at
+    # a system DB that is always present instead
+    if url.get_dialect().name == 'postgresql':
+        try:
+            url = url.set(database='postgres')
+        except AttributeError:
+            url.database = 'postgres'
+    elif url.get_dialect().name == 'mysql':
+        try:
+            url = url.set(database='information_schema')
+        except AttributeError:
+            url.database = 'information_schema'
+
     engine = sa.create_engine(url, isolation_level='AUTOCOMMIT')
 
     if engine.dialect.name == 'postgresql':
@@ -116,6 +130,11 @@ def drop_database(url):
             url = url.set(database='master')
         except AttributeError:
             url.database = 'master'
+    elif url.drivername.startswith('mysql'):
+        try:
+            url = url.set(database='information_schema')
+        except AttributeError:
+            url.database = 'information_schema'
     elif not url.drivername.startswith('sqlite'):
         try:
             url = url.set(database=None)

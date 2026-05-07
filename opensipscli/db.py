@@ -24,7 +24,11 @@ import re
 try:
     import sqlalchemy
     from sqlalchemy import Column, Date, Integer, String, Boolean, text
-    from sqlalchemy.orm import declarative_base, sessionmaker, deferred
+    try:
+        from sqlalchemy.orm import declarative_base  # SA 1.4+
+    except ImportError:
+        from sqlalchemy.ext.declarative import declarative_base  # SA 1.3
+    from sqlalchemy.orm import sessionmaker, deferred
 
     # for now, we use our own make_url(), since Alchemy API is highly unstable
     #  (https://github.com/OpenSIPS/opensips-cli/issues/85)
@@ -32,12 +36,11 @@ try:
 
     sqlalchemy_available = True
     logger.debug("SQLAlchemy version: %s", sqlalchemy.__version__)
-    try:
-        import sqlalchemy_utils
-    except ImportError:
-        logger.debug("using embedded implementation of SQLAlchemy_Utils")
-        # copied from SQLAlchemy_utils repository
-        from opensipscli.libs import sqlalchemy_utils
+    # always use the vendored shim — the system sqlalchemy-utils package
+    # varies a lot across distros (0.36.x ships broken database_exists for
+    # PostgreSQL on Bullseye; 0.41.x is required for SA 2.0); the shim is
+    # tested against SA 1.3–2.0 and behaves consistently
+    from opensipscli.libs import sqlalchemy_utils
 except ImportError:
     logger.info("sqlalchemy not available!")
     sqlalchemy_available = False
