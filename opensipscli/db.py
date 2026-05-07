@@ -27,6 +27,7 @@ try:
     try:
         from sqlalchemy.orm import declarative_base  # SA 1.4+
     except ImportError:
+        # keep this for Debian Bullseye, which still has SA 1.3 in stable
         from sqlalchemy.ext.declarative import declarative_base  # SA 1.3
     from sqlalchemy.orm import sessionmaker, deferred
 
