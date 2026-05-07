@@ -12,7 +12,6 @@ BuildArch: noarch
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-rpm-macros
-BuildRequires:  mysql-devel
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 AutoReqProv: no
@@ -20,11 +19,11 @@ AutoReqProv: no
 Requires: python3
 %if 0%{?rhel} == 7
 Requires: python36-sqlalchemy
-Requires: python36-mysql
+Requires: python36-PyMySQL
 Requires: python36-pyOpenSSL
 %else
 Requires: python3-sqlalchemy
-Requires: python3-mysqlclient
+Requires: python3-PyMySQL
 Requires: python3-pyOpenSSL
 %endif
 Requires: python3-opensips
