@@ -42,6 +42,8 @@ try:
     # PostgreSQL on Bullseye; 0.41.x is required for SA 2.0); the shim is
     # tested against SA 1.3–2.0 and behaves consistently
     from opensipscli.libs import sqlalchemy_utils
+    import pymysql
+    pymysql.install_as_MySQLdb()
 except ImportError:
     logger.info("sqlalchemy not available!")
     sqlalchemy_available = False

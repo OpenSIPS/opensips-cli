@@ -26,17 +26,17 @@ class OpenSIPSCLIUnitTests(unittest.TestCase):
         assert repr(u) == 'x://user:***@host:12/db'
         assert str(u) == 'x://user:pass@host:12/db'
 
-        u = make_url('mysql+pymysql://opensips:opensipsrw@localhost/opensips')
-        assert repr(u) == 'mysql+pymysql://opensips:***@localhost/opensips'
-        assert str(u) == 'mysql+pymysql://opensips:opensipsrw@localhost/opensips'
+        u = make_url('mysql://opensips:opensipsrw@localhost/opensips')
+        assert repr(u) == 'mysql://opensips:***@localhost/opensips'
+        assert str(u) == 'mysql://opensips:opensipsrw@localhost/opensips'
 
-        u = make_url('mysql+pymysql://opensips:opensipsrw@localhost')
-        assert repr(u) == 'mysql+pymysql://opensips:***@localhost'
-        assert str(u) == 'mysql+pymysql://opensips:opensipsrw@localhost'
+        u = make_url('mysql://opensips:opensipsrw@localhost')
+        assert repr(u) == 'mysql://opensips:***@localhost'
+        assert str(u) == 'mysql://opensips:opensipsrw@localhost'
 
-        u = make_url('mysql+pymysql://root@localhost')
-        assert repr(u) == 'mysql+pymysql://root@localhost'
-        assert str(u) == 'mysql+pymysql://root@localhost'
+        u = make_url('mysql://root@localhost')
+        assert repr(u) == 'mysql://root@localhost'
+        assert str(u) == 'mysql://root@localhost'
 
 
 if __name__ == "__main__":
