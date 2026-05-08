@@ -17,9 +17,8 @@ maintainers = [
 ]
 dependencies = [
     "opensips",
-    "mysqlclient<1.4.0rc1",
-    "sqlalchemy>=1.3.3,<2",
-    "sqlalchemy-utils",
+    "PyMySQL",
+    "sqlalchemy>=1.3.16",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -12,19 +12,18 @@ BuildArch: noarch
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-rpm-macros
-BuildRequires:  mysql-devel
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 AutoReqProv: no
 
 Requires: python3
 %if 0%{?rhel} == 7
-Requires: python36-sqlalchemy
-Requires: python36-mysql
+Requires: python36-sqlalchemy >= 1.3.16
+Requires: python36-PyMySQL
 Requires: python36-pyOpenSSL
 %else
-Requires: python3-sqlalchemy
-Requires: python3-mysqlclient
+Requires: python3-sqlalchemy >= 1.3.16
+Requires: python3-PyMySQL
 Requires: python3-pyOpenSSL
 %endif
 Requires: python3-opensips
@@ -44,7 +43,7 @@ loaded.
 Among others, the following modules are available: Digest Authentication, CPL
 scripts, Instant Messaging, MySQL support, Presence Agent, Radius
 Authentication, Record Routing, SMS Gateway, Jabber/XMPP Gateway, Transaction
-Module, Registrar and User Location, Load Balaning/Dispatching/LCR,
+Module, Registrar and User Location, Load Balancing/Dispatching/LCR,
 XMLRPC Interface.
 
 %prep
