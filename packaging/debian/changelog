@@ -1,3 +1,9 @@
+opensips-cli (0.4.0-1) stable; urgency=low
+
+  * New public release.
+
+ -- Razvan Crainea <razvan@opensips.org>  Fri, 08 May 2026 00:00:00 +0000
+
 opensips-cli (0.3.5-1) stable; urgency=low
 
   * Keep hatchling pyproject build path.
