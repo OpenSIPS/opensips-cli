@@ -18,11 +18,11 @@ AutoReqProv: no
 
 Requires: python3
 %if 0%{?rhel} == 7
-Requires: python36-sqlalchemy
+Requires: python36-sqlalchemy >= 1.3.16
 Requires: python36-PyMySQL
 Requires: python36-pyOpenSSL
 %else
-Requires: python3-sqlalchemy
+Requires: python3-sqlalchemy >= 1.3.16
 Requires: python3-PyMySQL
 Requires: python3-pyOpenSSL
 %endif

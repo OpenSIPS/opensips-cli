@@ -47,7 +47,7 @@ setup(
     install_requires=[
         "opensips",
         "PyMySQL",
-        "sqlalchemy>=1.3.3",
+        "sqlalchemy>=1.3.16",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
