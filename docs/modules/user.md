@@ -53,8 +53,8 @@ opensips-cli -x user delete username@domain.com
 
 ## Dependencies
 
-* [sqlalchemy and sqlalchemy_utils](https://www.sqlalchemy.org/) - used to
-abstract the database manipulation, regardless of the backend used
+* [sqlalchemy](https://www.sqlalchemy.org/) - used to abstract the database
+manipulation, regardless of the backend used
 
 ## Limitations
 

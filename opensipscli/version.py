@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ##
 ## This file is part of OpenSIPS CLI
 ## (see https://github.com/OpenSIPS/opensips-cli).
@@ -17,6 +17,6 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-__version__ = '0.3.5'
+__version__ = '0.4.0'
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

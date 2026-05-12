@@ -56,27 +56,26 @@ will vary on every supported operating system.
 
 ```
 # required OS packages
-sudo apt install python3 python3-pip python3-dev gcc default-libmysqlclient-dev \
-                 python3-mysqldb python3-pymysql python3-sqlalchemy \
-                 python3-sqlalchemy-utils python3-openssl
+sudo apt install python3 python3-pip python3-pymysql python3-sqlalchemy \
+                 python3-openssl
 
 # alternatively, you can build the requirements from source
-sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
+sudo pip3 install PyMySQL sqlalchemy pyOpenSSL
 ```
 
 #### Red Hat / CentOS
 
 ```
 # required CentOS 7 packages
-sudo yum install python36 python36-pip python36-devel gcc mysql-devel \
-                 python36-mysql python36-sqlalchemy python36-pyOpenSSL
+sudo yum install python36 python36-pip python36-PyMySQL \
+                 python36-sqlalchemy python36-pyOpenSSL
 
 # required CentOS 8 packages
-sudo yum install python3 python3-pip python3-devel gcc mysql-devel \
-                 python3-mysqlclient python3-sqlalchemy python3-pyOpenSSL
+sudo yum install python3 python3-pip python3-PyMySQL \
+                 python3-sqlalchemy python3-pyOpenSSL
 
 # alternatively, you can build the requirements from source
-sudo pip3 install mysqlclient sqlalchemy sqlalchemy-utils pyOpenSSL
+sudo pip3 install PyMySQL sqlalchemy pyOpenSSL
 ```
 
 ### Download, Build & Install
