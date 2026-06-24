@@ -28,11 +28,22 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Docker image
+    - name: Build and push Debian image
       uses: docker/build-push-action@v7
       with:
         context: ./docker/
+        file: ./docker/Dockerfile
         push: true
         tags: |
           opensips/opensips-cli:latest
           ghcr.io/opensips/opensips-cli:latest
+
+    - name: Build and push Alpine image
+      uses: docker/build-push-action@v7
+      with:
+        context: ./docker/
+        file: ./docker/Dockerfile.alpine
+        push: true
+        tags: |
+          opensips/opensips-cli:alpine
+          ghcr.io/opensips/opensips-cli:alpine
