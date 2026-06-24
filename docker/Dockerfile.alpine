@@ -1,0 +1,21 @@
+ARG BASE_IMAGE=python:alpine
+
+FROM ${BASE_IMAGE} AS builder
+
+RUN apk add --no-cache git && \
+    git clone https://github.com/OpenSIPS/opensips-cli.git /usr/src/opensips-cli && \
+    python3 -m pip install --no-cache-dir /usr/src/opensips-cli
+
+FROM ${BASE_IMAGE}
+LABEL maintainer="Razvan Crainea <razvan@opensips.org>"
+
+RUN apk add --no-cache bash
+
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/bin/opensips-cli /usr/local/bin/opensips-cli
+
+RUN python3 -m compileall -q /usr/local/lib
+
+COPY run.sh /run.sh
+
+ENTRYPOINT [ "/run.sh", "-o", "communication_type=http" ]

@@ -4,13 +4,19 @@ Docker recipe for running [OpenSIPS Command Line
 Interface](https://github.com/OpenSIPS/opensips-cli).
 
 ## Building the image
-You can build the docker image by running:
+You can build the Debian-based docker image by running:
 ```
-make build
+make build-debian
 ```
 
-This command will build a docker image with OpenSIPS CLI master version taken from
-the git repository
+Or the Alpine-based image (smaller footprint) with:
+```
+make build-alpine
+```
+
+`make build` is an alias for `make build-debian`.
+
+All variants install OpenSIPS CLI from the latest master branch on GitHub.
 
 ## Parameters
 
