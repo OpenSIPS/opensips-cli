@@ -13,6 +13,8 @@ LABEL maintainer="Razvan Crainea <razvan@opensips.org>"
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/bin/opensips-cli /usr/local/bin/opensips-cli
 
+RUN python3 -m compileall -q /usr/local/lib
+
 COPY run.sh /run.sh
 
 ENTRYPOINT [ "/run.sh", "-o", "communication_type=http" ]
