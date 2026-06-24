@@ -9,8 +9,6 @@ RUN apk add --no-cache git && \
 FROM ${BASE_IMAGE}
 LABEL maintainer="Razvan Crainea <razvan@opensips.org>"
 
-RUN apk add --no-cache bash
-
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/bin/opensips-cli /usr/local/bin/opensips-cli
 

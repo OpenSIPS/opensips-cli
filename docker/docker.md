@@ -31,13 +31,20 @@ Meaning of the parameters is as it follows:
 will end up in opensips-cli config file, in the `default` section, as
 `KEY: VALUE` lines
 * `CMD` - the command used to run; if the `CMD` ends with `.sh` extension, it
-will be run as a bash script, if the `CMD` ends with `.py` extension, it is
-run as a python script, otherwise it is run as a `opensips-cli` command
+will be run as a POSIX shell (`sh`) script, if the `CMD` ends with `.py`
+extension, it is run as a python script, otherwise it is run as a
+`opensips-cli` command
 * `PARAMS` - optional additional parameters passed to `CMD`
 
 ## Run
 
-To run a bash script, simply pass the connector followed by the bash script:
+The entrypoint script (`run.sh`) is POSIX `sh`-compatible and requires no
+additional shell. As a result, the Alpine image ships no extra packages beyond
+the base Python Alpine image. Shell scripts passed as `CMD` must also be POSIX
+`sh`-compatible, or include their own `#!/bin/bash` shebang with bash installed
+separately.
+
+To run a shell script, simply pass the connector followed by the script:
 ```
 docker run -d --name opensips-cli opensips/opensips-cli:latest \
 		   -o url=http://8.8.8.8:8888/mi script.sh
