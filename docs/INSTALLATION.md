@@ -17,8 +17,8 @@ to your system using the instructions provided, then install the
 
 Supported Operating Systems (at the time of writing):
 
-* Debian 8-10
-* Ubuntu 14.04, 16.04, 18.04, 19.04
+* Debian 10-12
+* Ubuntu 18.04, 20.04, 22.04, 24.04
 
 ### RPM packages (.rpm)
 
