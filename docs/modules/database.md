@@ -14,7 +14,10 @@ which database to delete.
 parameter the name of the module, as specified in the OpenSIPS scripts
 hierarchy.
 * `migrate` - copy and convert an OpenSIPS database into its next OpenSIPS
-release equivalent
+  release equivalent
+* `pi` - creates a `pi_http` framework from the framework shipped with
+  OpenSIPS, using the configured database URL and modules. An optional output
+  path may be provided.
 
 ## Configuration
 
@@ -89,6 +92,17 @@ If we want to add a new module, say `rtpproxy`, we have to run:
 opensips-cli -x database add rtpproxy
 ```
 The command above will create the `rtpproxy_sockets` table.
+
+To create a provisioning framework for the configured modules, run:
+
+```
+opensips-cli -x database pi /etc/opensips/pi_framework.xml
+```
+
+The command reuses the framework shipped in the OpenSIPS `pi_http` scripts,
+including its module-specific columns, validations, and commands. When
+`database_modules` is not `ALL`, entries for other modules are removed from
+the generated file.
 
 A drop command will prompt the user whether they really want to drop the
 database or not:

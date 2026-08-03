@@ -28,6 +28,7 @@ from opensipscli.db import (
 )
 
 import os, re
+import xml.etree.ElementTree as ET
 from getpass import getpass, getuser
 from collections import OrderedDict
 
@@ -590,7 +591,6 @@ class database(Module):
                 if not text:
                     return mig_flavours
                 ret = [t for t in mig_flavours if t.startswith(text)]
-
             elif arg == 3 or (arg == 4 and line[-1] != ' '):
                 db_source = ['opensips ']
                 if not text:
@@ -602,6 +602,8 @@ class database(Module):
                 if not text:
                     return db_dest
                 ret = [t for t in db_dest if t.startswith(text)]
+        elif command == 'pi':
+            ret = ['pi_framework.xml ']
 
         return ret or ['']
 
@@ -624,6 +626,7 @@ class database(Module):
             'drop',
             'add',
             'migrate',
+            'pi',
             ]
 
     def get_db_url(self, db_name=cfg.get('database_name')):
@@ -721,6 +724,72 @@ class database(Module):
 
         db.destroy()
         return ret
+
+    def do_pi(self, params=None, modifiers=None):
+        """Generate a pi_http framework from the installed OpenSIPS template."""
+        output = params[0] if params else 'pi_framework.xml'
+        if os.path.isdir(output):
+            output = os.path.join(output, 'pi_framework.xml')
+
+        if not cfg.exists('database_url'):
+            logger.error("database_url must be configured to create a PI framework")
+            return -1
+        schema_path = self.get_schema_path(osdb.get_url_driver(cfg.get('database_url')))
+        if not schema_path:
+            return -1
+
+        template = None
+        for candidate in (
+                os.path.join(schema_path, 'pi_http', 'pi_framework.xml'),
+                os.path.join(schema_path, 'pi', 'pi_framework.xml'),
+                os.path.join(schema_path, 'pi_framework.xml'),
+                os.path.join(os.path.dirname(schema_path), 'pi_http',
+                             'pi_framework.xml')):
+            if os.path.isfile(candidate):
+                template = candidate
+                break
+        if not template:
+            logger.error("cannot find the installed pi_http framework template")
+            return -1
+
+        try:
+            tree = ET.parse(template)
+        except ET.ParseError as ex:
+            logger.error("invalid PI framework template '{}': {}".format(template, ex))
+            return -1
+        root = tree.getroot()
+        db_url = self.get_db_url()
+        if not db_url:
+            logger.error("cannot determine the configured database URL")
+            return -1
+        for node in root.findall('db_url'):
+            node.text = db_url
+
+        configured = cfg.get('database_modules').strip().lower() \
+            if cfg.exists('database_modules') else ' '.join(STANDARD_DB_MODULES)
+        modules = None if configured == 'all' else set(configured.split())
+        if modules is not None:
+            retained = []
+            referenced_tables = set()
+            for mod in list(root.findall('mod')):
+                name = mod.findtext('mod_name', '').strip().lower()
+                if name in modules:
+                    retained.append(mod)
+                    referenced_tables.update(
+                        c.text.strip() for c in mod.findall('.//db_table_id')
+                        if c.text)
+                else:
+                    root.remove(mod)
+            for table in list(root.findall('db_table')):
+                if (table.get('id') not in modules and
+                        table.get('id') not in referenced_tables):
+                    root.remove(table)
+
+        os.makedirs(os.path.dirname(os.path.abspath(output)), exist_ok=True)
+        ET.indent(root, space='\t')
+        tree.write(output, encoding='utf-8', xml_declaration=True)
+        logger.info("PI framework written to '{}' using '{}'".format(output, template))
+        return 0
 
 
     def do_create(self, params=None, modifiers=None):
