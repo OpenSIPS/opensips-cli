@@ -210,7 +210,16 @@ class osdb(object):
 
 	    # TODO: do this only for SQLAlchemy
         try:
-            self.__engine = sqlalchemy.create_engine(db_url, isolation_level='AUTOCOMMIT')
+            if self.dialect == "sqlite":
+                # SQLite only got the AUTOCOMMIT isolation level in SA 1.3.16;
+                # older versions (EL8 ships 1.3.2) reject it with ArgumentError.
+                # Setting the pysqlite isolation_level to None gives the same
+                # autocommit behaviour on every supported SA version.
+                self.__engine = sqlalchemy.create_engine(
+                        db_url, connect_args={'isolation_level': None})
+            else:
+                self.__engine = sqlalchemy.create_engine(
+                        db_url, isolation_level='AUTOCOMMIT')
 
             logger.debug("connecting to %s", db_url)
             self.__conn = self.__engine.connect()
