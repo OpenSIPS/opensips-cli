@@ -486,10 +486,10 @@ class osdb(object):
         if not self.__conn:
             raise osdbError("connection not available")
 
-        where_str = self.get_where(filter_keys)
+        where_str, params = self.get_where(filter_keys)
         statement = "DELETE FROM {}{}".format(table, where_str)
         try:
-            self.__conn.execute(text(statement))
+            self.__conn.execute(text(statement), params)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -667,13 +667,13 @@ class osdb(object):
         elif type(fields) != list:
             fields = [ fields ]
 
-        where_str = self.get_where(filter_keys)
+        where_str, params = self.get_where(filter_keys)
         statement = "SELECT {} FROM {}{}".format(
                 ", ".join(fields),
                 table,
                 where_str)
         try:
-            result = self.__conn.execute(text(statement))
+            result = self.__conn.execute(text(statement), params)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -688,22 +688,18 @@ class osdb(object):
 
     def get_where(self, filter_keys):
         """
-        construct a sql 'where clause' from given filter keys
+        construct a sql 'where clause' from given filter keys, along with
+        the parameters to bind to it
         """
-        if filter_keys:
-            where_str = ""
-            for k, v in filter_keys.items():
-                where_str += " AND {} = ".format(k)
-                if type(v) == int:
-                    where_str += str(v)
-                else:
-                    where_str += "'{}'".format(
-                            v.translate(str.maketrans({'\'': '\\\''})))
-            if where_str != "":
-                where_str = " WHERE " + where_str[5:]
-        else:
-            where_str = ""
-        return where_str
+        if not filter_keys:
+            return "", {}
+
+        where_str = ""
+        params = {}
+        for i, (k, v) in enumerate(filter_keys.items()):
+            where_str += " AND {} = :w{}".format(k, i)
+            params["w{}".format(i)] = v
+        return " WHERE " + where_str[5:], params
 
     def get_role(self, role_name="opensips"):
         """
@@ -790,18 +786,13 @@ class osdb(object):
         if not self.__conn:
             raise osdbError("connection not available")
 
-        values = ""
-        for v in keys.values():
-            values += ", "
-            if type(v) == int:
-                values += str(v)
-            else:
-                values += "'{}'".format(
-                        v.translate(str.maketrans({'\'': '\\\''})))
+        cols = list(keys.keys())
+        params = {"v{}".format(i): keys[k] for i, k in enumerate(cols)}
         statement = "INSERT INTO {} ({}) VALUES ({})".format(
-                table, ", ".join(keys.keys()), values[2:])
+                table, ", ".join(cols),
+                ", ".join(":v{}".format(i) for i in range(len(cols))))
         try:
-            result = self.__conn.execute(text(statement))
+            result = self.__conn.execute(text(statement), params)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
@@ -883,18 +874,16 @@ class osdb(object):
             raise osdbError("connection not available")
 
         update_str = ""
-        for k, v in update_keys.items():
-            update_str += ", {} = ".format(k)
-            if type(v) == int:
-                update_str += str(v)
-            else:
-                update_str += "'{}'".format(
-                        v.translate(str.maketrans({'\'': '\\\''})))
-        where_str = self.get_where(filter_keys)
+        params = {}
+        for i, (k, v) in enumerate(update_keys.items()):
+            update_str += ", {} = :s{}".format(k, i)
+            params["s{}".format(i)] = v
+        where_str, where_params = self.get_where(filter_keys)
+        params.update(where_params)
         statement = "UPDATE {} SET {}{}".format(table,
                 update_str[2:], where_str)
         try:
-            result = self.__conn.execute(text(statement))
+            result = self.__conn.execute(text(statement), params)
         except sqlalchemy.exc.SQLAlchemyError as ex:
             logger.error("cannot execute query: {}".format(statement))
             logger.error(ex)
