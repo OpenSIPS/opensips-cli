@@ -1,6 +1,6 @@
 Summary:  Interactive command-line tool for OpenSIPS 3.0+
 Name:     opensips-cli
-Version:  0.4.0
+Version:  0.4.1
 Release:  0%{?dist}
 License:  GPL-3+
 Group:    System Environment/Daemons
@@ -68,6 +68,8 @@ rm -rf $RPM_BUILD_ROOT
 %license LICENSE
 
 %changelog
+* Thu Sep 3 2026 Stefan Darius <darius.stefan@opensips.org> - 0.4.1-0
+- Bump package version to 0.4.1.
 * Fri May 8 2026 Razvan Crainea <razvan@opensips.org> - 0.4.0-0
 - Bump package version to 0.4.0.
 * Thu Aug 27 2020 Liviu Chircu <liviu@opensips.org> - 0.1-2

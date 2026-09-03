@@ -17,6 +17,6 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
