@@ -1,18 +1,17 @@
-#!/bin/bash
+#!/bin/sh
 
-OPTS=
 CMD=
 PARAMS=
 CFG=/etc/opensips-cli.cfg
 
 echo "[default]" > "$CFG"
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
 	case "$1" in
 	-o|--option)
 		shift
-		P=$(cut -d'=' -f1 <<<"$1")
-		V=$(cut -d'=' -f2- <<<"$1")
+		P=$(echo "$1" | cut -d'=' -f1)
+		V=$(echo "$1" | cut -d'=' -f2-)
 		echo "$P: $V" >> "$CFG"
 		;;
 	*)
@@ -26,12 +25,10 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-if [[ $CMD == *.py ]]; then
-	TOOL=python3
-elif [[ $CMD == *.sh ]]; then
-	TOOL=bash
-else
-	TOOL=opensips-cli
-fi
+case "$CMD" in
+*.py) TOOL=python3 ;;
+*.sh) TOOL=sh ;;
+*)    TOOL=opensips-cli ;;
+esac
 
 exec $TOOL $CMD $PARAMS
