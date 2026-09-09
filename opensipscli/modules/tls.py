@@ -25,7 +25,32 @@ from time import gmtime, mktime
 from os.path import exists, join, dirname
 from os import makedirs
 from opensipscli.config import cfg, OpenSIPSCLIConfig
+from opensipscli.db import osdb, osdbError
+from opensipscli import comm
 from random import randrange
+
+DEFAULT_DB_NAME = "opensips"
+TLS_MGM_TABLE = "tls_mgm"
+TLS_DOMAIN_COL = "domain"
+TLS_TYPE_COL = "type"
+TLS_CERT_COL = "certificate"
+TLS_PK_COL = "private_key"
+TLS_CALIST_COL = "ca_list"
+TLS_DH_COL = "dh_params"
+
+# the tls_mgm columns that can be provisioned; 'id' is auto-incremented, while
+# 'domain' and 'type' identify the row and are passed as arguments
+TLS_MGM_COLUMNS = ["match_ip_address", "match_sip_domain", "method",
+        "verify_cert", "require_cert", TLS_CERT_COL, TLS_PK_COL,
+        "crl_check_all", "crl_dir", TLS_CALIST_COL, "ca_dir", "cipher_list",
+        TLS_DH_COL, "ec_curve"]
+
+# columns holding PEM content, which is read from the file they point to
+TLS_PEM_COLUMNS = [TLS_CERT_COL, TLS_PK_COL, TLS_CALIST_COL, TLS_DH_COL]
+
+# as defined by CLIENT_DOMAIN_TYPE/SERVER_DOMAIN_TYPE in tls_mgm/tls_domain.h
+TLS_DOMAIN_TYPES = {"client": 1, "server": 2}
+TLS_TYPE_NAMES = {v: k for k, v in TLS_DOMAIN_TYPES.items()}
 
 openssl_version = None
 
@@ -207,6 +232,7 @@ class tlsCryptographyKey(tlsKey):
                                                       password=None)
 
 class tls(Module):
+
     def do_rootCA(self, params, modifiers=None):
         global cfg
         logger.info("Preparing to generate CA cert + key...")
@@ -349,6 +375,287 @@ class tls(Module):
         logger.info("user private key created in " + k_f)
         logger.info("user CA list (chain of trust) created in " + ca_f)
 
+    def tls_db_connect(self):
+        """
+        connects to the database holding the tls_mgm table
+        """
+        if not osdb.has_sqlalchemy():
+            logger.error("SQLAlchemy not available: cannot access the database")
+            return None
+
+        engine = osdb.get_db_engine()
+
+        db_url = cfg.read_param(["database_tls_url", "database_url"],
+                "Please provide us the URL of the database")
+        if db_url is None:
+            print()
+            logger.error("no URL specified: aborting!")
+            return None
+
+        db_url = osdb.set_url_driver(db_url, engine)
+        db_name = cfg.read_param(["database_tls_name", "database_name"],
+                "Please provide the database storing the TLS domains",
+                DEFAULT_DB_NAME)
+
+        try:
+            db = osdb(db_url, db_name)
+        except osdbError:
+            logger.error("failed to connect to database %s", db_name)
+            return None
+
+        if not db.connect():
+            return None
+
+        return db
+
+    def tls_db_domain(self, params):
+        """
+        resolves the (domain, type) pair identifying a tls_mgm row
+        """
+        if len(params) > 0:
+            domain = params[0]
+        else:
+            domain = cfg.read_param(None,
+                    "Please provide the name of the TLS domain")
+            if not domain:
+                logger.error("no TLS domain specified!")
+                return None, None
+
+        if len(params) > 1:
+            dtype = params[1]
+        else:
+            dtype = cfg.read_param("tls_db_type",
+                    "TLS domain type (server/client)", "server")
+
+        if dtype.lower() not in TLS_DOMAIN_TYPES:
+            logger.error("invalid TLS domain type '%s': "
+                    "expected 'server' or 'client'", dtype)
+            return None, None
+
+        return domain, TLS_DOMAIN_TYPES[dtype.lower()]
+
+    def tls_db_reload(self):
+        """
+        makes a running OpenSIPS pick up the tls_mgm changes
+        """
+        if comm.execute('tls_reload') is None:
+            logger.warning("could not reload the TLS domains; "
+                    "OpenSIPS will load them at the next restart")
+
+    def tls_db_params(self, params):
+        """
+        splits the params into the (domain, type) pair identifying the row and
+        the 'column=value' assignments; the value of a PEM column is the path
+        of the file holding it
+        """
+        domain, dtype = self.tls_db_domain([p for p in params if '=' not in p])
+        if not domain:
+            return None, None, None
+
+        cols = {}
+        for param in [p for p in params if '=' in p]:
+            col, val = param.split('=', 1)
+            if col not in TLS_MGM_COLUMNS:
+                logger.error("unknown %s column '%s'", TLS_MGM_TABLE, col)
+                return None, None, None
+
+            if col in TLS_PEM_COLUMNS:
+                path = val
+                try:
+                    with open(path, "rt") as f:
+                        val = f.read()
+                except Exception as e:
+                    logger.exception(e)
+                    logger.error("Failed to read %s", path)
+                    return None, None, None
+
+                if "-----BEGIN" not in val:
+                    logger.error("%s is not in PEM format", path)
+                    return None, None, None
+
+            cols[col] = val
+
+        return domain, dtype, cols
+
+    def do_db_add(self, params=None, modifiers=None):
+        """
+        provisions a new TLS domain in the database
+        """
+        domain, dtype, cols = self.tls_db_params(params or [])
+        if not domain:
+            return -1
+
+        db = self.tls_db_connect()
+        if not db:
+            return -1
+
+        row = {TLS_DOMAIN_COL: domain, TLS_TYPE_COL: dtype}
+        if db.entry_exists(TLS_MGM_TABLE, row):
+            logger.error("TLS %s domain '%s' already exists",
+                    TLS_TYPE_NAMES[dtype], domain)
+            db.destroy()
+            return -1
+
+        row.update(cols)
+        if db.insert(TLS_MGM_TABLE, row) is False:
+            db.destroy()
+            return -1
+
+        db.destroy()
+        logger.info("Successfully added TLS %s domain '%s'",
+                TLS_TYPE_NAMES[dtype], domain)
+        self.tls_db_reload()
+        return True
+
+    def do_db_update(self, params=None, modifiers=None):
+        """
+        changes the given columns of an existing TLS domain
+        """
+        domain, dtype, cols = self.tls_db_params(params or [])
+        if not domain:
+            return -1
+
+        if not cols:
+            logger.error("no column to update: expected 'column=value'")
+            return -1
+
+        db = self.tls_db_connect()
+        if not db:
+            return -1
+
+        row = {TLS_DOMAIN_COL: domain, TLS_TYPE_COL: dtype}
+        if not db.entry_exists(TLS_MGM_TABLE, row):
+            logger.error("TLS %s domain '%s' does not exist",
+                    TLS_TYPE_NAMES[dtype], domain)
+            db.destroy()
+            return -1
+
+        if db.update(TLS_MGM_TABLE, cols, row) is False:
+            db.destroy()
+            return -1
+
+        db.destroy()
+        logger.info("Successfully updated TLS %s domain '%s'",
+                TLS_TYPE_NAMES[dtype], domain)
+        self.tls_db_reload()
+        return True
+
+    def do_db_list(self, params=None, modifiers=None):
+        """
+        lists the TLS domains provisioned in the database
+        """
+        db = self.tls_db_connect()
+        if not db:
+            return -1
+
+        res = db.find(TLS_MGM_TABLE,
+                ["id", TLS_DOMAIN_COL, TLS_TYPE_COL, "method",
+                    "verify_cert", "require_cert"], None)
+        if res is None:
+            db.destroy()
+            return -1
+
+        rows = res.fetchall()
+        db.destroy()
+
+        if not rows:
+            logger.info("no TLS domain provisioned in %s", TLS_MGM_TABLE)
+            return True
+
+        print("{:<5} {:<32} {:<8} {:<8} {:<8} {:<8}".format(
+            "id", "domain", "type", "method", "verify", "require"))
+        for r in rows:
+            print("{:<5} {:<32} {:<8} {:<8} {:<8} {:<8}".format(
+                r[0], r[1], TLS_TYPE_NAMES.get(r[2], r[2]),
+                str(r[3]), str(r[4]), str(r[5])))
+        return True
+
+    def do_db_show(self, params=None, modifiers=None):
+        """
+        prints the columns of a TLS domain
+        """
+        domain, dtype = self.tls_db_domain(params or [])
+        if not domain:
+            return -1
+
+        db = self.tls_db_connect()
+        if not db:
+            return -1
+
+        res = db.find(TLS_MGM_TABLE, TLS_MGM_COLUMNS,
+                {TLS_DOMAIN_COL: domain, TLS_TYPE_COL: dtype})
+        row = res.first() if res is not None else None
+        db.destroy()
+
+        if not row:
+            logger.error("TLS %s domain '%s' does not exist",
+                    TLS_TYPE_NAMES[dtype], domain)
+            return -1
+
+        def decode(val):
+            return val.decode('utf-8') if isinstance(val, bytes) else val
+
+        values = dict(zip(TLS_MGM_COLUMNS, row))
+
+        print("{} domain: {}".format(TLS_TYPE_NAMES[dtype], domain))
+        for col in TLS_MGM_COLUMNS:
+            if col in TLS_PEM_COLUMNS:
+                continue
+            print("{}: {}".format(col,
+                "<empty>" if values[col] is None else values[col]))
+
+        # the private key is never printed back
+        print("{}: {}".format(TLS_PK_COL,
+            "<hidden>" if values[TLS_PK_COL] else "<empty>"))
+
+        for col in TLS_PEM_COLUMNS:
+            if col == TLS_PK_COL:
+                continue
+            print("\n{}:\n{}".format(col,
+                decode(values[col]) if values[col] else "<empty>"))
+        return True
+
+    def do_db_delete(self, params=None, modifiers=None):
+        """
+        removes a TLS domain from the database
+        """
+        domain, dtype = self.tls_db_domain(params or [])
+        if not domain:
+            return -1
+
+        db = self.tls_db_connect()
+        if not db:
+            return -1
+
+        row = {TLS_DOMAIN_COL: domain, TLS_TYPE_COL: dtype}
+        if not db.entry_exists(TLS_MGM_TABLE, row):
+            logger.error("TLS %s domain '%s' does not exist",
+                    TLS_TYPE_NAMES[dtype], domain)
+            db.destroy()
+            return -1
+
+        if db.delete(TLS_MGM_TABLE, row) is False:
+            db.destroy()
+            return -1
+
+        db.destroy()
+        logger.info("Successfully deleted TLS %s domain '%s'",
+                TLS_TYPE_NAMES[dtype], domain)
+        self.tls_db_reload()
+        return True
+
+    def __complete__(self, command, text, line, begidx, endidx):
+        """
+        helper for autocompletion in interactive mode
+        """
+        if command not in ('db_add', 'db_update'):
+            return ['']
+
+        cols = [c + '=' for c in TLS_MGM_COLUMNS]
+        if not text:
+            return cols
+
+        return [c for c in cols if c.startswith(text)] or ['']
 
     def __exclude__(self):
         return (not openssl_version, None)
