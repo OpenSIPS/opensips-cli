@@ -411,8 +411,8 @@ class tls(Module):
     def tls_db_domain(self, params, require_type=False):
         """
         resolves the (domain, type) pair identifying a tls_mgm row; commands
-        that change an existing row require the type, so that they cannot pick
-        a different row than the intended one
+        that change an existing row get no default type, so that they cannot
+        pick a different row than the intended one
         """
         if len(params) > 0:
             domain = params[0]
@@ -425,13 +425,9 @@ class tls(Module):
 
         if len(params) > 1:
             dtype = params[1]
-        elif require_type:
-            logger.error("no TLS domain type specified: "
-                    "expected 'server' or 'client'")
-            return None, None
         else:
-            dtype = cfg.read_param(None,
-                    "TLS domain type (server/client)", "server")
+            dtype = cfg.read_param(None, "TLS domain type (server/client)",
+                    None if require_type else "server")
             if not dtype:
                 logger.error("no TLS domain type specified!")
                 return None, None
