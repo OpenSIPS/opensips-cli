@@ -430,7 +430,7 @@ class tls(Module):
                     "expected 'server' or 'client'")
             return None, None
         else:
-            dtype = cfg.read_param("tls_db_type",
+            dtype = cfg.read_param(None,
                     "TLS domain type (server/client)", "server")
             if not dtype:
                 logger.error("no TLS domain type specified!")
