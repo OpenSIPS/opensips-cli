@@ -20,9 +20,9 @@ as paths to files.  A TLS domain is identified by its name and its type
 ```
 opensips-cli -x tls db_delete a.example.org server
 ```
-`db_add` and `db_show` fall back to the `tls_db_type` setting, and then to
-`server`, when no type is given.  `db_update` and `db_delete` always require
-it, so that they cannot change a different domain than the intended one.
+`db_add` and `db_show` ask for the type when it is not given, defaulting to
+`server`.  `db_update` and `db_delete` always require it, so that they cannot
+change a different domain than the intended one.
 
 `db_add` and `db_update` take the remaining `tls_mgm` columns as `column=value`
 arguments, in any order and after the domain and the type:
@@ -95,8 +95,6 @@ List of `opensips-cli.cfg` settings for the `db_*` subcommands:
 * database_tls_url - URL of the database holding the `tls_mgm` table; falls
 back to `database_url`
 * database_tls_name - name of the database; falls back to `database_name`
-* tls_db_type - the default TLS domain type ("server" or "client"), used when
-no type is passed as an argument
 
 
 ## Examples
@@ -167,7 +165,6 @@ Configuration file example for the `db_*` subcommands:
 [default]
 database_url: mysql://opensips:opensipsrw@localhost
 database_name: opensips
-tls_db_type: server
 ```
 
 To renew the certificate of a domain, or to change any of its other columns:
