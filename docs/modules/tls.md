@@ -2,11 +2,61 @@
 
 Using the `tls` module, you can generate TLS certificates and private keys.
 
-The module has two subcommands:
+The module has the following subcommands:
 * `rootCA` - generates a CA (certification authority) self signed certificate
 and private key pair.  These are to be used by a TLS server.
 * `userCERT` - generates a certificate signed by a given CA, a private key and
 a CA list (chain of trust) file.  These are to be used by TLS clients (users).
+* `db_add` - adds a new TLS domain to the `tls_mgm` table.
+* `db_update` - changes the columns of an existing TLS domain.
+* `db_list` - lists the TLS domains provisioned in the `tls_mgm` table.
+* `db_show` - prints the columns of a TLS domain.
+* `db_delete` - removes a TLS domain from the `tls_mgm` table.
+
+The `db_*` subcommands provision the `tls_mgm` module over the database, where
+the certificate, private key and CA list are stored as BLOB values rather than
+as paths to files.  A TLS domain is identified by its name and its type
+(`server` or `client`), both passed as arguments:
+```
+opensips-cli -x tls db_delete a.example.org server
+```
+The domain and its type may also be given by name, in which case they can
+appear anywhere among the other columns:
+```
+opensips-cli -x tls db_delete domain=a.example.org type=server
+```
+Giving one of them both ways at once is an error.  The commands addressing a
+single domain ask for whatever is left out; `db_add` and `db_show` default the
+type to `server`, while `db_update` and `db_delete` have no default and keep
+asking until one is given, so that they cannot change a different domain than
+the intended one.
+
+`db_add` and `db_update` take the remaining `tls_mgm` columns as `column=value`
+arguments, in any order and after the domain and the type:
+```
+opensips-cli -x tls db_add a.example.org server method=TLSv1_2 verify_cert=1
+```
+The settable columns are `match_ip_address`, `match_sip_domain`, `method`,
+`verify_cert`, `require_cert`, `certificate`, `private_key`, `crl_check_all`,
+`crl_dir`, `ca_list`, `ca_dir`, `cipher_list`, `dh_params` and `ec_curve`.  A
+column that is not given is left to its default in the database schema;
+`db_update` only changes the columns it is given.
+
+The `certificate`, `private_key`, `ca_list` and `dh_params` columns hold PEM
+content, so their value is the path of the file holding it, and that file is
+read and stored in the table:
+```
+opensips-cli -x tls db_add a.example.org server \
+	certificate=/etc/opensips/tls/user/user-cert.pem \
+	private_key=/etc/opensips/tls/user/user-privkey.pem
+```
+Every other column is stored as the value it is given, paths included: for
+example, `ca_list` reads the file it points to, while `ca_dir` and `crl_dir`
+keep the directory as such, which is what `tls_mgm` expects of them.
+
+After every change, the `tls_reload` MI command is issued so that a running
+OpenSIPS picks up the new domains.  If OpenSIPS cannot be reached, a warning is
+logged and the domains are loaded at the next restart.
 
 ## Configuration
 
@@ -46,6 +96,12 @@ List of `opensips-cli.cfg` settings for configuring user certificates:
 * tls_user_notafter - the validity period, in seconds (e.g. 315360000)
 * tls_user_key_size - the size of the RSA key, in bits (e.g. 4096)
 * tls_user_md - the digest algorithm to use for signing (e.g. SHA256)
+
+List of `opensips-cli.cfg` settings for the `db_*` subcommands:
+
+* database_tls_url - URL of the database holding the `tls_mgm` table; falls
+back to `database_url`
+* database_tls_name - name of the database; falls back to `database_name`
 
 
 ## Examples
@@ -96,4 +152,39 @@ tls_user_organisational_unit: Project
 tls_user_notafter: 315360000
 tls_user_key_size: 4096
 tls_user_md: SHA256
+```
+
+To provision the certificate generated above as a TLS domain in the database:
+```
+opensips-cli -x tls db_add a.example.org server \
+	certificate=/etc/opensips/tls/user/user-cert.pem \
+	private_key=/etc/opensips/tls/user/user-privkey.pem \
+	ca_list=/etc/opensips/tls/user/user-calist.pem
+```
+Certificates issued by a public CA are provisioned the same way:
+```
+opensips-cli -x tls db_add a.example.org server \
+	certificate=/etc/letsencrypt/live/a.example.org/fullchain.pem \
+	private_key=/etc/letsencrypt/live/a.example.org/privkey.pem
+```
+Configuration file example for the `db_*` subcommands:
+```
+[default]
+database_url: mysql://opensips:opensipsrw@localhost
+database_name: opensips
+```
+
+To renew the certificate of a domain, or to change any of its other columns:
+```
+opensips-cli -x tls db_update a.example.org server \
+	certificate=/etc/letsencrypt/live/a.example.org/fullchain.pem \
+	private_key=/etc/letsencrypt/live/a.example.org/privkey.pem
+opensips-cli -x tls db_update a.example.org server cipher_list=HIGH
+```
+
+To inspect and remove the provisioned domains:
+```
+opensips-cli -x tls db_list
+opensips-cli -x tls db_show a.example.org server
+opensips-cli -x tls db_delete a.example.org server
 ```
