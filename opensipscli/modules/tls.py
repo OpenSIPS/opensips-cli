@@ -48,6 +48,9 @@ TLS_MGM_COLUMNS = ["match_ip_address", "match_sip_domain", "method",
 # columns holding PEM content, which is read from the file they point to
 TLS_PEM_COLUMNS = [TLS_CERT_COL, TLS_PK_COL, TLS_CALIST_COL, TLS_DH_COL]
 
+# columns identifying a row, which are not provisioned as 'column=value'
+TLS_ID_COLUMNS = ["id", TLS_DOMAIN_COL, TLS_TYPE_COL]
+
 # as defined by CLIENT_DOMAIN_TYPE/SERVER_DOMAIN_TYPE in tls_mgm/tls_domain.h
 TLS_DOMAIN_TYPES = {"client": 1, "server": 2}
 TLS_TYPE_NAMES = {v: k for k, v in TLS_DOMAIN_TYPES.items()}
@@ -449,18 +452,20 @@ class tls(Module):
 
     def tls_db_params(self, params, require_type=False):
         """
-        splits the params into the (domain, type) pair identifying the row and
-        the 'column=value' assignments; the value of a PEM column is the path
-        of the file holding it
+        splits the params into the 'column=value' assignments and the
+        (domain, type) pair identifying the row; the value of a PEM column is
+        the path of the file holding it.  The columns are parsed first, so that
+        a bad one is reported without asking for the domain beforehand
         """
-        domain, dtype = self.tls_db_domain(
-                [p for p in params if '=' not in p], require_type)
-        if not domain:
-            return None, None, None
-
         cols = {}
         for param in [p for p in params if '=' in p]:
             col, val = param.split('=', 1)
+            if col in TLS_ID_COLUMNS:
+                logger.error("column '%s' identifies the row and cannot be "
+                        "provisioned; the domain and its type are passed as "
+                        "arguments", col)
+                return None, None, None
+
             if col not in TLS_MGM_COLUMNS:
                 logger.error("unknown %s column '%s'", TLS_MGM_TABLE, col)
                 return None, None, None
@@ -480,6 +485,11 @@ class tls(Module):
                     return None, None, None
 
             cols[col] = val
+
+        domain, dtype = self.tls_db_domain(
+                [p for p in params if '=' not in p], require_type)
+        if not domain:
+            return None, None, None
 
         return domain, dtype, cols
 
