@@ -408,9 +408,11 @@ class tls(Module):
 
         return db
 
-    def tls_db_domain(self, params):
+    def tls_db_domain(self, params, require_type=False):
         """
-        resolves the (domain, type) pair identifying a tls_mgm row
+        resolves the (domain, type) pair identifying a tls_mgm row; commands
+        that change an existing row require the type, so that they cannot pick
+        a different row than the intended one
         """
         if len(params) > 0:
             domain = params[0]
@@ -423,9 +425,16 @@ class tls(Module):
 
         if len(params) > 1:
             dtype = params[1]
+        elif require_type:
+            logger.error("no TLS domain type specified: "
+                    "expected 'server' or 'client'")
+            return None, None
         else:
             dtype = cfg.read_param("tls_db_type",
                     "TLS domain type (server/client)", "server")
+            if not dtype:
+                logger.error("no TLS domain type specified!")
+                return None, None
 
         if dtype.lower() not in TLS_DOMAIN_TYPES:
             logger.error("invalid TLS domain type '%s': "
@@ -442,13 +451,14 @@ class tls(Module):
             logger.warning("could not reload the TLS domains; "
                     "OpenSIPS will load them at the next restart")
 
-    def tls_db_params(self, params):
+    def tls_db_params(self, params, require_type=False):
         """
         splits the params into the (domain, type) pair identifying the row and
         the 'column=value' assignments; the value of a PEM column is the path
         of the file holding it
         """
-        domain, dtype = self.tls_db_domain([p for p in params if '=' not in p])
+        domain, dtype = self.tls_db_domain(
+                [p for p in params if '=' not in p], require_type)
         if not domain:
             return None, None, None
 
@@ -511,7 +521,7 @@ class tls(Module):
         """
         changes the given columns of an existing TLS domain
         """
-        domain, dtype, cols = self.tls_db_params(params or [])
+        domain, dtype, cols = self.tls_db_params(params or [], True)
         if not domain:
             return -1
 
@@ -619,7 +629,7 @@ class tls(Module):
         """
         removes a TLS domain from the database
         """
-        domain, dtype = self.tls_db_domain(params or [])
+        domain, dtype = self.tls_db_domain(params or [], True)
         if not domain:
             return -1
 
