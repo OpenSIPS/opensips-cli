@@ -500,7 +500,7 @@ class tls(Module):
 
         return domain, TLS_DOMAIN_TYPES[dtype.lower()], cols
 
-    def do_db_add(self, params=None, modifiers=None):
+    def do_add(self, params=None, modifiers=None):
         """
         provisions a new TLS domain in the database
         """
@@ -530,7 +530,7 @@ class tls(Module):
         self.tls_db_reload()
         return True
 
-    def do_db_update(self, params=None, modifiers=None):
+    def do_update(self, params=None, modifiers=None):
         """
         changes the given columns of an existing TLS domain
         """
@@ -563,7 +563,7 @@ class tls(Module):
         self.tls_db_reload()
         return True
 
-    def do_db_list(self, params=None, modifiers=None):
+    def do_list(self, params=None, modifiers=None):
         """
         lists the TLS domains provisioned in the database
         """
@@ -593,13 +593,13 @@ class tls(Module):
                 str(r[3]), str(r[4]), str(r[5])))
         return True
 
-    def do_db_show(self, params=None, modifiers=None):
+    def do_show(self, params=None, modifiers=None):
         """
         prints the columns of a TLS domain
         """
         domain, dtype, cols = self.tls_db_params(params or [])
         if domain and cols:
-            logger.error("db_show takes no column: '%s'", list(cols)[0])
+            logger.error("show takes no column: '%s'", list(cols)[0])
             return -1
         if not domain:
             return -1
@@ -641,13 +641,13 @@ class tls(Module):
                 decode(values[col]) if values[col] else "<empty>"))
         return True
 
-    def do_db_delete(self, params=None, modifiers=None):
+    def do_delete(self, params=None, modifiers=None):
         """
         removes a TLS domain from the database
         """
         domain, dtype, cols = self.tls_db_params(params or [], True)
         if domain and cols:
-            logger.error("db_delete takes no column: '%s'", list(cols)[0])
+            logger.error("delete takes no column: '%s'", list(cols)[0])
             return -1
         if not domain:
             return -1
@@ -677,7 +677,7 @@ class tls(Module):
         """
         helper for autocompletion in interactive mode
         """
-        if command not in ('db_add', 'db_update'):
+        if command not in ('add', 'update'):
             return ['']
 
         cols = [c + '=' for c in TLS_MGM_COLUMNS]
