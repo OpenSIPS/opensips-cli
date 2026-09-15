@@ -1,9 +1,8 @@
-ARG BASE_IMAGE=python:slim-trixie
+ARG BASE_IMAGE=python:alpine
 
 FROM ${BASE_IMAGE} AS builder
 
-RUN apt-get -y update -qq && \
-    apt-get -y --no-install-recommends install git && \
+RUN apk add --no-cache git && \
     git clone https://github.com/OpenSIPS/opensips-cli.git /usr/src/opensips-cli && \
     python3 -m pip install --no-cache-dir /usr/src/opensips-cli
 
