@@ -43,14 +43,19 @@ try:
     # PostgreSQL on Bullseye; 0.41.x is required for SA 2.0); the shim is
     # tested against SA 1.3–2.0 and behaves consistently
     from opensipscli.libs import sqlalchemy_utils
-    import pymysql
-    pymysql.install_as_MySQLdb()
 except ImportError as e:
     # keep the cause around so callers can report it when the database
     # is actually needed
     logger.info("sqlalchemy not available: %s", e)
     sqlalchemy_available = False
     sqlalchemy_import_error = e
+
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    # only needed for mysql:// URLs; the other backends work without it
+    pass
 
 SUPPORTED_BACKENDS = [
     "mysql",
