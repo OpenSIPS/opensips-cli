@@ -25,7 +25,7 @@ from time import gmtime, mktime
 from os.path import exists, join, dirname
 from os import makedirs
 from opensipscli.config import cfg, OpenSIPSCLIConfig
-from opensipscli.db import osdb, osdbError
+from opensipscli.db import osdb, osdbError, sqlalchemy_import_error
 from opensipscli import comm
 from random import randrange
 
@@ -385,7 +385,8 @@ class tls(Module):
         connects to the database holding the tls_mgm table
         """
         if not osdb.has_sqlalchemy():
-            logger.error("SQLAlchemy not available: cannot access the database")
+            logger.error("SQLAlchemy not available (%s): cannot access the database",
+                    sqlalchemy_import_error)
             return None
 
         engine = osdb.get_db_engine()

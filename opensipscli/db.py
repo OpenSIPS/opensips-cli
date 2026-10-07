@@ -36,6 +36,7 @@ try:
     #from sqlalchemy.engine.url import make_url
 
     sqlalchemy_available = True
+    sqlalchemy_import_error = None
     logger.debug("SQLAlchemy version: %s", sqlalchemy.__version__)
     # always use the vendored shim — the system sqlalchemy-utils package
     # varies a lot across distros (0.36.x ships broken database_exists for
@@ -44,9 +45,12 @@ try:
     from opensipscli.libs import sqlalchemy_utils
     import pymysql
     pymysql.install_as_MySQLdb()
-except ImportError:
-    logger.info("sqlalchemy not available!")
+except ImportError as e:
+    # keep the cause around so callers can report it when the database
+    # is actually needed
+    logger.info("sqlalchemy not available: %s", e)
     sqlalchemy_available = False
+    sqlalchemy_import_error = e
 
 SUPPORTED_BACKENDS = [
     "mysql",
