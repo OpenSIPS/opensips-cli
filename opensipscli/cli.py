@@ -29,7 +29,6 @@ from opensipscli import comm
 from opensipscli import defaults
 from opensipscli.config import cfg
 from opensipscli.logger import logger
-from opensipscli.modules import *
 
 class OpenSIPSCLI(cmd.Cmd, object):
     """
@@ -120,6 +119,10 @@ class OpenSIPSCLI(cmd.Cmd, object):
         # first of all, let's handle logging
         self.current_instance = instance
         self.update_logger()
+
+        # import the modules only now, so that their import-time messages
+        # honor the logging level
+        importlib.import_module("opensipscli.modules")
 
         # Update the intro and prompt
         self.intro = cfg.get('prompt_intro')
