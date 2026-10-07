@@ -776,6 +776,8 @@ class osdb(object):
         check for support of a given database dialect via SQLAlchemy
         """
         # TODO: do this only for SQLAlchemy
+        if not sqlalchemy_available:
+            return False
         try:
             sqlalchemy.create_engine('{}://'.format(dialect))
         except sqlalchemy.exc.NoSuchModuleError:
