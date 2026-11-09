@@ -64,6 +64,9 @@ MI_MODIFIERS = [ "-j" ]
 
 class mi(Module):
 
+    def __init__(self):
+        self.aliases = {}
+
     def print_pretty_print(self, result):
         print(json.dumps(result, indent=4))
 
@@ -150,11 +153,34 @@ class mi(Module):
                 new_params.append(params[MI_ARRAY_PARAMS_COMMANDS[cmd][0]:])
         return new_params
 
+    def __get_aliases__(self):
+        result = comm.execute('which_aliases', silent=True)
+        if not isinstance(result, list):
+            return self.aliases
+
+        aliases = {}
+        for item in result:
+            if not isinstance(item, dict):
+                continue
+            alias = item.get('alias')
+            command = item.get('command')
+            if not isinstance(alias, str) or not isinstance(command, str):
+                continue
+            if alias in aliases and aliases[alias] != command:
+                aliases[alias] = None
+            else:
+                aliases[alias] = command
+
+        self.aliases = {alias: command for alias, command in aliases.items()
+                        if command is not None}
+        return self.aliases
+
     def __invoke__(self, cmd, params=None, modifiers=None):
-        params = self.parse_params(cmd, params, modifiers)
+        command = self.aliases.get(cmd, cmd)
+        params = self.parse_params(command, params, modifiers)
         # Mi Module works with JSON Communication
-        logger.debug("running command '{}' '{}'".format(cmd, params))
-        res = comm.execute(cmd, params)
+        logger.debug("running command '{}' '{}'".format(command, params))
+        res = comm.execute(command, params)
         if res is None:
             return -1
         output_type = cfg.get('output_type')

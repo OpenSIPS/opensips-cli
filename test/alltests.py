@@ -1,8 +1,20 @@
 import unittest
+from unittest.mock import patch
 
 from opensipscli.db import make_url
+from opensipscli.modules.mi import mi
 
 class OpenSIPSCLIUnitTests(unittest.TestCase):
+    def testMIAliasUsesCanonicalCommand(self):
+        module = mi()
+        module.aliases = {'alias': 'canonical'}
+
+        with patch('opensipscli.modules.mi.comm.execute', return_value=None) as execute:
+            result = module.__invoke__('alias', ['key=value'], [])
+
+        self.assertEqual(result, -1)
+        execute.assert_called_once_with('canonical', {'key': 'value'})
+
     def testMakeURL(self):
         u = make_url('x://')
         assert repr(u) == 'x://'

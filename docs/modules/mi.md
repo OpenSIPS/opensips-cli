@@ -7,8 +7,13 @@ commands and display the result in the console.
 
 This module exports all the commands that are exported by the OpenSIPS
 instance that `opensips-cli` points to. It fetches the available commands by
-running the OpenSIPS MI `which` command. When running a command, it returns
+running the OpenSIPS MI `which` command. It also loads MI aliases using the
+`which_aliases` command. When running a command, it returns
 the raw, unprocessed data from OpenSIPS.
+
+Aliases are accepted when executing commands, but are not included in command
+completion suggestions. Ambiguous aliases are ignored and must be invoked by
+their canonical command name.
 
 Commands using this module can be run in two manners:
 * using *positional* parameters: this is similar to the old way the

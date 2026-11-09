@@ -178,7 +178,11 @@ class OpenSIPSCLI(cmd.Cmd, object):
                 continue
             logger.debug("Loaded module '{}'".format(name))
             imod = mod()
-            self.modules[name] = (imod, mod.__get_methods__(imod))
+            methods = mod.__get_methods__(imod)
+            aliases = {}
+            if hasattr(imod, '__get_aliases__'):
+                aliases = imod.__get_aliases__() or {}
+            self.modules[name] = (imod, methods, aliases)
 
     def history_write(self):
         """
@@ -422,7 +426,7 @@ class OpenSIPSCLI(cmd.Cmd, object):
             logger.error("module '{}' expects the following commands: {}".
                    format(module, ", ".join(mod[1])))
             return -1
-        elif cmd and not cmd in mod[1]:
+        elif cmd and cmd not in mod[1] and cmd not in mod[2]:
             logger.error("no command '{}' in module '{}'".
                     format(cmd, module))
             return -1
