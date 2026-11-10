@@ -45,7 +45,7 @@ class OpenSIPSCLIConfig:
     def set_option(self, option, value = None):
         if value:
             self.custom_options[option] = value
-        else:
+        elif option in self.custom_options:
             del self.custom_options[option]
 
     def set_custom_options(self, options):
